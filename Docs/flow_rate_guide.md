@@ -26,7 +26,8 @@ To calculate heat output accurately, we need:
 | **Aerona3 8kW** | 20 L/min | 18-22 L/min |
 | **Aerona3 12kW** | 22 L/min | 20-25 L/min |
 | **Aerona3 16kW** | 27 L/min | 25-30 L/min |
-https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration/blob/main/Docs/images/Flow_Rates.jpeg
+
+![Flow Rates](https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration/blob/main/Docs/images/Flow_Rates.jpeg)
 
 *Note: Actual flow rates depend on system design, pump settings, and resistance*
 
@@ -42,8 +43,10 @@ https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration/bl
    - Primary return pipe (22mm or 28mm copper)
    - Between heat pump and first split/valve
    - Straight pipe section (no bends within 10 pipe diameters)
-(https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration/blob/main/Docs/images/flow_meter_diag.png)
-https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration/blob/main/Docs/images/flow_metre.jpeg
+     
+![Flow Meter Diagram](https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration/blob/main/Docs/images/flow_meter_diag.png)
+
+![Flow Meter](https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration/blob/main/Docs/images/flow_metre.jpeg)
 
 2. **Install/attach flow meter**:
    - **Ultrasonic**: Clamp sensors on pipe exterior
