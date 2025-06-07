@@ -1,5 +1,6 @@
 """Minimal config flow test."""
 from homeassistant import config_entries
+from homeassistant.config_entries import ConfigFlow
 import voluptuous as vol
 
 DOMAIN = "grant_aerona3"
