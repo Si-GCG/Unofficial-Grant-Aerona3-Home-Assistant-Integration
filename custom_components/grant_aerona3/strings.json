@@ -1,0 +1,23 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Grant Aerona3 Heat Pump",
+        "description": "Enter your Grant Aerona3 heat pump's network details. All registers will be automatically configured as entities.",
+        "data": {
+          "host": "IP Address",
+          "port": "Port",
+          "slave_id": "Slave ID",
+          "scan_interval": "Scan Interval (seconds)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the heat pump. Please check the IP address and port.",
+      "unknown": "Unexpected error occurred"
+    },
+    "abort": {
+      "already_configured": "Device is already configured"
+    }
+  }
+}
