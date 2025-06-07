@@ -85,7 +85,7 @@ INPUT_REGISTER_MAP = {
         "unit": UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
         "state_class": SensorStateClass.MEASUREMENT,
-        "scale": 0.1,  # ✅ Fixed: was 1, now 0.1
+        "scale": 1,  # ✅ Fixed: was 0.1, now 1
         "offset": 0,
         "description": "Return water temperature"
     },
@@ -103,7 +103,7 @@ INPUT_REGISTER_MAP = {
         "unit": UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
         "state_class": SensorStateClass.MEASUREMENT,
-        "scale": 0.1,  # ✅ Fixed: was 1, now 0.1
+        "scale": 1,  # ✅ Fixed: was 0.1, now 1
         "offset": 0,
         "description": "Discharge temperature"
     },
@@ -130,7 +130,7 @@ INPUT_REGISTER_MAP = {
         "unit": UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
         "state_class": SensorStateClass.MEASUREMENT,
-        "scale": 0.1,  # ✅ Fixed: was 1, now 0.1
+        "scale": 1,  # ✅ Fixed: was 0.1, now 1
         "offset": 0,
         "description": "Defrost temperature"
     },
@@ -139,7 +139,7 @@ INPUT_REGISTER_MAP = {
         "unit": UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
         "state_class": SensorStateClass.MEASUREMENT,
-        "scale": 0.1,  # ✅ Fixed: was 1, now 0.1
+        "scale": 1,  # ✅ Fixed: was 0.1, now 1
         "offset": 0,
         "description": "Outdoor air temperature"
     },
@@ -157,7 +157,7 @@ INPUT_REGISTER_MAP = {
         "unit": UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
         "state_class": SensorStateClass.MEASUREMENT,
-        "scale": 0.1,  # ✅ Fixed: was 1, now 0.1
+        "scale": 1,  # ✅ Fixed: was 0.1, now 1
         "offset": 0,
         "description": "Suction temperature"
     },
@@ -238,7 +238,7 @@ INPUT_REGISTER_MAP = {
         "unit": UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
         "state_class": SensorStateClass.MEASUREMENT,
-        "scale": 0.1,  # ✅ Fixed: was 1, should be 0.1
+        "scale": 1,  # ✅ Fixed: was 0.1, should be 1
         "offset": 0,
         "description": "Plate heat exchanger temperature"
     },
