@@ -17,6 +17,8 @@ Before installing, ensure you have:
 ### Modbus Communication Setup
 You'll need a way to connect Home Assistant to your Grant Aerona3's Modbus interface:
 
+![Modbus Adapter](https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration/blob/main/Docs/images/RS485-TO-POE-ETH-B.jpg)
+
 #### Recommended: Waveshare RS485 to Ethernet Converter
 - **Model**: RS232/485/422 to POE ETH (B)
 - **Default IP**: 192.168.1.200
@@ -25,6 +27,8 @@ You'll need a way to connect Home Assistant to your Grant Aerona3's Modbus inter
   - RS485+ (orange wire) → terminal 15
   - RS485- (orange/white wire) → terminal 16
   - GND → terminal 32
+
+![PCB Diagram](https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration/blob/main/Docs/images/PCB_Diag.jpeg)
 
 #### Alternative: USB to RS485 Converter
 - Connect via USB to your Home Assistant device
