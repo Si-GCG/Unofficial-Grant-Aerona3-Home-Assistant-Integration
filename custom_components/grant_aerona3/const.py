@@ -1136,17 +1136,17 @@ COIL_REGISTER_MAP = {
     3: {
         "name": "Heating Weather Compensation Zone 2",
         "device_class": None,
-        "description": "Heating Zone2, enable Outgoing water set point (0=Fixed set point, 1=Climatic curve"
+        "description": "Heating Zone2, enable Outgoing water set point (0=Fixed set point, 1=Climatic curve)"
     },
     4: {
         "name": "Cooling Weather Compensation Zone 1",
         "device_class": None,
-        "description": "Cooling Zone1, enable Outgoing water set point (0=Fixed set point, 1=Climatic curve"
+        "description": "Cooling Zone1, enable Outgoing water set point (0=Fixed set point, 1=Climatic curve)"
     },
     5: {
         "name": "Cooling Weather Compensation Zone 2",
         "device_class": None,
-        "description": "Cooling Zone2, enable Outgoing water set point (0=Fixed set point, 1=Climatic Curve"
+        "description": "Cooling Zone2, enable Outgoing water set point (0=Fixed set point, 1=Climatic Curve)"
     },
     6: {
         "name": "Anti-legionella Function",
