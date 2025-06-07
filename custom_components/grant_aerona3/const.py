@@ -370,10 +370,10 @@ HOLDING_REGISTER_MAP = {
         "scale": 0.1,
         "offset": 0,
         "writable": True,
-        "description": "Min. Outdoor air temperature corresponding to max. Outgoing water temperature Cooling (Te1) Zone1"
+        "description": "Min. Outdoor air temperature corresponding to min. Outgoing water temperature Cooling (Te1) Zone1"
     },
     16: {
-        "name": "Max. Outdoor Air Temperature Corresponding To M... 3",
+        "name": "Max. Outdoor Air Temperature Corresponding To max. Outgoing water temperature Cooling (Te2) Zone1",
         "unit": UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
         "scale": 0.1,
