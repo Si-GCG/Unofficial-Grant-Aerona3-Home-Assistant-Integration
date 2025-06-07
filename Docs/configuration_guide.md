@@ -97,9 +97,11 @@ The integration automatically creates **150+ entities** across multiple platform
 ### Terminal Configuration
 | Entity | Description | When to Enable |
 |--------|-------------|----------------|
-| `switch.grant_aerona3_terminal_7_8_dhw_tank_temperature_probe` | DHW temperature sensor | If you have hot water cylinder |
-| `switch.grant_aerona3_terminal_11_12_buffer_tank_temperature_probe` | Buffer tank sensor | If you have buffer tank |
+| `switch.grant_aerona3_terminal_7_8_dhw_tank_temperature_probe` | DHW temperature sensor | If you have thermistor on your hot water cylinder |
+| `switch.grant_aerona3_terminal_11_12_buffer_tank_temperature_probe` | Buffer tank sensor | If you have buffer tank and have a Thermistor on the buffer tank |
 | `switch.grant_aerona3_terminal_26_27_flow_switch` | Flow switch monitoring | ✅ Usually enabled |
+
+![PCB Diagram](https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration/blob/main/Docs/images/PCB_Diag.jpeg)
 
 ## Number Entities
 
