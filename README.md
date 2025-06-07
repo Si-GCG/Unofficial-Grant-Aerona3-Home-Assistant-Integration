@@ -21,7 +21,7 @@ A comprehensive Home Assistant integration for **Grant Aerona3 Heat Pumps** usin
 
 ## 🚀 Quick Start
 
-1. **Install** the integration (see [Installation Guide](docs/installation_guide.md))
+1. **Install** the integration (see [Installation Guide](Docs/installation_guide.md))
 2. **Add Integration** via Home Assistant UI
 3. **Enter Details**: IP address (required), port (502), slave ID (1), scan interval (30s)
 4. **Configure Flow Rate**: Set your measured flow rate for accurate COP calculations
@@ -60,11 +60,11 @@ A comprehensive Home Assistant integration for **Grant Aerona3 Heat Pumps** usin
 
 | Document | Description |
 |----------|-------------|
-| [📋 Installation Guide](docs/installation_guide.md) | Step-by-step installation instructions |
-| [⚙️ Configuration Guide](docs/configuration_guide.md) | Detailed configuration options |
-| [📏 Flow Rate Measurement](docs/flow_rate_guide.md) | How to measure and configure flow rate for accurate COP |
-| [🔧 Troubleshooting](docs/troubleshooting_guide.md) | Common issues and solutions |
-| [📚 Register Reference](docs/reference_files/) | Complete list of all 150+ registers |
+| [📋 Installation Guide](Docs/installation_guide.md) | Step-by-step installation instructions |
+| [⚙️ Configuration Guide](Docs/configuration_guide.md) | Detailed configuration options |
+| [📏 Flow Rate Measurement](Docs/flow_rate_guide.md) | How to measure and configure flow rate for accurate COP |
+| [🔧 Troubleshooting](Docs/troubleshooting_guide.md) | Common issues and solutions |
+| [📚 Register Reference](Docs/reference_files/) | Complete list of all 150+ registers |
 | [🎯 Examples](examples/) | Sample automations and dashboard cards |
 
 ## 🏠 Typical Grant Aerona3 Systems
