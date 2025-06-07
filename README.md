@@ -21,7 +21,7 @@ A comprehensive Home Assistant integration for **Grant Aerona3 Heat Pumps** usin
 
 ## 🚀 Quick Start
 
-1. **Install** the integration (see [Installation Guide](docs/installation.md))
+1. **Install** the integration (see [Installation Guide](docs/installation_guide.md))
 2. **Add Integration** via Home Assistant UI
 3. **Enter Details**: IP address (required), port (502), slave ID (1), scan interval (30s)
 4. **Configure Flow Rate**: Set your measured flow rate for accurate COP calculations
@@ -60,11 +60,11 @@ A comprehensive Home Assistant integration for **Grant Aerona3 Heat Pumps** usin
 
 | Document | Description |
 |----------|-------------|
-| [📋 Installation Guide](docs/installation.md) | Step-by-step installation instructions |
-| [⚙️ Configuration Guide](docs/configuration.md) | Detailed configuration options |
-| [📏 Flow Rate Measurement](docs/flow-rate-measurement.md) | How to measure and configure flow rate for accurate COP |
-| [🔧 Troubleshooting](docs/troubleshooting.md) | Common issues and solutions |
-| [📚 Register Reference](docs/register-reference.md) | Complete list of all 150+ registers |
+| [📋 Installation Guide](docs/installation_guide.md) | Step-by-step installation instructions |
+| [⚙️ Configuration Guide](docs/configuration_guide.md) | Detailed configuration options |
+| [📏 Flow Rate Measurement](docs/flow_rate_guide.md) | How to measure and configure flow rate for accurate COP |
+| [🔧 Troubleshooting](docs/troubleshooting_guide.md) | Common issues and solutions |
+| [📚 Register Reference](docs/reference_files/) | Complete list of all 150+ registers |
 | [🎯 Examples](examples/) | Sample automations and dashboard cards |
 
 ## 🏠 Typical Grant Aerona3 Systems
@@ -132,6 +132,7 @@ https://thepihut.com/products/rs232-to-rj45-ethernet-module
 New version https://www.waveshare.com/rs232-485-422-to-poe-eth-b.htm
 
 https://www.amazon.co.uk/Enclosure-Consumer-Waterproof-Terminals-Connectors/dp/B0BGSC2FF2
+
 ---
 
 **Made with ❤️ for the Home Assistant community**
