@@ -433,5 +433,5 @@ When reporting configuration issues, include:
 **Next Steps:**
 - [Set up flow rate measurement](flow_rate_guide.md)
 - [Review troubleshooting guide](troubleshooting_guide.md)
-- [Explore automation examples](../examples/examples_automations.yaml)
-- [Explore dashboard examples](../examples/examples_lovelace.yaml)
+- [Explore automation examples](../Examples/examples_automations.yaml)
+- [Explore dashboard examples](../Examples/examples_lovelace.yaml)
