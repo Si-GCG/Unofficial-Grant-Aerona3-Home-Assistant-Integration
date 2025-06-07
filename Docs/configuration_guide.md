@@ -252,7 +252,7 @@ automation:
 
 ### Dual Zone Configuration
 
-For systems with two heating zones:
+For systems with two heating zones or those wishing to set a dual set point:
 
 #### Enable Zone 2
 1. **Enable weather compensation**:
@@ -431,6 +431,7 @@ When reporting configuration issues, include:
 ---
 
 **Next Steps:**
-- [Set up flow rate measurement](flow-rate-measurement.md)
-- [Review troubleshooting guide](troubleshooting.md)
-- [Explore automation examples](../examples/automations.yaml)
+- [Set up flow rate measurement](flow_rate_guide.md)
+- [Review troubleshooting guide](troubleshooting_guide.md)
+- [Explore automation examples](../examples/examples_automations.yaml)
+- [Explore dashboard examples](../examples/examples_lovelace.yaml)
