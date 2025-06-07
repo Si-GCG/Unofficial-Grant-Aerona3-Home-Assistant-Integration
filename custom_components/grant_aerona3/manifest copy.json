@@ -1,0 +1,13 @@
+{
+  "domain": "grant_aerona3",
+  "name": "Grant Aerona3 Heat Pump",
+  "documentation": "https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration",
+  "issue_tracker": "https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration/issues",
+  "version": "1.0.0",
+  "dependencies": [],
+  "codeowners": ["@Si-GCG"],
+  "requirements": ["pymodbus==3.6.8"],
+  "config_flow": true,
+  "iot_class": "local_polling",
+  "integration_type": "device"
+}

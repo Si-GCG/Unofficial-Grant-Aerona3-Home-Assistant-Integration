@@ -1,13 +1,15 @@
-"""Config flow."""
-import voluptuous as vol
+"""Minimal config flow test."""
 from homeassistant import config_entries
+import voluptuous as vol
 
-class GrantAerona3ConfigFlow(config_entries.ConfigFlow, domain="grant_aerona3"):
+DOMAIN = "grant_aerona3"
+
+class GrantAerona3ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
     async def async_step_user(self, user_input=None):
         if user_input is not None:
-            return self.async_create_entry(title="Test", data=user_input)
+            return self.async_create_entry(title="Test", data={"host": user_input["host"]})
         
         return self.async_show_form(
             step_id="user",

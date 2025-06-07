@@ -1,4 +1,4 @@
-"""Config flow for Grant Aerona3 Heat Pump integration."""
+"""Simplified config flow for Grant Aerona3 Heat Pump integration."""
 from __future__ import annotations
 
 import logging
@@ -23,7 +23,7 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-# Setup schema with all required fields
+# Simple setup schema - one form with all required fields
 STEP_USER_SCHEMA = vol.Schema({
     vol.Required(CONF_HOST): str,
     vol.Optional(CONF_PORT, default=DEFAULT_PORT): int,
@@ -69,8 +69,8 @@ async def validate_connection(hass: HomeAssistant, data: Dict[str, Any]) -> Dict
     return {"title": f"Grant Aerona3 ({data[CONF_HOST]})"}
 
 
-class GrantAerona3ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for Grant Aerona3."""
+class GrantAerona3ConfigFlow(config_entries.ConfigFlow, domain = DOMAIN):
+    
 
     VERSION = 1
 
