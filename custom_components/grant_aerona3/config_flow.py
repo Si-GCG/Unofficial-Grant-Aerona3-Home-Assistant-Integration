@@ -69,8 +69,8 @@ async def validate_connection(hass: HomeAssistant, data: Dict[str, Any]) -> Dict
     return {"title": f"Grant Aerona3 ({data[CONF_HOST]})"}
 
 
-class GrantAerona3ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for Grant Aerona3 Heat Pump."""
+class GrantAerona3ConfigFlow(config_entries.ConfigFlow):
+    DOMAIN = DOMAIN
 
     VERSION = 1
 
