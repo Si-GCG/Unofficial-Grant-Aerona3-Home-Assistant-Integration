@@ -7,8 +7,10 @@ from homeassistant.const import (
     UnitOfFrequency,
     PERCENTAGE,
 )
+
 # Domain
 DOMAIN = "grant_aerona3"
+
 # Device information
 MANUFACTURER = "Grant"
 MODEL = "Aerona3"
@@ -61,7 +63,6 @@ ERROR_CODES = {
     7: "Communication Error"
 }
 
-
 # Configuration keys
 CONF_HOST = "host"
 CONF_PORT = "port"
@@ -78,14 +79,14 @@ INPUT_REGISTERS = "input"
 HOLDING_REGISTERS = "holding"
 COIL_REGISTERS = "coil"
 
-# INPUT REGISTERS - Fixed scaling for temperatures
+# INPUT REGISTERS - Temperature and sensor readings
 INPUT_REGISTER_MAP = {
     0: {
         "name": "Return Water Temperature",
         "unit": UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
         "state_class": SensorStateClass.MEASUREMENT,
-        "scale": 1,  # ✅ Fixed: was 0.1, now 1
+        "scale": 1,
         "offset": 0,
         "description": "Return water temperature"
     },
@@ -94,7 +95,7 @@ INPUT_REGISTER_MAP = {
         "unit": UnitOfFrequency.HERTZ,
         "device_class": SensorDeviceClass.FREQUENCY,
         "state_class": SensorStateClass.MEASUREMENT,
-        "scale": 1,  # ✅ Correct: frequencies don't need scaling
+        "scale": 1,
         "offset": 0,
         "description": "Compressor operating frequency"
     },
@@ -103,7 +104,7 @@ INPUT_REGISTER_MAP = {
         "unit": UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
         "state_class": SensorStateClass.MEASUREMENT,
-        "scale": 1,  # ✅ Fixed: was 0.1, now 1
+        "scale": 1,
         "offset": 0,
         "description": "Discharge temperature"
     },
@@ -112,7 +113,7 @@ INPUT_REGISTER_MAP = {
         "unit": UnitOfPower.WATT,
         "device_class": SensorDeviceClass.CURRENT,
         "state_class": SensorStateClass.MEASUREMENT,
-        "scale": 100,  # ✅ Correct: power often needs scaling
+        "scale": 100,
         "offset": 0,
         "description": "Current consumption value"
     },
@@ -121,7 +122,7 @@ INPUT_REGISTER_MAP = {
         "unit": "rpm",
         "device_class": None,
         "state_class": None,
-        "scale": 10,  # ✅ Correct: RPM scaling
+        "scale": 10,
         "offset": 0,
         "description": "Fan control number of rotation"
     },
@@ -130,7 +131,7 @@ INPUT_REGISTER_MAP = {
         "unit": UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
         "state_class": SensorStateClass.MEASUREMENT,
-        "scale": 1,  # ✅ Fixed: was 0.1, now 1
+        "scale": 1,
         "offset": 0,
         "description": "Defrost temperature"
     },
@@ -139,7 +140,7 @@ INPUT_REGISTER_MAP = {
         "unit": UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
         "state_class": SensorStateClass.MEASUREMENT,
-        "scale": 1,  # ✅ Fixed: was 0.1, now 1
+        "scale": 1,
         "offset": 0,
         "description": "Outdoor air temperature"
     },
@@ -148,7 +149,7 @@ INPUT_REGISTER_MAP = {
         "unit": "rpm",
         "device_class": None,
         "state_class": None,
-        "scale": 100,  # ✅ Correct: pump RPM scaling
+        "scale": 100,
         "offset": 0,
         "description": "Water pump control number of rotation"
     },
@@ -157,7 +158,7 @@ INPUT_REGISTER_MAP = {
         "unit": UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
         "state_class": SensorStateClass.MEASUREMENT,
-        "scale": 1,  # ✅ Fixed: was 0.1, now 1
+        "scale": 1,
         "offset": 0,
         "description": "Suction temperature"
     },
@@ -166,7 +167,7 @@ INPUT_REGISTER_MAP = {
         "unit": UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
         "state_class": SensorStateClass.MEASUREMENT,
-        "scale": 0.1,  # ✅ Fixed: was 1, now 0.1
+        "scale": 0.1,
         "offset": 0,
         "description": "Outgoing water temperature"
     },
@@ -175,7 +176,7 @@ INPUT_REGISTER_MAP = {
         "unit": None,
         "device_class": None,
         "state_class": None,
-        "scale": 1,  # ✅ Correct: mode values don't need scaling
+        "scale": 1,
         "offset": 0,
         "description": "Selected operating mode (0=Heating/Cooling OFF, 1=Heating, 2=Cooling)"
     },
@@ -184,7 +185,7 @@ INPUT_REGISTER_MAP = {
         "unit": UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
         "state_class": SensorStateClass.MEASUREMENT,
-        "scale": 0.1,  # ✅ Fixed: was 0.5, should be 0.1
+        "scale": 0.1,
         "offset": 0,
         "description": "Room air set temperature of Zone1(Master)"
     },
@@ -193,7 +194,7 @@ INPUT_REGISTER_MAP = {
         "unit": UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
         "state_class": SensorStateClass.MEASUREMENT,
-        "scale": 0.1,  # ✅ Fixed: was 0.5, should be 0.1
+        "scale": 0.1,
         "offset": 0,
         "description": "Room air set temperature of Zone2(Slave)"
     },
@@ -202,7 +203,7 @@ INPUT_REGISTER_MAP = {
         "unit": UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
         "state_class": SensorStateClass.MEASUREMENT,
-        "scale": 0.1,  # ✅ Fixed: was 0.5, should be 0.1
+        "scale": 0.1,
         "offset": 0,
         "description": "DHW tank temperature (Terminal 7-8)"
     },
@@ -211,7 +212,7 @@ INPUT_REGISTER_MAP = {
         "unit": UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
         "state_class": SensorStateClass.MEASUREMENT,
-        "scale": 0.1,  # ✅ Fixed: was 0.5, should be 0.1
+        "scale": 0.1,
         "offset": 0,
         "description": "Outdoor air temperature (Terminal 9-10)"
     },
@@ -220,7 +221,7 @@ INPUT_REGISTER_MAP = {
         "unit": UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
         "state_class": SensorStateClass.MEASUREMENT,
-        "scale": 0.1,  # ✅ Fixed: was 0.5, should be 0.1
+        "scale": 0.1,
         "offset": 0,
         "description": "Buffer tank temperature (Terminal 11-12)"
     },
@@ -229,7 +230,7 @@ INPUT_REGISTER_MAP = {
         "unit": UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
         "state_class": SensorStateClass.MEASUREMENT,
-        "scale": 0.1,  # ✅ Fixed: was 0.5, should be 0.1
+        "scale": 0.1,
         "offset": 0,
         "description": "Mix water temperature (Terminal 13-14)"
     },
@@ -238,7 +239,7 @@ INPUT_REGISTER_MAP = {
         "unit": UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
         "state_class": SensorStateClass.MEASUREMENT,
-        "scale": 1,  # ✅ Fixed: was 0.1, should be 1
+        "scale": 1,
         "offset": 0,
         "description": "Plate heat exchanger temperature"
     },
@@ -1283,58 +1284,4 @@ COIL_REGISTER_MAP = {
         "device_class": None,
         "description": "Terminal 46 : DHW Electric heater or Backup heater (0=DHW Electric heater, 1=Backup heater)"
     },
-}
-
-# Installation Templates
-INSTALLATION_TEMPLATES = {
-    "single_zone": {
-        "name": "Single Zone Heating",
-        "description": "Most common setup with one heating zone",
-        "percentage": "65%",
-        "enabled_registers": {
-            "input": list(range(0, 21)) + [32], 
-            "holding": list(range(2, 97)) + [99, 100], 
-            "coil": list(range(1, 33))
-        }
-    },
-    "dual_zone": {
-        "name": "Dual Zone Heating",
-        "description": "Upstairs/downstairs or separate zones",
-        "percentage": "20%",
-        "enabled_registers": {
-            "input": list(range(0, 21)) + [32], 
-            "holding": list(range(2, 97)) + [99, 100], 
-            "coil": list(range(1, 33))
-        }
-    },
-    "dhw_only": {
-        "name": "Hot Water Only",
-        "description": "Cylinder heating only",
-        "percentage": "8%",
-        "enabled_registers": {
-            "input": [0, 1, 2, 3, 6, 11, 21, 22, 26],
-            "holding": [],
-            "coil": [1, 6]
-        }
-    },
-    "replacement": {
-        "name": "Boiler Replacement",
-        "description": "Full system replacement",
-        "percentage": "5%",
-        "enabled_registers": {
-            "input": list(range(0, 33)),
-            "holding": list(range(2, 100)),
-            "coil": list(range(1, 34))
-        }
-    },
-    "custom": {
-        "name": "Custom Configuration",
-        "description": "Advanced users - all registers",
-        "percentage": "2%",
-        "enabled_registers": {
-            "input": list(range(0, 21)) + [32], 
-            "holding": list(range(2, 97)) + [99, 100], 
-            "coil": list(range(1, 33))
-        }
-    }
 }

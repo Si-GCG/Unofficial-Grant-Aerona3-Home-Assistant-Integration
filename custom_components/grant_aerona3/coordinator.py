@@ -9,6 +9,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from pymodbus.client import ModbusTcpClient
 from pymodbus.exceptions import ModbusException
+import pymodbus
 
 from .const import (
     CONF_SCAN_INTERVAL,
@@ -33,6 +34,13 @@ class GrantAerona3Coordinator(DataUpdateCoordinator):
         self.port = entry.data[CONF_PORT]
         self.slave_id = entry.data[CONF_SLAVE_ID]
         
+        # Detect pymodbus version for parameter compatibility
+        pymodbus_version = tuple(map(int, pymodbus.__version__.split('.')[:2]))
+        self._use_slave_param = pymodbus_version >= (3, 0)
+        
+        _LOGGER.info("Using pymodbus %s, slave parameter: %s", 
+                    pymodbus.__version__, self._use_slave_param)
+        
         scan_interval = entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
         
         super().__init__(
@@ -48,6 +56,13 @@ class GrantAerona3Coordinator(DataUpdateCoordinator):
             timeout=10
         )
 
+    def _get_slave_kwargs(self) -> Dict[str, int]:
+        """Get the correct slave/unit parameter for the pymodbus version."""
+        if self._use_slave_param:
+            return {"slave": self.slave_id}
+        else:
+            return {"unit": self.slave_id}
+
     async def _async_update_data(self) -> Dict[str, Any]:
         """Fetch data from the heat pump."""
         try:
@@ -59,155 +74,184 @@ class GrantAerona3Coordinator(DataUpdateCoordinator):
         """Fetch data from the heat pump (runs in executor)."""
         data = {}
         
+        # Use context manager for automatic client cleanup
+        client_connected = False
         try:
-            if not self._client.connect():
+            client_connected = self._client.connect()
+            if not client_connected:
                 raise ModbusException("Failed to connect to Modbus device")
 
             # Read all input registers
             input_data = self._read_input_registers()
             data.update(input_data)
 
-            # Read all holding registers
-            holding_data = self._read_holding_registers()
+            # Read all holding registers with improved error handling
+            holding_data = self._read_holding_registers_bulk()
             data.update(holding_data)
 
             # Read all coil registers
-            coil_data = self._read_coil_registers()
+            coil_data = self._read_coil_registers_bulk()
             data.update(coil_data)
 
+        except Exception as err:
+            _LOGGER.error("Error during data fetch: %s", str(err))
+            raise
         finally:
-            self._client.close()
+            # Ensure client is always closed, even if connect() failed
+            if client_connected:
+                try:
+                    self._client.close()
+                except Exception as close_err:
+                    _LOGGER.warning("Error closing Modbus client: %s", str(close_err))
 
+        _LOGGER.info("Successfully read %d total registers", len(data))
         return data
 
     def _read_input_registers(self) -> Dict[str, Any]:
         """Read all input registers."""
         data = {}
+        slave_kwargs = self._get_slave_kwargs()
         
-        # Read input registers 0-32 in blocks
-        try:
-            # Read registers 0-18 (first block)
-            result = self._client.read_input_registers(
-                address=0,
-                count=19,
-                slave=self.slave_id
-            )
-            
-            if not result.isError():
-                for addr, config in INPUT_REGISTER_MAP.items():
-                    if addr < len(result.registers):
-                        raw_value = result.registers[addr]
-                        
-                        # Handle signed values (temperature can be negative)
-                        if raw_value > 32767:
-                            raw_value = raw_value - 65536
-                        
-                        # Apply scaling from const.py
-                        scaled_value = raw_value * config["scale"]
-                        
-                        data[f"input_{addr}"] = {
-                            "value": scaled_value,
-                            "raw_value": result.registers[addr],
-                            "name": config["name"],
-                            "unit": config["unit"],
-                            "device_class": config["device_class"],
-                            "state_class": config.get("state_class"),
-                            "description": config.get("description", "")
-                        }
-            
-            # Read register 32 (Plate Heat Exchanger Temperature)
-            if 32 in INPUT_REGISTER_MAP:
+        # Read input registers individually to avoid index mapping issues
+        for addr, config in INPUT_REGISTER_MAP.items():
+            try:
                 result = self._client.read_input_registers(
-                    address=32,
+                    address=addr,
                     count=1,
-                    slave=self.slave_id
+                    **slave_kwargs
                 )
                 
-                if not result.isError():
-                    config = INPUT_REGISTER_MAP[32]
-                    raw_value = result.registers[0]
+                if result is not None and not result.isError():
+                    raw_value = result.registers[0]  # Always use index 0 for single register reads
                     
+                    # Handle signed values (temperature can be negative)
                     if raw_value > 32767:
                         raw_value = raw_value - 65536
                     
-                    scaled_value = raw_value * config["scale"]
+                    # Apply scaling from const.py with safe config access
+                    scale = config.get("scale", 1)
+                    scaled_value = raw_value * scale
                     
-                    data["input_32"] = {
+                    data[f"input_{addr}"] = {
                         "value": scaled_value,
                         "raw_value": result.registers[0],
-                        "name": config["name"],
-                        "unit": config["unit"],
-                        "device_class": config["device_class"],
+                        "name": config.get("name", f"Input Register {addr}"),
+                        "unit": config.get("unit"),
+                        "device_class": config.get("device_class"),
                         "state_class": config.get("state_class"),
                         "description": config.get("description", "")
                     }
+                elif result is not None:
+                    _LOGGER.debug("Input register %d (%s) not available: %s", 
+                                addr, config.get("name", f"Register {addr}"), str(result))
+                else:
+                    _LOGGER.debug("Input register %d (%s) read returned None", 
+                                addr, config.get("name", f"Register {addr}"))
                     
-        except Exception as err:
-            _LOGGER.error("Error reading input registers: %s", err)
+            except Exception as err:
+                _LOGGER.debug("Error reading input register %d (%s): %s", 
+                            addr, config.get("name", f"Register {addr}"), str(err))
+                continue
             
+        _LOGGER.info("Successfully read %d input registers", len(data))
         return data
 
-    def _read_holding_registers(self) -> Dict[str, Any]:
-        """Read all holding registers."""
+    def _read_holding_registers_bulk(self) -> Dict[str, Any]:
+        """Read holding registers individually with robust error handling."""
         data = {}
+        successful_reads = 0
+        failed_reads = 0
+        slave_kwargs = self._get_slave_kwargs()
         
-        # Read each holding register individually
+        # Read each holding register individually to avoid bulk read failures
         for addr, config in HOLDING_REGISTER_MAP.items():
             try:
                 result = self._client.read_holding_registers(
                     address=addr,
                     count=1,
-                    slave=self.slave_id
+                    **slave_kwargs
                 )
                 
-                if not result.isError():
+                if result is not None and not result.isError():
                     raw_value = result.registers[0]
                     
                     # Handle signed values
                     if raw_value > 32767:
                         raw_value = raw_value - 65536
                     
-                    # Apply scaling from const.py
-                    scaled_value = raw_value * config["scale"]
+                    # Apply scaling from const.py with safe config access
+                    scale = config.get("scale", 1)
+                    scaled_value = raw_value * scale
                     
                     data[f"holding_{addr}"] = {
                         "value": scaled_value,
                         "raw_value": result.registers[0],
-                        "name": config["name"],
-                        "unit": config["unit"],
+                        "name": config.get("name", f"Holding Register {addr}"),
+                        "unit": config.get("unit"),
                         "device_class": config.get("device_class"),
                         "description": config.get("description", ""),
                         "writable": config.get("writable", False)
                     }
+                    successful_reads += 1
+                elif result is not None:
+                    _LOGGER.debug("Holding register %d (%s) not available: %s", 
+                                addr, config.get("name", f"Register {addr}"), str(result))
+                    failed_reads += 1
+                else:
+                    _LOGGER.debug("Holding register %d (%s) read returned None", 
+                                addr, config.get("name", f"Register {addr}"))
+                    failed_reads += 1
                     
             except Exception as err:
-                _LOGGER.error("Error reading holding register %s: %s", addr, err)
-                
+                _LOGGER.debug("Error reading holding register %d (%s): %s", 
+                            addr, config.get("name", f"Register {addr}"), str(err))
+                failed_reads += 1
+                continue
+        
+        _LOGGER.info("Successfully read %d holding registers (%d failed/unavailable)", 
+                    successful_reads, failed_reads)
         return data
 
-    def _read_coil_registers(self) -> Dict[str, Any]:
-        """Read all coil registers."""
+    def _read_coil_registers_bulk(self) -> Dict[str, Any]:
+        """Read coil registers individually with robust error handling."""
         data = {}
+        successful_reads = 0
+        failed_reads = 0
+        slave_kwargs = self._get_slave_kwargs()
         
-        # Read each coil register individually
+        # Read each coil register individually to avoid bulk read failures
         for addr, config in COIL_REGISTER_MAP.items():
             try:
                 result = self._client.read_coils(
                     address=addr,
                     count=1,
-                    slave=self.slave_id
+                    **slave_kwargs
                 )
                 
-                if not result.isError():
+                if result is not None and not result.isError():
                     data[f"coil_{addr}"] = {
                         "value": result.bits[0],
-                        "name": config["name"],
-                        "description": config["description"]
+                        "name": config.get("name", f"Coil Register {addr}"),
+                        "description": config.get("description", "")
                     }
+                    successful_reads += 1
+                elif result is not None:
+                    _LOGGER.debug("Coil register %d (%s) not available: %s", 
+                                addr, config.get("name", f"Register {addr}"), str(result))
+                    failed_reads += 1
+                else:
+                    _LOGGER.debug("Coil register %d (%s) read returned None", 
+                                addr, config.get("name", f"Register {addr}"))
+                    failed_reads += 1
                     
             except Exception as err:
-                _LOGGER.error("Error reading coil register %s: %s", addr, err)
+                _LOGGER.debug("Error reading coil register %d (%s): %s", 
+                            addr, config.get("name", f"Register {addr}"), str(err))
+                failed_reads += 1
+                continue
                 
+        _LOGGER.info("Successfully read %d coil registers (%d failed/unavailable)", 
+                    successful_reads, failed_reads)
         return data
 
     async def async_write_holding_register(self, address: int, value: int) -> bool:
@@ -222,20 +266,39 @@ class GrantAerona3Coordinator(DataUpdateCoordinator):
 
     def _write_holding_register(self, address: int, value: int) -> bool:
         """Write to a holding register (runs in executor)."""
+        client_connected = False
+        slave_kwargs = self._get_slave_kwargs()
+        
         try:
-            if not self._client.connect():
+            client_connected = self._client.connect()
+            if not client_connected:
+                _LOGGER.error("Failed to connect for writing holding register %d", address)
                 return False
                 
             result = self._client.write_register(
                 address=address,
                 value=value,
-                slave=self.slave_id
+                **slave_kwargs
             )
             
-            return not result.isError()
-            
+            if result is not None:
+                success = not result.isError()
+                if not success:
+                    _LOGGER.error("Failed to write holding register %d: %s", address, str(result))
+                return success
+            else:
+                _LOGGER.error("Write to holding register %d returned None", address)
+                return False
+                
+        except Exception as err:
+            _LOGGER.error("Exception writing holding register %d: %s", address, str(err))
+            return False
         finally:
-            self._client.close()
+            if client_connected:
+                try:
+                    self._client.close()
+                except Exception as close_err:
+                    _LOGGER.warning("Error closing client after write: %s", str(close_err))
 
     async def async_write_coil(self, address: int, value: bool) -> bool:
         """Write to a coil register."""
@@ -244,22 +307,41 @@ class GrantAerona3Coordinator(DataUpdateCoordinator):
                 self._write_coil, address, value
             )
         except Exception as err:
-            _LOGGER.error("Error writing coil register %s: %s", address, err)
+            _LOGGER.error("Error writing coil register %d: %s", address, str(err))
             return False
 
     def _write_coil(self, address: int, value: bool) -> bool:
         """Write to a coil register (runs in executor)."""
+        client_connected = False
+        slave_kwargs = self._get_slave_kwargs()
+        
         try:
-            if not self._client.connect():
+            client_connected = self._client.connect()
+            if not client_connected:
+                _LOGGER.error("Failed to connect for writing coil register %d", address)
                 return False
                 
             result = self._client.write_coil(
                 address=address,
                 value=value,
-                slave=self.slave_id
+                **slave_kwargs
             )
             
-            return not result.isError()
-            
+            if result is not None:
+                success = not result.isError()
+                if not success:
+                    _LOGGER.error("Failed to write coil register %d: %s", address, str(result))
+                return success
+            else:
+                _LOGGER.error("Write to coil register %d returned None", address)
+                return False
+                
+        except Exception as err:
+            _LOGGER.error("Exception writing coil register %d: %s", address, str(err))
+            return False
         finally:
-            self._client.close()
+            if client_connected:
+                try:
+                    self._client.close()
+                except Exception as close_err:
+                    _LOGGER.warning("Error closing client after write: %s", str(close_err))
