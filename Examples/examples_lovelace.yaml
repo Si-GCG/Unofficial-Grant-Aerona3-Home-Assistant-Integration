@@ -1,0 +1,506 @@
+# Grant Aerona3 Heat Pump Dashboard Cards
+# Copy these card configurations to your Lovelace dashboard
+
+#==============================================================================
+# MAIN OVERVIEW CARD
+#==============================================================================
+
+# Primary status card showing key metrics
+type: entities
+title: 🔥 Heat Pump Overview
+show_header_toggle: false
+entities:
+  - entity: binary_sensor.grant_aerona3_system_status
+    name: System Status
+    icon: mdi:power
+  - entity: sensor.grant_aerona3_cop
+    name: Efficiency (COP)
+    icon: mdi:gauge
+  - entity: sensor.grant_aerona3_power_consumption
+    name: Power Usage
+    icon: mdi:flash
+  - entity: sensor.grant_aerona3_outdoor_air_temperature
+    name: Outdoor Temperature
+    icon: mdi:thermometer
+  - entity: sensor.grant_aerona3_outgoing_water_temperature
+    name: Flow Temperature
+    icon: mdi:thermometer-water
+  - entity: climate.grant_aerona3_zone_1
+    name: Zone 1 Control
+    icon: mdi:home-thermometer
+
+#==============================================================================
+# GAUGE CARDS FOR KEY METRICS
+#==============================================================================
+
+# COP Efficiency Gauge
+type: gauge
+entity: sensor.grant_aerona3_cop
+name: Heat Pump Efficiency
+unit: COP
+min: 0
+max: 6
+severity:
+  green: 3
+  yellow: 2
+  red: 0
+needle: true
+
+---
+
+# Power Consumption Gauge
+type: gauge
+entity: sensor.grant_aerona3_power_consumption
+name: Power Consumption
+min: 0
+max: 8000  # Adjust based on your heat pump size
+severity:
+  green: 0
+  yellow: 4000
+  red: 6000
+needle: true
+
+---
+
+# Outdoor Temperature Gauge
+type: gauge
+entity: sensor.grant_aerona3_outdoor_air_temperature
+name: Outdoor Temperature
+min: -20
+max: 30
+severity:
+  red: -20
+  yellow: 0
+  green: 10
+needle: true
+
+#==============================================================================
+# HISTORICAL DATA CARDS
+#==============================================================================
+
+# COP History Graph
+type: history-graph
+title: 📈 Heat Pump Efficiency Trend
+hours_to_show: 24
+refresh_interval: 300
+entities:
+  - entity: sensor.grant_aerona3_cop
+    name: COP
+  - entity: sensor.grant_aerona3_outdoor_air_temperature
+    name: Outdoor Temp
+    y_axis: secondary
+
+---
+
+# Power and Temperature History
+type: history-graph
+title: 📊 Power & Temperature History
+hours_to_show: 48
+refresh_interval: 300
+entities:
+  - entity: sensor.grant_aerona3_power_consumption
+    name: Power (W)
+  - entity: sensor.grant_aerona3_outgoing_water_temperature
+    name: Flow Temp (°C)
+    y_axis: secondary
+  - entity: sensor.grant_aerona3_return_water_temperature
+    name: Return Temp (°C)
+    y_axis: secondary
+
+#==============================================================================
+# DETAILED STATUS CARDS
+#==============================================================================
+
+# System Status Details
+type: entities
+title: 🔍 System Status Details
+show_header_toggle: false
+entities:
+  - entity: sensor.grant_aerona3_selected_operating_mode
+    name: Operating Mode
+    icon: mdi:cog
+  - entity: sensor.grant_aerona3_compressor_operating_frequency
+    name: Compressor Frequency
+    icon: mdi:sine-wave
+  - entity: binary_sensor.grant_aerona3_defrost_mode
+    name: Defrost Mode
+    icon: mdi:snowflake-melt
+  - entity: binary_sensor.grant_aerona3_error_status
+    name: Error Status
+    icon: mdi:alert-circle
+  - entity: sensor.grant_aerona3_fan_control_number_of_rotation
+    name: Fan Speed
+    icon: mdi:fan
+  - entity: sensor.grant_aerona3_water_pump_control_number_of_rotation
+    name: Pump Speed
+    icon: mdi:pump
+
+---
+
+# Temperature Sensors
+type: entities
+title: 🌡️ Temperature Sensors
+show_header_toggle: false
+entities:
+  - entity: sensor.grant_aerona3_outdoor_air_temperature
+    name: Outdoor Air
+    icon: mdi:thermometer
+  - entity: sensor.grant_aerona3_outgoing_water_temperature
+    name: Flow Water
+    icon: mdi:thermometer-water
+  - entity: sensor.grant_aerona3_return_water_temperature
+    name: Return Water
+    icon: mdi:thermometer-water
+  - entity: sensor.grant_aerona3_discharge_temperature
+    name: Compressor Discharge
+    icon: mdi:thermometer-high
+  - entity: sensor.grant_aerona3_suction_temperature
+    name: Compressor Suction
+    icon: mdi:thermometer-low
+  - entity: sensor.grant_aerona3_defrost_temperature
+    name: Defrost Sensor
+    icon: mdi:snowflake
+  - type: conditional
+    conditions:
+      - entity: sensor.grant_aerona3_dhw_tank_temperature
+        state_not: unavailable
+    row:
+      entity: sensor.grant_aerona3_dhw_tank_temperature
+      name: DHW Tank
+      icon: mdi:water-thermometer
+
+#==============================================================================
+# CONTROL CARDS
+#==============================================================================
+
+# Main Controls
+type: entities
+title: ⚙️ Heat Pump Controls
+show_header_toggle: false
+entities:
+  - entity: climate.grant_aerona3_zone_1
+    name: Zone 1 Control
+  - type: conditional
+    conditions:
+      - entity: climate.grant_aerona3_zone_2
+        state_not: unavailable
+    row:
+      entity: climate.grant_aerona3_zone_2
+      name: Zone 2 Control
+  - entity: number.grant_aerona3_fixed_flow_temp_zone_1
+    name: Zone 1 Flow Temperature
+    icon: mdi:thermometer-water
+  - entity: number.grant_aerona3_flow_rate
+    name: Flow Rate Configuration
+    icon: mdi:water-pump
+
+---
+
+# Weather Compensation Controls
+type: entities
+title: 🌤️ Weather Compensation
+show_header_toggle: false
+entities:
+  - entity: switch.grant_aerona3_heating_weather_compensation_zone_1
+    name: Zone 1 Weather Compensation
+    icon: mdi:weather-partly-cloudy
+  - type: conditional
+    conditions:
+      - entity: switch.grant_aerona3_heating_weather_compensation_zone_2
+        state_not: unavailable
+    row:
+      entity: switch.grant_aerona3_heating_weather_compensation_zone_2
+      name: Zone 2 Weather Compensation
+      icon: mdi:weather-partly-cloudy
+  - entity: number.grant_aerona3_min_outdoor_air_temperature_zone1
+    name: Min Outdoor Temperature
+    icon: mdi:thermometer-minus
+  - entity: number.grant_aerona3_max_outdoor_air_temperature_zone1
+    name: Max Outdoor Temperature
+    icon: mdi:thermometer-plus
+  - entity: number.grant_aerona3_max_flow_temp_zone1
+    name: Max Flow Temperature
+    icon: mdi:thermometer-water
+  - entity: number.grant_aerona3_min_flow_temp_zone1
+    name: Min Flow Temperature
+    icon: mdi:thermometer-water
+
+---
+
+# DHW (Hot Water) Controls
+type: conditional
+conditions:
+  - entity: sensor.grant_aerona3_dhw_tank_temperature
+    state_not: unavailable
+card:
+  type: entities
+  title: 🚿 Hot Water Controls
+  show_header_toggle: false
+  entities:
+    - entity: sensor.grant_aerona3_dhw_tank_temperature
+      name: Tank Temperature
+      icon: mdi:water-thermometer
+    - entity: number.grant_aerona3_dhw_comfort_set_temperature
+      name: Comfort Temperature
+      icon: mdi:thermometer-water
+    - entity: number.grant_aerona3_dhw_economy_set_temperature
+      name: Economy Temperature
+      icon: mdi:thermometer-water
+    - entity: switch.grant_aerona3_anti_legionella_function
+      name: Anti-Legionella
+      icon: mdi:shield-check
+    - entity: number.grant_aerona3_anti_legionella_set_point
+      name: Legionella Temperature
+      icon: mdi:thermometer-high
+
+#==============================================================================
+# SAFETY & PROTECTION CARDS
+#==============================================================================
+
+# Frost Protection Settings
+type: entities
+title: ❄️ Frost Protection
+show_header_toggle: false
+entities:
+  - entity: switch.grant_aerona3_frost_protection_based_on_outdoor_temperature
+    name: Outdoor Frost Protection
+    icon: mdi:snowflake
+  - entity: switch.grant_aerona3_frost_protection_based_on_room_temperature
+    name: Room Frost Protection
+    icon: mdi:home-thermometer
+  - entity: switch.grant_aerona3_frost_protection_based_on_flow_temp
+    name: Water Frost Protection
+    icon: mdi:pipe-leak
+  - entity: number.grant_aerona3_start_temperature_of_frost_protection_on_outdoor_air_temp
+    name: Outdoor Trigger Temperature
+    icon: mdi:thermometer-alert
+  - entity: number.grant_aerona3_water_temperature_of_frost_protection
+    name: Protection Water Temperature
+    icon: mdi:thermometer-water
+
+#==============================================================================
+# ENERGY MONITORING CARDS
+#==============================================================================
+
+# Energy Statistics Card
+type: statistics-graph
+title: ⚡ Energy Consumption
+stat_types:
+  - mean
+  - min
+  - max
+period: day
+days_to_show: 7
+entities:
+  - sensor.grant_aerona3_power_consumption
+
+---
+
+# Energy Usage Comparison
+type: energy-usage-graph
+title: 📊 Daily Energy Usage
+entities:
+  - entity: sensor.grant_aerona3_energy_consumption
+    name: Heat Pump
+
+---
+
+# COP Statistics
+type: statistics-graph
+title: 📈 Efficiency Statistics (COP)
+stat_types:
+  - mean
+  - min
+  - max
+period: day
+days_to_show: 14
+entities:
+  - sensor.grant_aerona3_cop
+
+#==============================================================================
+# DIAGNOSTIC CARDS
+#==============================================================================
+
+# Diagnostic Information
+type: entities
+title: 🔧 Diagnostic Information
+show_header_toggle: false
+state_color: true
+entities:
+  - entity: binary_sensor.grant_aerona3_system_status
+    name: System Running
+    icon: mdi:power
+  - entity: binary_sensor.grant_aerona3_error_status
+    name: Error Status
+    icon: mdi:alert-circle
+  - entity: sensor.grant_aerona3_compressor_operating_frequency
+    name: Compressor Load
+    icon: mdi:gauge
+  - entity: binary_sensor.grant_aerona3_defrost_mode
+    name: Defrost Active
+    icon: mdi:snowflake-melt
+  - type: divider
+  - entity: switch.grant_aerona3_terminal_26_27_flow_switch
+    name: Flow Switch
+    icon: mdi:pipe-valve
+  - entity: switch.grant_aerona3_terminal_15_16_32_rs485_mod_bus
+    name: Modbus Connection
+    icon: mdi:connection
+
+#==============================================================================
+# COMPACT MOBILE CARDS
+#==============================================================================
+
+# Mobile-friendly overview
+type: glance
+title: 🔥 Heat Pump Quick View
+columns: 2
+show_name: true
+show_state: true
+entities:
+  - entity: sensor.grant_aerona3_cop
+    name: COP
+  - entity: sensor.grant_aerona3_power_consumption
+    name: Power
+  - entity: sensor.grant_aerona3_outdoor_air_temperature
+    name: Outdoor
+  - entity: sensor.grant_aerona3_outgoing_water_temperature
+    name: Flow Temp
+  - entity: binary_sensor.grant_aerona3_system_status
+    name: Status
+  - entity: binary_sensor.grant_aerona3_defrost_mode
+    name: Defrost
+
+#==============================================================================
+# CUSTOM BUTTON CARDS (requires custom:button-card)
+#==============================================================================
+
+# COP Status Button (if you have custom:button-card installed)
+type: custom:button-card
+entity: sensor.grant_aerona3_cop
+name: Heat Pump Efficiency
+show_state: true
+show_icon: true
+icon: mdi:gauge
+color_type: icon
+color: |
+  [[[
+    if (entity.state >= 4) return 'green';
+    if (entity.state >= 2.5) return 'orange';
+    return 'red';
+  ]]]
+styles:
+  card:
+    - height: 80px
+  name:
+    - font-size: 14px
+  state:
+    - font-size: 16px
+    - font-weight: bold
+tap_action:
+  action: more-info
+
+---
+
+# Power Usage Button
+type: custom:button-card
+entity: sensor.grant_aerona3_power_consumption
+name: Power Usage
+show_state: true
+show_icon: true
+icon: mdi:flash
+color_type: icon
+color: |
+  [[[
+    if (entity.state <= 2000) return 'green';
+    if (entity.state <= 5000) return 'orange';
+    return 'red';
+  ]]]
+styles:
+  card:
+    - height: 80px
+  name:
+    - font-size: 14px
+  state:
+    - font-size: 16px
+    - font-weight: bold
+tap_action:
+  action: more-info
+
+#==============================================================================
+# WEATHER CORRELATION CARD
+#==============================================================================
+
+# Compare outdoor temperature with heat pump performance
+type: history-graph
+title: 🌡️ Weather vs Performance
+hours_to_show: 72
+refresh_interval: 300
+entities:
+  - entity: sensor.grant_aerona3_outdoor_air_temperature
+    name: Outdoor Temp
+  - entity: sensor.grant_aerona3_cop
+    name: COP
+    y_axis: secondary
+  - entity: sensor.grant_aerona3_power_consumption
+    name: Power
+    y_axis: secondary
+
+#==============================================================================
+# CONFIGURATION CARDS
+#==============================================================================
+
+# System Configuration Overview
+type: entities
+title: ⚙️ System Configuration
+show_header_toggle: false
+entities:
+  - entity: number.grant_aerona3_flow_rate
+    name: Flow Rate
+    icon: mdi:water-pump
+  - entity: sensor.grant_aerona3_fixed_flow_temp_zone_1_current
+    name: Current Zone 1 Setpoint
+    icon: mdi:thermometer-water
+  - type: conditional
+    conditions:
+      - entity: sensor.grant_aerona3_dhw_comfort_set_temperature_current
+        state_not: unavailable
+    row:
+      entity: sensor.grant_aerona3_dhw_comfort_set_temperature_current
+      name: Current DHW Setpoint
+      icon: mdi:water-thermometer
+  - type: divider
+  - entity: switch.grant_aerona3_heating_weather_compensation_zone_1
+    name: Weather Compensation
+    icon: mdi:weather-partly-cloudy
+
+#==============================================================================
+# USAGE INSTRUCTIONS
+#==============================================================================
+
+# To use these cards:
+# 1. Copy the YAML for cards you want to your Lovelace dashboard
+# 2. Edit in Raw Configuration mode or use the UI editor
+# 3. Replace entity names if yours are different
+# 4. Adjust gauge ranges based on your heat pump specifications
+# 5. Remove conditional cards for features you don't have (e.g., DHW, Zone 2)
+
+# Card customization tips:
+# - Adjust gauge min/max values for your specific heat pump model
+# - Change colors and thresholds based on your preferences  
+# - Group related cards in vertical or horizontal stacks
+# - Use conditional cards to hide features not applicable to your system
+# - Add more-info tap actions for detailed entity information
+
+# Layout suggestions:
+# - Place overview cards at the top of your dashboard
+# - Group control cards together for easy access
+# - Put diagnostic cards in a separate view or at the bottom
+# - Use gauge cards for at-a-glance status checking
+# - Place history graphs in a separate "History" view
+
+# Performance considerations:
+# - Limit history graph hours_to_show for better performance
+# - Use refresh_interval appropriately (don't refresh too often)
+# - Consider using conditional cards to reduce load
+# - Group less important entities in expandable sections
