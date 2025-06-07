@@ -1191,7 +1191,12 @@ COIL_REGISTER_MAP = {
     14: {
         "name": "Conditions To Be Available Backup Heaters",
         "device_class": None,
-        "description": "Conditions to be available Backup heaters (0=always enabled, 1=depends on Outdoor Air temperature"
+        "description": "Conditions to be available Backup heaters (0=always enabled, 1=depends on Outdoor Air temperature)"
+    },
+    15: {
+        "name": "Terminal 41-42 : EHS (External heat source for space heating)",
+        "device_class": None,
+        "description": "Terminal 41-42 : EHS (0=disable, 1=enable)"
     },
     16: {
         "name": "Terminal 1-2-3 : Remote Controller",
