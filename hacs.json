@@ -8,8 +8,8 @@
   "version": "1.0.0",
   "country": ["GB"],
   "codeowners": ["@Si-GCG"],
-  "documentation": "https://github.com/Si-GCG/grant-aerona3-hass",
-  "issue_tracker": "https://github.com/Si-GCG/grant-aerona3-hass/issues",
+  "documentation": "https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration",
+  "issue_tracker": "https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration/issues",
   "keywords": [
     "grant",
     "aerona3", 
@@ -26,5 +26,5 @@
     "uk",
     "british"
   ],
-  "release_notes": "https://github.com/Si-GCG/grant-aerona3-hass/releases"
+  "release_notes": "https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration/releases"
 }
