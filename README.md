@@ -86,7 +86,7 @@ This integration works with all Grant Aerona3 configurations:
 ## 📸 Screenshots
 
 ### Integration Setup
-![Config Flow](/Docs/images/initial_setup.jpeg)
+![Config Flow](/Docs/images/Initial_setup.jpeg)
 
 ### Set Area
 ![Area](/Docs/images/set_area.jpeg)
