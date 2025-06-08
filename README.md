@@ -86,10 +86,13 @@ This integration works with all Grant Aerona3 configurations:
 ## 📸 Screenshots
 
 ### Integration Setup
-![Config Flow](docs/images/config-flow.png)
+![Config Flow](Docs/images/initial_setup.jpeg)
+
+### Set Area
+![Entities](Docs/images/set_area.jpeg)
 
 ### Entity Overview
-![Entities](docs/images/entities-overview.png)
+![Entities](Docs/images/entity_list.jpeg)
 
 ### Dashboard Example
 ![Dashboard](docs/images/dashboard-example.png)
