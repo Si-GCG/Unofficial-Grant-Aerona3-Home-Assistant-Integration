@@ -1,4 +1,4 @@
-"""Simplified climate platform for Grant Aerona3 Heat Pump."""
+"""Improved climate platform for Grant Aerona3 Heat Pump."""
 from __future__ import annotations
 
 import logging
@@ -15,7 +15,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, MANUFACTURER, MODEL
+from .const import DOMAIN, MANUFACTURER, MODEL, HOLDING_REGISTER_MAP
 from .coordinator import GrantAerona3Coordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -28,17 +28,17 @@ async def async_setup_entry(
 ) -> None:
     """Set up Grant Aerona3 climate entities."""
     coordinator: GrantAerona3Coordinator = hass.data[DOMAIN][config_entry.entry_id]
-    
+
     entities = []
-    
-    # Create climate entity for Zone 1 (main zone)
+
+    # CRITICAL FIX: Always create climate entity for Zone 1 (main zone)
     entities.append(GrantAerona3Climate(coordinator, config_entry, zone=1))
-    
-    # Create climate entity for Zone 2 if configured
-    # Check if Zone 2 registers are available in the data
-    if "input_12" in coordinator.data:  # Room Air Set Temperature Of Zone 2
-        entities.append(GrantAerona3Climate(coordinator, config_entry, zone=2))
-    
+
+    # CRITICAL FIX: Always create climate entity for Zone 2 
+    # Don't check if data is available during setup - entity will handle unavailable state
+    entities.append(GrantAerona3Climate(coordinator, config_entry, zone=2))
+
+    _LOGGER.info("Creating %d climate entities", len(entities))
     async_add_entities(entities)
 
 
@@ -54,10 +54,10 @@ class GrantAerona3Climate(CoordinatorEntity, ClimateEntity):
         """Initialize the climate entity."""
         super().__init__(coordinator)
         self._zone = zone
-        
+
         self._attr_unique_id = f"{config_entry.entry_id}_climate_zone_{zone}"
         self._attr_name = f"Grant Aerona3 Zone {zone}"
-        
+
         # Device info
         self._attr_device_info = {
             "identifiers": {(DOMAIN, config_entry.entry_id)},
@@ -66,7 +66,7 @@ class GrantAerona3Climate(CoordinatorEntity, ClimateEntity):
             "model": MODEL,
             "sw_version": "1.0.0",
         }
-        
+
         # Climate properties
         self._attr_temperature_unit = UnitOfTemperature.CELSIUS
         self._attr_supported_features = (
@@ -74,7 +74,7 @@ class GrantAerona3Climate(CoordinatorEntity, ClimateEntity):
             ClimateEntityFeature.TURN_ON |
             ClimateEntityFeature.TURN_OFF
         )
-        
+
         # HVAC modes
         self._attr_hvac_modes = [
             HVACMode.OFF,
@@ -82,7 +82,7 @@ class GrantAerona3Climate(CoordinatorEntity, ClimateEntity):
             HVACMode.COOL,
             HVACMode.AUTO,
         ]
-        
+
         # Temperature limits
         self._attr_min_temp = 5.0
         self._attr_max_temp = 30.0
@@ -93,17 +93,26 @@ class GrantAerona3Climate(CoordinatorEntity, ClimateEntity):
         """Return the current temperature."""
         # Use return water temperature as current temperature
         if "input_0" in self.coordinator.data:
-            return self.coordinator.data["input_0"]["value"]
+            register_data = self.coordinator.data["input_0"]
+            if register_data.get("available", True):
+                return register_data["value"]
         return None
 
     @property
     def target_temperature(self) -> Optional[float]:
         """Return the target temperature."""
         # Use room air set temperature for the zone
-        if self._zone == 1 and "input_11" in self.coordinator.data:
-            return self.coordinator.data["input_11"]["value"]
-        elif self._zone == 2 and "input_12" in self.coordinator.data:
-            return self.coordinator.data["input_12"]["value"]
+        if self._zone == 1:
+            register_key = "input_11"
+        elif self._zone == 2:
+            register_key = "input_12"
+        else:
+            return None
+
+        if register_key in self.coordinator.data:
+            register_data = self.coordinator.data[register_key]
+            if register_data.get("available", True):
+                return register_data["value"]
         return None
 
     @property
@@ -111,13 +120,15 @@ class GrantAerona3Climate(CoordinatorEntity, ClimateEntity):
         """Return current HVAC mode."""
         # Get operating mode from register 10
         if "input_10" in self.coordinator.data:
-            mode_value = self.coordinator.data["input_10"]["value"]
-            mode_map = {
-                0: HVACMode.OFF,
-                1: HVACMode.HEAT,
-                2: HVACMode.COOL,
-            }
-            return mode_map.get(mode_value, HVACMode.OFF)
+            register_data = self.coordinator.data["input_10"]
+            if register_data.get("available", True):
+                mode_value = register_data["value"]
+                mode_map = {
+                    0: HVACMode.OFF,
+                    1: HVACMode.HEAT,
+                    2: HVACMode.COOL,
+                }
+                return mode_map.get(mode_value, HVACMode.OFF)
         return HVACMode.OFF
 
     async def async_set_temperature(self, **kwargs: Any) -> None:
@@ -125,10 +136,8 @@ class GrantAerona3Climate(CoordinatorEntity, ClimateEntity):
         temperature = kwargs.get(ATTR_TEMPERATURE)
         if temperature is None:
             return
-        
+
         # Get the scale factor from HOLDING_REGISTER_MAP for proper conversion
-        from .const import HOLDING_REGISTER_MAP
-        
         # Write to appropriate zone register
         if self._zone == 1:
             # Zone 1 uses holding register 2 (Fixed Flow Temp Zone 1)
@@ -148,7 +157,7 @@ class GrantAerona3Climate(CoordinatorEntity, ClimateEntity):
                 success = False
         else:
             success = False
-        
+
         if success:
             await self.coordinator.async_request_refresh()
         else:
@@ -163,12 +172,12 @@ class GrantAerona3Climate(CoordinatorEntity, ClimateEntity):
             HVACMode.COOL: 2,
             HVACMode.AUTO: 1,  # Default to heating for auto
         }
-        
+
         mode_value = mode_map.get(hvac_mode)
         if mode_value is None:
             _LOGGER.error("Unsupported HVAC mode: %s", hvac_mode)
             return
-        
+
         # Note: The operating mode register (input_10) might be read-only
         # This is a simplified implementation - in practice, mode setting
         # might require writing to different registers or coils
@@ -180,35 +189,44 @@ class GrantAerona3Climate(CoordinatorEntity, ClimateEntity):
         attributes = {
             "zone": self._zone,
         }
-        
+
         # Add flow temperatures
-        if "input_9" in self.coordinator.data:
-            attributes["flow_temperature"] = self.coordinator.data["input_9"]["value"]
-        
-        if "input_0" in self.coordinator.data:
-            attributes["return_temperature"] = self.coordinator.data["input_0"]["value"]
-        
+        flow_temp_data = self.coordinator.data.get("input_9")
+        if flow_temp_data and flow_temp_data.get("available", True):
+            attributes["flow_temperature"] = flow_temp_data["value"]
+
+        return_temp_data = self.coordinator.data.get("input_0")
+        if return_temp_data and return_temp_data.get("available", True):
+            attributes["return_temperature"] = return_temp_data["value"]
+
         # Add outdoor temperature
-        if "input_6" in self.coordinator.data:
-            attributes["outdoor_temperature"] = self.coordinator.data["input_6"]["value"]
-        
+        outdoor_temp_data = self.coordinator.data.get("input_6")
+        if outdoor_temp_data and outdoor_temp_data.get("available", True):
+            attributes["outdoor_temperature"] = outdoor_temp_data["value"]
+
         # Add compressor frequency
-        if "input_1" in self.coordinator.data:
-            attributes["compressor_frequency"] = self.coordinator.data["input_1"]["value"]
-        
+        compressor_data = self.coordinator.data.get("input_1")
+        if compressor_data and compressor_data.get("available", True):
+            attributes["compressor_frequency"] = compressor_data["value"]
+
+        # Add zone-specific information
+        if self._zone == 1:
+            zone_temp_data = self.coordinator.data.get("input_11")
+        else:
+            zone_temp_data = self.coordinator.data.get("input_12")
+
+        if zone_temp_data:
+            if zone_temp_data.get("available", True):
+                attributes["zone_available"] = True
+            else:
+                attributes["zone_available"] = False
+                attributes["zone_error"] = zone_temp_data.get("error", "Zone not available")
+
         return attributes
 
     @property
     def available(self) -> bool:
         """Return if entity is available."""
-        # Check if required registers are available
-        required_registers = ["input_10"]  # Operating mode
-        if self._zone == 1:
-            required_registers.append("input_11")  # Zone 1 set temp
-        elif self._zone == 2:
-            required_registers.append("input_12")  # Zone 2 set temp
-        
-        return (
-            self.coordinator.last_update_success and
-            all(reg in self.coordinator.data for reg in required_registers)
-        )
+        # Climate entity is available if coordinator is working
+        # Individual zone availability is shown in attributes
+        return self.coordinator.last_update_success

@@ -1,4 +1,4 @@
-"""Simplified switch platform for Grant Aerona3 Heat Pump."""
+"""Improved switch platform for Grant Aerona3 Heat Pump."""
 from __future__ import annotations
 
 import logging
@@ -9,6 +9,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.helpers.entity import EntityCategory
 
 from .const import DOMAIN, MANUFACTURER, MODEL, COIL_REGISTER_MAP
 from .coordinator import GrantAerona3Coordinator
@@ -23,24 +24,25 @@ async def async_setup_entry(
 ) -> None:
     """Set up Grant Aerona3 switch entities."""
     coordinator: GrantAerona3Coordinator = hass.data[DOMAIN][config_entry.entry_id]
-    
+
     entities = []
-    
-    # Create switches for writable coil registers
-    # Only create switches for configuration/control coils, not status/alarm coils
+
+    # CRITICAL FIX: Create switches for ALL configuration coil registers
+    # Only create switches for configuration items, not status/alarm items
     for register_id, config in COIL_REGISTER_MAP.items():
         name_lower = config["name"].lower()
-        
+
         # Only create switches for configuration items, not status/alarm items
         if any(word in name_lower for word in [
-            "weather compensation", "anti-legionella", "frost protection", 
+            "weather compensation", "anti-legionella", "frost protection",
             "enable", "terminal", "remote", "function", "compensation",
             "backup", "heater", "pump", "valve", "modbus"
         ]) and not any(word in name_lower for word in ["alarm", "error"]):
             entities.append(
                 GrantAerona3CoilSwitch(coordinator, config_entry, register_id)
             )
-    
+
+    _LOGGER.info("Creating %d switch entities", len(entities))
     async_add_entities(entities)
 
 
@@ -57,10 +59,10 @@ class GrantAerona3CoilSwitch(CoordinatorEntity, SwitchEntity):
         super().__init__(coordinator)
         self._register_id = register_id
         self._register_config = COIL_REGISTER_MAP[register_id]
-        
+
         self._attr_unique_id = f"{config_entry.entry_id}_switch_coil_{register_id}"
         self._attr_name = f"Grant Aerona3 {self._register_config['name']}"
-        
+
         # Device info
         self._attr_device_info = {
             "identifiers": {(DOMAIN, config_entry.entry_id)},
@@ -69,7 +71,7 @@ class GrantAerona3CoilSwitch(CoordinatorEntity, SwitchEntity):
             "model": MODEL,
             "sw_version": "1.0.0",
         }
-        
+
         # Set icon based on function
         name_lower = self._register_config["name"].lower()
         if "weather" in name_lower or "compensation" in name_lower:
@@ -86,9 +88,9 @@ class GrantAerona3CoilSwitch(CoordinatorEntity, SwitchEntity):
             self._attr_icon = "mdi:connection"
         else:
             self._attr_icon = "mdi:toggle-switch"
-        
+
         # Set entity category
-        self._attr_entity_category = "config"
+        self._attr_entity_category = EntityCategory.CONFIG
 
     @property
     def is_on(self) -> Optional[bool]:
@@ -96,8 +98,14 @@ class GrantAerona3CoilSwitch(CoordinatorEntity, SwitchEntity):
         register_key = f"coil_{self._register_id}"
         if register_key not in self.coordinator.data:
             return None
+
+        register_data = self.coordinator.data[register_key]
+        
+        # Check if register is available
+        if not register_data.get("available", True):
+            return None
             
-        return self.coordinator.data[register_key]["value"]
+        return register_data["value"]
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the switch on."""
@@ -122,20 +130,31 @@ class GrantAerona3CoilSwitch(CoordinatorEntity, SwitchEntity):
         """Return additional state attributes."""
         register_key = f"coil_{self._register_id}"
         if register_key not in self.coordinator.data:
-            return {}
-            
+            return {"register_address": self._register_id, "status": "not_configured"}
+
         data = self.coordinator.data[register_key]
-        
-        return {
+
+        attributes = {
             "register_address": self._register_id,
             "description": data.get("description", ""),
+            "available": data.get("available", True),
         }
+
+        # Add error information if register is not available
+        if not data.get("available", True):
+            attributes["error"] = data.get("error", "Register not available")
+            attributes["status"] = "unavailable"
+        else:
+            attributes["status"] = "available"
+
+        return attributes
 
     @property
     def available(self) -> bool:
         """Return if entity is available."""
         register_key = f"coil_{self._register_id}"
-        return (
-            self.coordinator.last_update_success and
-            register_key in self.coordinator.data
-        )
+        if register_key not in self.coordinator.data:
+            return False
+            
+        # Entity is available even if register is not readable (shows unavailable state)
+        return self.coordinator.last_update_success
