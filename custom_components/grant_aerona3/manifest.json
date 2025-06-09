@@ -9,5 +9,13 @@
   "requirements": ["pymodbus==3.6.8"],
   "config_flow": true,
   "iot_class": "local_polling",
-  "integration_type": "device"
+  "integration_type": "device",
+  "platforms": [
+    "sensor",
+    "binary_sensor",
+    "climate",
+    "switch",
+    "number",
+    "select"  
+  ]
 }

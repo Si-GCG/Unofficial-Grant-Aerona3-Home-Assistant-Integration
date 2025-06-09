@@ -6,13 +6,16 @@ from typing import Any, Dict, Optional
 
 from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfTemperature
+from homeassistant.const import UnitOfTemperature, UnitOfTime, PERCENTAGE # Added UnitOfTime, PERCENTAGE
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.entity import EntityCategory
 
-from .const import DOMAIN, MANUFACTURER, MODEL, HOLDING_REGISTER_MAP
+from .const import (
+    DOMAIN, MANUFACTURER, MODEL, HOLDING_REGISTER_MAP,
+    CONF_SYSTEM_ELEMENTS # Import new config constant
+)
 from .coordinator import GrantAerona3Coordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -25,17 +28,56 @@ async def async_setup_entry(
 ) -> None:
     """Set up Grant Aerona3 number entities."""
     coordinator: GrantAerona3Coordinator = hass.data[DOMAIN][config_entry.entry_id]
+    selected_elements = config_entry.options.get(CONF_SYSTEM_ELEMENTS, [])
 
     entities = []
 
-    # CRITICAL FIX: Create number entities for ALL writable holding registers
+    # Create number entities for ALL writable holding registers
+    # The availability of these entities will be determined by the coordinator.
     for register_id, config in HOLDING_REGISTER_MAP.items():
         if config.get("writable", False):
-            entities.append(
-                GrantAerona3HoldingNumber(coordinator, config_entry, register_id)
-            )
+            # Check if this register is relevant based on selected elements.
+            # This logic should mirror _get_relevant_registers in coordinator.py for consistency.
+            name_lower = config["name"].lower()
+            is_relevant_to_elements = True
 
-    # Add flow rate configuration entity
+            # Example: Only create DHW related number entities if hot_water_cylinder is selected
+            if "dhw" in name_lower and "hot_water_cylinder" not in selected_elements:
+                is_relevant_to_elements = False
+            # Example: Only create buffer tank related number entities if buffer_tank is selected
+            elif "buffer tank" in name_lower and "buffer_tank" not in selected_elements:
+                is_relevant_to_elements = False
+            # Example: Only create mixing valve related number entities if 3way_mixing_valve_heating is selected
+            elif "mixing valve" in name_lower and "3way_mixing_valve_heating" not in selected_elements:
+                is_relevant_to_elements = False
+            # Example: Only create backup heater related number entities if backup_electric_heater is selected
+            elif "backup heater" in name_lower and "backup_electric_heater" not in selected_elements:
+                is_relevant_to_elements = False
+            # Example: Only create EHS related number entities if external_heat_source_ehs is selected
+            elif "ehs" in name_lower and "external_heat_source_ehs" not in selected_elements:
+                is_relevant_to_elements = False
+            # Example: Only create humidity related number entities if humidity_sensor_present is selected
+            elif "humidity" in name_lower and "humidity_sensor_present" not in selected_elements:
+                is_relevant_to_elements = False
+            # Example: Zone 2 specific parameters
+            elif "zone 2" in name_lower and "multiple_heating_zones" not in selected_elements:
+                is_relevant_to_elements = False
+            # Example: Dual set point parameters should be shown if either relevant option is chosen
+            elif "dual set point" in name_lower and \
+                 not ("multiple_heating_zones" in selected_elements or "dual_set_point_control_workaround" in selected_elements):
+                is_relevant_to_elements = False
+
+            # Add more conditions as needed for other system elements
+
+            if is_relevant_to_elements:
+                entities.append(
+                    GrantAerona3HoldingNumber(coordinator, config_entry, register_id)
+                )
+            else:
+                _LOGGER.debug("Skipping holding register %d (%s) for number entity creation (not relevant to configured system).", register_id, config.get("name"))
+
+
+    # Add flow rate configuration entity (always available as it's a manual input for calculations)
     entities.append(
         GrantAerona3FlowRateNumber(coordinator, config_entry)
     )
@@ -45,7 +87,7 @@ async def async_setup_entry(
 
 
 class GrantAerona3HoldingNumber(CoordinatorEntity, NumberEntity):
-    """Grant Aerona3 holding register number entity."""
+    """Grant Aerona3 writable holding register number entity."""
 
     def __init__(
         self,
@@ -57,11 +99,11 @@ class GrantAerona3HoldingNumber(CoordinatorEntity, NumberEntity):
         super().__init__(coordinator)
         self._register_id = register_id
         self._register_config = HOLDING_REGISTER_MAP[register_id]
+        self._config_entry = config_entry
 
-        self._attr_unique_id = f"{config_entry.entry_id}_number_holding_{register_id}"
+        self._attr_unique_id = f"{config_entry.entry_id}_holding_number_{register_id}"
         self._attr_name = f"Grant Aerona3 {self._register_config['name']}"
 
-        # Device info
         self._attr_device_info = {
             "identifiers": {(DOMAIN, config_entry.entry_id)},
             "name": "Grant Aerona3 Heat Pump",
@@ -72,139 +114,95 @@ class GrantAerona3HoldingNumber(CoordinatorEntity, NumberEntity):
 
         # Set number properties
         self._attr_native_unit_of_measurement = self._register_config["unit"]
-        self._attr_mode = NumberMode.BOX  # Use box mode for precise control
+        self._attr_device_class = self._register_config.get("device_class")
+        self._attr_mode = NumberMode.SLIDER # Or NumberMode.BOX if precise input is preferred
 
-        # Set min/max values based on register type and unit
-        if self._register_config["unit"] == UnitOfTemperature.CELSIUS:
-            # Temperature ranges
-            if "dhw" in self._register_config["name"].lower():
-                self._attr_native_min_value = 10.0
-                self._attr_native_max_value = 70.0
-                self._attr_native_step = 0.5
-            elif "outdoor" in self._register_config["name"].lower():
-                self._attr_native_min_value = -30.0
-                self._attr_native_max_value = 50.0
-                self._attr_native_step = 0.5
-            else:
-                self._attr_native_min_value = 0.0
-                self._attr_native_max_value = 80.0
-                self._attr_native_step = 0.5
-        elif self._register_config["unit"] is None:
-            # Non-unit values (modes, settings, etc.)
-            name_lower = self._register_config["name"].lower()
-            if "mode" in name_lower or "type" in name_lower or "function" in name_lower:
-                self._attr_native_min_value = 0
-                self._attr_native_max_value = 10  # Most modes are 0-3, give some room
-                self._attr_native_step = 1
-            elif "time" in name_lower or "delay" in name_lower:
-                self._attr_native_min_value = 0
-                self._attr_native_max_value = 300  # Up to 5 minutes for timing settings
-                self._attr_native_step = 1
-            else:
-                self._attr_native_min_value = 0
-                self._attr_native_max_value = 100
-                self._attr_native_step = 1
-        else:
-            # Other units - set reasonable defaults
+        # Determine min/max values and step based on register type or manual.
+        # This requires careful review of each register in the manual.
+        # Placeholder values for now, should be specific to each register.
+        self._attr_native_min_value = 0.0
+        self._attr_native_max_value = 100.0
+        self._attr_native_step = 0.1 # Default step, override for specific registers
+
+        # Example: For temperature setpoints (like registers 2, 7, 28, 29, etc.)
+        if self._attr_device_class == UnitOfTemperature.CELSIUS:
+            self._attr_native_min_value = 5.0
+            self._attr_native_max_value = 60.0
+            self._attr_native_step = 0.5
+        elif self._attr_device_class == UnitOfTime.MINUTES or self._attr_device_class == UnitOfTime.SECONDS:
             self._attr_native_min_value = 0
-            self._attr_native_max_value = 100
+            self._attr_native_max_value = 3600 # Max seconds, adjust per register
             self._attr_native_step = 1
+        elif self._attr_native_unit_of_measurement == PERCENTAGE:
+             self._attr_native_min_value = 0
+             self._attr_native_max_value = 100
+             self._attr_native_step = 1
 
-        # Set icon based on function
-        name_lower = self._register_config["name"].lower()
-        if "temp" in name_lower:
-            self._attr_icon = "mdi:thermometer"
-        elif "dhw" in name_lower:
-            self._attr_icon = "mdi:water-thermometer"
-        elif "time" in name_lower or "delay" in name_lower:
-            self._attr_icon = "mdi:clock"
-        elif "hysteresis" in name_lower:
-            self._attr_icon = "mdi:thermometer-lines"
-        elif "flow" in name_lower:
-            self._attr_icon = "mdi:pipe"
-        else:
-            self._attr_icon = "mdi:tune"
-
-        # Set entity category
+        # Set entity category for configuration settings
         self._attr_entity_category = EntityCategory.CONFIG
 
     @property
     def native_value(self) -> Optional[float]:
-        """Return the current value."""
+        """Return the current value of the holding register."""
         register_key = f"holding_{self._register_id}"
         if register_key not in self.coordinator.data:
             return None
 
         register_data = self.coordinator.data[register_key]
-        
-        # Check if register is available
         if not register_data.get("available", True):
             return None
-            
         return register_data["value"]
 
     async def async_set_native_value(self, value: float) -> None:
-        """Set the value."""
-        # Convert value back to raw register value using the scale factor from const.py
-        raw_value = int(value / self._register_config["scale"])
+        """Set the native value of the number entity (write to Modbus holding register)."""
+        register_config = HOLDING_REGISTER_MAP.get(self._register_id)
+        if not register_config or not register_config.get("writable", False):
+            _LOGGER.error("Attempted to write to non-writable or non-existent register %d", self._register_id)
+            return
+
+        # Apply scaling from const.py to convert user value to raw Modbus value
+        scale = register_config.get("scale", 1)
+        raw_value = int(value / scale) # Convert float to int for Modbus, after scaling
 
         success = await self.coordinator.async_write_holding_register(self._register_id, raw_value)
         if success:
-            # Request immediate refresh to update state
-            await self.coordinator.async_request_refresh()
+            _LOGGER.debug("Successfully set holding register %d (%s) to %f (raw: %d)", self._register_id, self._attr_name, value, raw_value)
+            await self.coordinator.async_request_refresh() # Request immediate refresh to update state
         else:
-            _LOGGER.error("Failed to set value %s for %s", value, self._attr_name)
+            _LOGGER.error("Failed to set value for number entity %s at address %d", self._attr_name, self._register_id)
 
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:
         """Return additional state attributes."""
         register_key = f"holding_{self._register_id}"
-        if register_key not in self.coordinator.data:
-            return {"register_address": self._register_id, "status": "not_configured"}
-
-        data = self.coordinator.data[register_key]
+        data = self.coordinator.data.get(register_key, {})
 
         attributes = {
             "register_address": self._register_id,
-            "description": data.get("description", ""),
-            "scale_factor": self._register_config["scale"],
             "raw_value": data.get("raw_value"),
-            "available": data.get("available", True),
+            "description": data.get("description", ""),
+            "writable": data.get("writable", False),
+            "scale_factor": self._register_config.get("scale"),
+            "available": data.get("available", False),
         }
-
-        # Add error information if register is not available
         if not data.get("available", True):
-            attributes["error"] = data.get("error", "Register not available")
+            attributes["error"] = data.get("error", "Register not available or not relevant to configured system.")
             attributes["status"] = "unavailable"
         else:
             attributes["status"] = "available"
-
-        # Add helpful information for specific setting types
-        name_lower = self._register_config["name"].lower()
-        if "dhw" in name_lower:
-            attributes["tooltip"] = "DHW (Domestic Hot Water) temperature setting"
-        elif "weather compensation" in name_lower:
-            attributes["tooltip"] = "Weather compensation automatically adjusts heating based on outdoor temperature"
-        elif "hysteresis" in name_lower:
-            attributes["tooltip"] = "Hysteresis prevents frequent switching by creating a temperature band"
-        elif "frost protection" in name_lower:
-            attributes["tooltip"] = "Frost protection prevents system damage in cold weather"
-
         return attributes
 
     @property
     def available(self) -> bool:
         """Return if entity is available."""
         register_key = f"holding_{self._register_id}"
-        if register_key not in self.coordinator.data:
-            return False
-            
-        # Entity is available even if register is not readable (shows unavailable state)
-        return self.coordinator.last_update_success
+        register_data = self.coordinator.data.get(register_key)
+        # Entity is available if coordinator is successfully updating AND the specific register was available/relevant
+        return self.coordinator.last_update_success and register_data and register_data.get("available", False)
 
 
 class GrantAerona3FlowRateNumber(CoordinatorEntity, NumberEntity):
-    """Grant Aerona3 flow rate configuration number entity."""
+    """Manually configured flow rate for COP calculations."""
 
     def __init__(
         self,
@@ -214,17 +212,16 @@ class GrantAerona3FlowRateNumber(CoordinatorEntity, NumberEntity):
         """Initialize the flow rate number entity."""
         super().__init__(coordinator)
 
-        self._attr_unique_id = f"{config_entry.entry_id}_flow_rate_config"
-        self._attr_name = "Grant Aerona3 Flow Rate"
-        self._attr_native_unit_of_measurement = "L/min"
-        self._attr_mode = NumberMode.BOX
+        self._attr_unique_id = f"{config_entry.entry_id}_flow_rate_manual"
+        self._attr_name = "Grant Aerona3 Flow Rate (Manual)"
+        self._attr_native_unit_of_measurement = "L/min" # Liters per minute
         self._attr_native_min_value = 10.0
         self._attr_native_max_value = 50.0
         self._attr_native_step = 0.5
         self._attr_icon = "mdi:water-pump"
         self._attr_entity_category = EntityCategory.CONFIG
+        self._attr_mode = NumberMode.SLIDER
 
-        # Device info
         self._attr_device_info = {
             "identifiers": {(DOMAIN, config_entry.entry_id)},
             "name": "Grant Aerona3 Heat Pump",
@@ -233,28 +230,34 @@ class GrantAerona3FlowRateNumber(CoordinatorEntity, NumberEntity):
             "sw_version": "1.0.0",
         }
 
-        # Default flow rate - typical for residential Grant Aerona3
-        self._flow_rate = 28.0
+        # Initialize with the value stored in the coordinator (which might be default or previously set)
+        self._flow_rate = coordinator.flow_rate
 
     @property
     def native_value(self) -> float:
         """Return the current flow rate."""
-        return self._flow_rate
+        # This value comes directly from the coordinator's stored state
+        return self.coordinator.flow_rate
 
     async def async_set_native_value(self, value: float) -> None:
         """Set the flow rate value."""
-        self._flow_rate = value
-        _LOGGER.info("Flow rate set to %.1f L/min", value)
-
-        # Store in coordinator for COP calculations
+        # Update the flow rate in the coordinator, which will then be used by COP sensor
         self.coordinator.flow_rate = value
+        _LOGGER.info("Flow rate set to %.1f L/min via manual number entity.", value)
+        self.async_write_ha_state() # Update Home Assistant state
 
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:
         """Return additional state attributes."""
         return {
-            "description": "Manually measured flow rate for COP calculations",
-            "how_to_measure": "Use a flow meter or calculate from pump curves",
-            "typical_range": "15-25 L/min for residential systems",
-            "tooltip": "Set this to your actual measured flow rate for accurate COP calculations"
+            "description": "Manually entered flow rate for COP calculations (Liters/minute).",
+            "how_to_measure": "Use a flow meter or calculate from pump curves/system design.",
+            "typical_range": "15-25 L/min for residential systems.",
+            "note": "This value does NOT control the pump. It is used only for heat output/COP calculations."
         }
+
+    @property
+    def available(self) -> bool:
+        """Return if entity is available."""
+        # This entity is always available as its value is local to the integration.
+        return True

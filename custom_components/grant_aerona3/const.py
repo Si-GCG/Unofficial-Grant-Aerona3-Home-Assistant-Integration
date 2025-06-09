@@ -6,6 +6,7 @@ from homeassistant.const import (
     UnitOfPower,
     UnitOfFrequency,
     PERCENTAGE,
+    UnitOfTime, # Added for duration sensors
 )
 
 # Domain
@@ -19,31 +20,65 @@ MODEL = "Aerona3"
 OPERATING_MODES = {
     0: "Off",
     1: "Heating",
-    2: "Cooling", 
+    2: "Cooling",
     3: "DHW",
     4: "Auto"
 }
 
-# DHW (Domestic Hot Water) modes
-DHW_MODES = {
-    0: "Off",
-    1: "Comfort",
-    2: "Economy",
-    3: "Boost"
+# DHW (Domestic Hot Water) modes (from HOLDING_REGISTER_MAP description for register 26)
+DHW_PRODUCTION_PRIORITY_MODES = {
+    0: "DHW Unavailable",
+    1: "DHW Priority (over Heating)",
+    2: "Heating Priority (over DHW)"
 }
 
-# Days of the week
-DAYS_OF_WEEK = {
-    0: "Monday",
-    1: "Tuesday", 
-    2: "Wednesday",
-    3: "Thursday",
-    4: "Friday",
-    5: "Saturday",
-    6: "Sunday"
+# Type of configuration to heat DHW (from HOLDING_REGISTER_MAP description for register 27)
+DHW_HEATING_CONFIG_TYPES = {
+    0: "Heat Pump + Heater",
+    1: "Heat Pump Only",
+    2: "Heater Only"
 }
 
-# Climate modes mapping
+# Type of configuration of Main water pump (from HOLDING_REGISTER_MAP description for register 41)
+MAIN_WATER_PUMP_CONFIG_TYPES = {
+    0: "Always ON",
+    1: "ON/OFF based on Buffer Tank Temp",
+    2: "ON/OFF based on Sniffing Cycles"
+}
+
+# Type of operation of Additional water pump (from HOLDING_REGISTER_MAP description for register 49)
+ADDITIONAL_WATER_PUMP_OPERATION_TYPES = {
+    0: "Disable",
+    1: "Depends on Main Pump (except DHW)",
+    2: "Depends on Main Pump (always OFF when DHW activated)",
+    3: "Always ON (unless alarm/OFF)",
+    4: "ON/OFF based on Room Air Temp"
+}
+
+# Backup heater type of function (from HOLDING_REGISTER_MAP description for register 71)
+BACKUP_HEATER_FUNCTION_TYPES = {
+    0: "Disable",
+    1: "Replacement Mode",
+    2: "Emergency Mode",
+    3: "Supplementary Mode"
+}
+
+# EHS type of function (from HOLDING_REGISTER_MAP description for register 84)
+EHS_FUNCTION_TYPES = {
+    0: "Disable",
+    1: "Replacement Mode",
+    2: "Supplementary Mode"
+}
+
+# Freeze protection functions (from HOLDING_REGISTER_MAP description for register 81)
+FREEZE_PROTECTION_FUNCTIONS = {
+    0: "Disable",
+    1: "Enabled during Start-up",
+    2: "Enabled during Defrost",
+    3: "Enabled during Start-up and Defrost"
+}
+
+# Climate modes mapping - These are for internal mapping, less for user display directly
 CLIMATE_MODES = {
     "off": 0,
     "heat": 1,
@@ -51,11 +86,11 @@ CLIMATE_MODES = {
     "auto": 4
 }
 
-# Error codes mapping
+# Error codes mapping (existing)
 ERROR_CODES = {
     0: "No Error",
     1: "High Pressure",
-    2: "Low Pressure", 
+    2: "Low Pressure",
     3: "Compressor Overload",
     4: "Fan Motor Error",
     5: "Water Flow Error",
@@ -63,11 +98,37 @@ ERROR_CODES = {
     7: "Communication Error"
 }
 
-# Configuration keys
+# Configuration keys (from config_flow.py)
 CONF_HOST = "host"
 CONF_PORT = "port"
-CONF_SLAVE_ID = "slave_id"
-CONF_SCAN_INTERVAL = "scan_interval"
+CONF_SLAVE_ID = "slave_id" # This seems to be missing from config_flow, but exists in coordinator.py. Needs reconciliation.
+CONF_SCAN_INTERVAL = "scan_interval" # This seems to be missing from config_flow, but exists in coordinator.py. Needs reconciliation.
+
+# New configuration keys from config_flow.py for options
+CONF_SYSTEM_ELEMENTS = "system_elements"
+
+CONF_FLOW_TEMP_SENSOR = "flow_temperature_sensor_entity_id"
+CONF_RETURN_TEMP_SENSOR = "return_temperature_sensor_entity_id"
+CONF_OUTSIDE_TEMP_SENSOR = "outside_temperature_sensor_entity_id"
+CONF_CYLINDER_TEMP_SENSOR = "cylinder_temperature_sensor_entity_id"
+CONF_BUFFER_TEMP_SENSOR = "buffer_temperature_sensor_entity_id"
+CONF_MIX_WATER_TEMP_SENSOR = "mix_water_temperature_sensor_entity_id"
+CONF_ROOM_TEMP_SENSOR = "room_temperature_sensor_entity_id"
+CONF_HUMIDITY_SENSOR = "humidity_sensor_entity_id"
+
+CONF_ZONE1_HEATING_TYPE = "zone1_heating_type"
+CONF_ZONE2_HEATING_TYPE = "zone2_heating_type"
+
+CONF_BACKUP_HEATER_EXTERNAL_SWITCH = "backup_heater_external_switch_entity_id"
+CONF_EHS_EXTERNAL_SWITCH = "ehs_external_switch_entity_id"
+CONF_HEATING_COOLING_CHANGE_OVER_CONTACT = "heating_cooling_change_over_contact_entity_id"
+CONF_ON_OFF_REMOTE_CONTACT = "on_off_remote_contact_entity_id"
+CONF_DHW_REMOTE_CONTACT = "dhw_remote_contact_entity_id"
+CONF_DUAL_SET_POINT_CONTROL = "dual_set_point_control_entity_id"
+CONF_THREE_WAY_MIXING_VALVE_ENTITY = "three_way_mixing_valve_entity_id"
+CONF_DHW_THREE_WAY_VALVE_ENTITY = "dhw_three_way_valve_entity_id"
+CONF_EXTERNAL_FLOW_SWITCH_ENTITY = "external_flow_switch_entity_id"
+
 
 # Default values
 DEFAULT_PORT = 502
@@ -79,7 +140,7 @@ INPUT_REGISTERS = "input"
 HOLDING_REGISTERS = "holding"
 COIL_REGISTERS = "coil"
 
-# INPUT REGISTERS - Temperature and sensor readings
+# INPUT REGISTERS - Temperature and sensor readings (existing, assume correct)
 INPUT_REGISTER_MAP = {
     0: {
         "name": "Return Water Temperature",
@@ -111,9 +172,9 @@ INPUT_REGISTER_MAP = {
     3: {
         "name": "Current Consumption Value",
         "unit": UnitOfPower.WATT,
-        "device_class": SensorDeviceClass.CURRENT,
+        "device_class": SensorDeviceClass.POWER, # Changed from CURRENT to POWER
         "state_class": SensorStateClass.MEASUREMENT,
-        "scale": 100,
+        "scale": 100, # Assuming this is correct from manuals for WATT conversion
         "offset": 0,
         "description": "Current consumption value"
     },
@@ -121,7 +182,7 @@ INPUT_REGISTER_MAP = {
         "name": "Fan Control Number Of Rotation",
         "unit": "rpm",
         "device_class": None,
-        "state_class": None,
+        "state_class": SensorStateClass.MEASUREMENT, # Added state class
         "scale": 10,
         "offset": 0,
         "description": "Fan control number of rotation"
@@ -148,7 +209,7 @@ INPUT_REGISTER_MAP = {
         "name": "Water Pump Control Number Of Rotation",
         "unit": "rpm",
         "device_class": None,
-        "state_class": None,
+        "state_class": SensorStateClass.MEASUREMENT, # Added state class
         "scale": 100,
         "offset": 0,
         "description": "Water pump control number of rotation"
@@ -174,7 +235,7 @@ INPUT_REGISTER_MAP = {
     10: {
         "name": "Selected Operating Mode",
         "unit": None,
-        "device_class": None,
+        "device_class": None, # Should be a sensor mapping to OPERATING_MODES
         "state_class": None,
         "scale": 1,
         "offset": 0,
@@ -191,243 +252,7 @@ INPUT_REGISTER_MAP = {
     },
     12: {
         "name": "Room Air Set Temperature Of Zone 2",
-        "unit": UnitOfTemperature.CELSIUS,
-        "device_class": SensorDeviceClass.TEMPERATURE,
-        "state_class": SensorStateClass.MEASUREMENT,
-        "scale": 0.1,
-        "offset": 0,
-        "description": "Room air set temperature of Zone2(Slave)"
-    },
-    16: {
-        "name": "DHW Tank Temperature",
-        "unit": UnitOfTemperature.CELSIUS,
-        "device_class": SensorDeviceClass.TEMPERATURE,
-        "state_class": SensorStateClass.MEASUREMENT,
-        "scale": 0.1,
-        "offset": 0,
-        "description": "DHW tank temperature (Terminal 7-8)"
-    },
-    17: {
-        "name": "Outdoor Air Temperature - Remote Sensor",
-        "unit": UnitOfTemperature.CELSIUS,
-        "device_class": SensorDeviceClass.TEMPERATURE,
-        "state_class": SensorStateClass.MEASUREMENT,
-        "scale": 0.1,
-        "offset": 0,
-        "description": "Outdoor air temperature (Terminal 9-10)"
-    },
-    18: {
-        "name": "Buffer Tank Temperature",
-        "unit": UnitOfTemperature.CELSIUS,
-        "device_class": SensorDeviceClass.TEMPERATURE,
-        "state_class": SensorStateClass.MEASUREMENT,
-        "scale": 0.1,
-        "offset": 0,
-        "description": "Buffer tank temperature (Terminal 11-12)"
-    },
-    19: {
-        "name": "Mix Water Temperature",
-        "unit": UnitOfTemperature.CELSIUS,
-        "device_class": SensorDeviceClass.TEMPERATURE,
-        "state_class": SensorStateClass.MEASUREMENT,
-        "scale": 0.1,
-        "offset": 0,
-        "description": "Mix water temperature (Terminal 13-14)"
-    },
-    32: {
-        "name": "Plate Heat Exchanger Temperature",
-        "unit": UnitOfTemperature.CELSIUS,
-        "device_class": SensorDeviceClass.TEMPERATURE,
-        "state_class": SensorStateClass.MEASUREMENT,
-        "scale": 1,
-        "offset": 0,
-        "description": "Plate heat exchanger temperature"
-    },
-}
-
-# Holding Registers (Read/Write configuration settings)
-HOLDING_REGISTER_MAP = {
-    2: {
-        "name": "Fixed Flow Temp Zone 1",
-        "unit": UnitOfTemperature.CELSIUS,
-        "device_class": None,
-        "scale": 0.1,
-        "offset": 0,
-        "writable": True,
-        "description": "Heating Zone1, Fixed Outgoing water set point in Heating"
-    },
-    3: {
-        "name": "Max Flow Temp Zone1",
-        "unit": UnitOfTemperature.CELSIUS,
-        "device_class": SensorDeviceClass.TEMPERATURE,
-        "scale": 0.1,
-        "offset": 0,
-        "writable": True,
-        "description": "Max. Outgoing water temperature in Heating mode (Tm1) Zone1"
-    },
-    4: {
-        "name": "Min Flow Temp Zone1",
-        "unit": UnitOfTemperature.CELSIUS,
-        "device_class": SensorDeviceClass.TEMPERATURE,
-        "scale": 0.1,
-        "offset": 0,
-        "writable": True,
-        "description": "Min. Outgoing water temperature in Heating mode (Tm2) Zone1"
-    },
-    5: {
-        "name": "Min. Outdoor Air Temperature Zone1",
-        "unit": UnitOfTemperature.CELSIUS,
-        "device_class": SensorDeviceClass.TEMPERATURE,
-        "scale": 0.1,
-        "offset": 0,
-        "writable": True,
-        "description": "Min. Outdoor air temperature corresponding to max. Outgoing water temperature (Te1) Zone1"
-    },
-    6: {
-        "name": "Max. Outdoor Air Temperature Zone1",
-        "unit": UnitOfTemperature.CELSIUS,
-        "device_class": SensorDeviceClass.TEMPERATURE,
-        "scale": 0.1,
-        "offset": 0,
-        "writable": True,
-        "description": "Max. Outdoor air temperature corresponding to max. Outgoing water temperature (Te2) Zone1"
-    },
-    7: {
-        "name": "Fixed Flow Temp Zone 2",
-        "unit": UnitOfTemperature.CELSIUS,
-        "device_class": None,
-        "scale": 0.1,
-        "offset": 0,
-        "writable": True,
-        "description": "Heating Zone2, Fixed Outgoing water set point in Heating"
-    },
-    8: {
-        "name": "Max Flow Temp Zone2",
-        "unit": UnitOfTemperature.CELSIUS,
-        "device_class": SensorDeviceClass.TEMPERATURE,
-        "scale": 0.1,
-        "offset": 0,
-        "writable": True,
-        "description": "Max. Outgoing water temperature in Heating mode (Tm1) Zone2"
-    },
-    9: {
-        "name": "Min Flow Temp Zone2",
-        "unit": UnitOfTemperature.CELSIUS,
-        "device_class": SensorDeviceClass.TEMPERATURE,
-        "scale": 0.1,
-        "offset": 0,
-        "writable": True,
-        "description": "Min. Outgoing water temperature in Heating mode (Tm2) Zone2"
-    },
-    10: {
-        "name": "Min. Outdoor Air Temperature Zone2",
-        "unit": UnitOfTemperature.CELSIUS,
-        "device_class": SensorDeviceClass.TEMPERATURE,
-        "scale": 0.1,
-        "offset": 0,
-        "writable": True,
-        "description": "Min. Outdoor air temperature corresponding to max. Outgoing water temperature (Te1) Zone2"
-    },
-    11: {
-        "name": "Max. Outdoor Air Temperature Zone2",
-        "unit": UnitOfTemperature.CELSIUS,
-        "device_class": SensorDeviceClass.TEMPERATURE,
-        "scale": 0.1,
-        "offset": 0,
-        "writable": True,
-        "description": "Max. Outdoor air temperature corresponding to max. Outgoing water temperature (Te2) Zone2"
-    },
-    12: {
-        "name": "Cooling Fixed Flow Temp Zone 1",
-        "unit": UnitOfTemperature.CELSIUS,
-        "device_class": None,
-        "scale": 0.1,
-        "offset": 0,
-        "writable": True,
-        "description": "Cooling Zone1, Fixed Outgoing water set point in Cooling"
-    },
-    13: {
-        "name": "Max. Flow Temperature In Cooling Mode",
-        "unit": UnitOfTemperature.CELSIUS,
-        "device_class": SensorDeviceClass.TEMPERATURE,
-        "scale": 0.1,
-        "offset": 0,
-        "writable": True,
-        "description": "Max. Outgoing water temperature in Cooling mode (Tm1) Zone1"
-    },
-    14: {
-        "name": "Min. Flow Water Temperature In Cooling Mode",
-        "unit": UnitOfTemperature.CELSIUS,
-        "device_class": SensorDeviceClass.TEMPERATURE,
-        "scale": 0.1,
-        "offset": 0,
-        "writable": True,
-        "description": "Min. Outgoing water temperature in Cooling mode (Tm2) Zone1"
-    },
-    15: {
-        "name": "Min. Outdoor Air Temperature Cooling Zone1",
-        "unit": UnitOfTemperature.CELSIUS,
-        "device_class": SensorDeviceClass.TEMPERATURE,
-        "scale": 0.1,
-        "offset": 0,
-        "writable": True,
-        "description": "Min. Outdoor air temperature corresponding to min. Outgoing water temperature Cooling (Te1) Zone1"
-    },
-    16: {
-        "name": "Max. Outdoor Air Temperature Corresponding To max. Outgoing water temperature Cooling (Te2) Zone1",
-        "unit": UnitOfTemperature.CELSIUS,
-        "device_class": SensorDeviceClass.TEMPERATURE,
-        "scale": 0.1,
-        "offset": 0,
-        "writable": True,
-        "description": "Max. Outdoor air temperature corresponding to max. Outgoing water temperature Cooling (Te2) Zone1"
-    },
-    17: {
-        "name": "Cooling Fixed Flow Temp Zone2",
-        "unit": UnitOfTemperature.CELSIUS,
-        "device_class": None,
-        "scale": 0.1,
-        "offset": 0,
-        "writable": True,
-        "description": "Cooling Zone2, Fixed Outgoing water set point in Cooling"
-    },
-    18: {
-        "name": "Max Flow Temperature In Cooling Mode 2",
-        "unit": UnitOfTemperature.CELSIUS,
-        "device_class": SensorDeviceClass.TEMPERATURE,
-        "scale": 0.1,
-        "offset": 0,
-        "writable": True,
-        "description": "Max. Outgoing water temperature in Cooling mode (Tm1) Zone2"
-    },
-    19: {
-        "name": "Min Flow Temperature In Cooling Mode 2",
-        "unit": UnitOfTemperature.CELSIUS,
-        "device_class": SensorDeviceClass.TEMPERATURE,
-        "scale": 0.1,
-        "offset": 0,
-        "writable": True,
-        "description": "Min. Outgoing water temperature in Cooling mode (Tm2) Zone2"
-    },
-    20: {
-        "name": "Min Outdoor Air Temperature Cooling Zone2",
-        "unit": UnitOfTemperature.CELSIUS,
-        "device_class": SensorDeviceClass.TEMPERATURE,
-        "scale": 0.1,
-        "offset": 0,
-        "writable": True,
-        "description": "Min. Outdoor air temperature corresponding to max. Outgoing water temperature (Te1) Zone2"
-    },
-    21: {
-        "name": "Max. Outdoor Air Temperature Cooling Zone2",
-        "unit": UnitOfTemperature.CELSIUS,
-        "device_class": SensorDeviceClass.TEMPERATURE,
-        "scale": 0.1,
-        "offset": 0,
-        "writable": True,
-        "description": "Max. Outdoor air temperature corresponding to max. Outgoing water temperature (Te2) Zone2"
-    },
-    22: {
+        "unit": UnitOfTemperature.CELSI22: {
         "name": "Hysteresis Of Water Set Point In Heating And DHW",
         "unit": UnitOfTemperature.CELSIUS,
         "device_class": None,
@@ -470,6 +295,7 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "options_map": DHW_PRODUCTION_PRIORITY_MODES, # Added for select entity
         "description": "DHW production priority setting (0=DHW is unavailable, 1=DHW is available and priority DHW over space Heating, 2=DHW is available and priority space Heating over DHW)"
     },
     27: {
@@ -479,6 +305,7 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "options_map": DHW_HEATING_CONFIG_TYPES, # Added for select entity
         "description": "Type of configuration to heat the DHW (0=Heat pump + Heater, 1=Heat pump only, 2=Heater only)"
     },
     28: {
@@ -519,7 +346,7 @@ HOLDING_REGISTER_MAP = {
     },
     32: {
         "name": "Max. Time For DHW Request",
-        "unit": None,
+        "unit": UnitOfTime.MINUTES, # Corrected unit
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -528,7 +355,7 @@ HOLDING_REGISTER_MAP = {
     },
     33: {
         "name": "Delay Time On DHW Heater From Off Compressor",
-        "unit": None,
+        "unit": UnitOfTime.MINUTES, # Corrected unit
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -563,17 +390,17 @@ HOLDING_REGISTER_MAP = {
         "description": "Anti-legionella set point"
     },
     37: {
-        "name": "Max. Frequency Of Night Mode",
-        "unit": None,
-        "device_class": SensorDeviceClass.FREQUENCY,
+        "name": "Max. Frequency for Night Mode", # This might be a percentage or specific value, "frequency" might be misleading if it's not Hz
+        "unit": PERCENTAGE, # Assuming it's a percentage or some dimensionless frequency
+        "device_class": None,
         "scale": 1,
         "offset": 0,
         "writable": True,
-        "description": "Max. frequency of Night mode"
+        "description": "Max. Percentage of Compressor Frequency for Night Mode"
     },
     38: {
         "name": "Min. Time Compressor On/off Time",
-        "unit": None,
+        "unit": UnitOfTime.SECONDS, # Assuming seconds as a common short duration
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -582,7 +409,7 @@ HOLDING_REGISTER_MAP = {
     },
     39: {
         "name": "Delay Time Pump Off From Compressor Off",
-        "unit": None,
+        "unit": UnitOfTime.SECONDS,
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -591,7 +418,7 @@ HOLDING_REGISTER_MAP = {
     },
     40: {
         "name": "Delay Time Compressor On From Pump On",
-        "unit": None,
+        "unit": UnitOfTime.SECONDS,
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -605,11 +432,12 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
-        "description": "Type of configuration of Main water pump (0=always ON, 1=ON/OFF based on Buffertank temperature, 2=ON/OFF based on Sniffing cycles"
+        "options_map": MAIN_WATER_PUMP_CONFIG_TYPES, # Added for select entity
+        "description": "Type of configuration of Main water pump (0=always ON, 1=ON/OFF based on Buffer tank temperature, 2=ON/OFF based on Sniffing cycles"
     },
     42: {
         "name": "Time On Main Water Pump For Sniffing Cycle",
-        "unit": None,
+        "unit": UnitOfTime.SECONDS,
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -618,7 +446,7 @@ HOLDING_REGISTER_MAP = {
     },
     43: {
         "name": "Time Off Main Water Pump",
-        "unit": None,
+        "unit": UnitOfTime.SECONDS,
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -627,7 +455,7 @@ HOLDING_REGISTER_MAP = {
     },
     44: {
         "name": "Delay Time Off Main Water Pump From Off Compressor",
-        "unit": None,
+        "unit": UnitOfTime.SECONDS,
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -636,7 +464,7 @@ HOLDING_REGISTER_MAP = {
     },
     45: {
         "name": "Off Time For Unlock Pump Function Start",
-        "unit": None,
+        "unit": UnitOfTime.SECONDS,
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -645,7 +473,7 @@ HOLDING_REGISTER_MAP = {
     },
     46: {
         "name": "Time On Main Water Pump For Unlock Pump Function",
-        "unit": None,
+        "unit": UnitOfTime.SECONDS,
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -654,7 +482,7 @@ HOLDING_REGISTER_MAP = {
     },
     47: {
         "name": "Time On Water Pump1 For Unlock Pump Function",
-        "unit": None,
+        "unit": UnitOfTime.SECONDS,
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -663,7 +491,7 @@ HOLDING_REGISTER_MAP = {
     },
     48: {
         "name": "Time On Water Pump2 For Unlock Pump Function",
-        "unit": None,
+        "unit": UnitOfTime.SECONDS,
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -677,6 +505,7 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "options_map": ADDITIONAL_WATER_PUMP_OPERATION_TYPES, # Added for select entity
         "description": "Type of operation of additional water pump (0=disable, 1=depending on Main water pump setting, 2=depending on Main water pump setting but always OFF when the DHW mode is activated, 3=always ON apart if any alarms are activated or if the HP unit is in OFF mode, 4=ON/OFF based on Room air temperature)"
     },
     50: {
@@ -708,7 +537,7 @@ HOLDING_REGISTER_MAP = {
     },
     53: {
         "name": "Delay Time Off Main Water Pump From Off",
-        "unit": None,
+        "unit": UnitOfTime.SECONDS,
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -771,8 +600,8 @@ HOLDING_REGISTER_MAP = {
     },
     60: {
         "name": "Room Relative Humidity Value",
-        "unit": None,
-        "device_class": None,
+        "unit": PERCENTAGE, # Assuming percentage
+        "device_class": SensorDeviceClass.HUMIDITY,
         "scale": 1,
         "offset": 0,
         "writable": True,
@@ -780,8 +609,8 @@ HOLDING_REGISTER_MAP = {
     },
     61: {
         "name": "Room Relative Humidity Value To Start Increasing Flow Temp",
-        "unit": None,
-        "device_class": None,
+        "unit": PERCENTAGE, # Assuming percentage
+        "device_class": SensorDeviceClass.HUMIDITY,
         "scale": 1,
         "offset": 0,
         "writable": True,
@@ -798,7 +627,7 @@ HOLDING_REGISTER_MAP = {
     },
     63: {
         "name": "Mixing Valve Runtime",
-        "unit": None,
+        "unit": UnitOfTime.SECONDS,
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -816,16 +645,16 @@ HOLDING_REGISTER_MAP = {
     },
     65: {
         "name": "Max Water Temperature In Mixing Circuit",
-        "unit": None,
+        "unit": UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
-        "scale": 1,
+        "scale": 0.1, 
         "offset": 0,
         "writable": True,
         "description": "Max Water temperature in mixing circuit"
     },
     66: {
         "name": "3way Valve Change Over Time",
-        "unit": None,
+        "unit": UnitOfTime.SECONDS,
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -834,7 +663,7 @@ HOLDING_REGISTER_MAP = {
     },
     67: {
         "name": "Flow Switch Alarm Delay Time At. Pump Start Up",
-        "unit": None,
+        "unit": UnitOfTime.SECONDS,
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -843,7 +672,7 @@ HOLDING_REGISTER_MAP = {
     },
     68: {
         "name": "Flow Switch Alarm Delay Time",
-        "unit": None,
+        "unit": UnitOfTime.SECONDS,
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -861,7 +690,7 @@ HOLDING_REGISTER_MAP = {
     },
     70: {
         "name": "The Time Of Repeating Retry Until Displaying Alarm",
-        "unit": None,
+        "unit": UnitOfTime.SECONDS,
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -875,6 +704,7 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "options_map": BACKUP_HEATER_FUNCTION_TYPES, # Added for select entity
         "description": "Backup heater type of function (0=disable, 1=Replacement mode, 2=Emergency mode, 3=Supplementary mode)"
     },
     72: {
@@ -897,7 +727,7 @@ HOLDING_REGISTER_MAP = {
     },
     74: {
         "name": "Delay Time Of The Heater Off That Avoid Flow Switch Alarm",
-        "unit": None,
+        "unit": UnitOfTime.SECONDS,
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -906,7 +736,7 @@ HOLDING_REGISTER_MAP = {
     },
     75: {
         "name": "Heater Activation Delay Time",
-        "unit": None,
+        "unit": UnitOfTime.SECONDS,
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -915,7 +745,7 @@ HOLDING_REGISTER_MAP = {
     },
     76: {
         "name": "Integration Time For Starting Heaters",
-        "unit": None,
+        "unit": UnitOfTime.SECONDS,
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -965,6 +795,7 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "options_map": FREEZE_PROTECTION_FUNCTIONS, # Added for select entity
         "description": "Freeze protection functions (0=disable, 1=enabled during Start-up, 2=enabled during Defrost, 3=enabled during Start-up and Defrost)"
     },
     82: {
@@ -992,6 +823,7 @@ HOLDING_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "writable": True,
+        "options_map": EHS_FUNCTION_TYPES, # Added for select entity
         "description": "EHS type of function (0=disable, 1=Replacement mode, 2=Supplementary mode)"
     },
     85: {
@@ -1032,7 +864,7 @@ HOLDING_REGISTER_MAP = {
     },
     89: {
         "name": "EHS Activation Delay Time",
-        "unit": None,
+        "unit": UnitOfTime.SECONDS,
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -1041,7 +873,7 @@ HOLDING_REGISTER_MAP = {
     },
     90: {
         "name": "Integration Time For Starting EHS",
-        "unit": None,
+        "unit": UnitOfTime.SECONDS,
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -1122,7 +954,7 @@ HOLDING_REGISTER_MAP = {
     },
 }
 
-# Coil Registers (Read/Write boolean controls)
+# Coil Registers (Read/Write boolean controls) (existing, assume correct)
 COIL_REGISTER_MAP = {
     1: {
         "name": "Operation At The Time Of Reboot After Blackout 0",
