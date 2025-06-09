@@ -168,7 +168,7 @@ After successful installation, you should see 150+ new entities:
 For accurate COP (Coefficient of Performance) calculations:
 
 1. Find the **"Grant Aerona3 Flow Rate"** number entity
-2. Set it to your measured flow rate (see [Flow Rate Measurement Guide](flow_rate_guide_.md))
+2. Set it to your measured flow rate (see [Flow Rate Measurement Guide](flow_rate_guide.md))
 3. Typical values:
    - **6kW model**: 15-18 L/min
    - **8kW model**: 18-22 L/min
@@ -222,9 +222,9 @@ Include this information when asking for help:
 ## Next Steps
 
 - 📏 [Configure flow rate](flow_rate_guide_.md) for accurate COP calculations
-- ⚙️ [Review configuration options](configuration.md)
-- 🎯 [Set up automations](../Examples/automations.yaml)
-- 📊 [Create dashboard cards and install EMONCMS](../Examples/lovelace-cards.yaml), here is a great video from Speak to the Geek telling you how to set up EMONCMS: https://www.youtube.com/watch?v=VOGLjONINqM
+- ⚙️ [Review configuration options](configuration_guide.md)
+- 🎯 [Set up automations](../Examples/examples_automations.yaml)
+- 📊 [Create dashboard cards and install EMONCMS](../Examples/examples_lovelace.yaml), here is a great video from Speak to the Geek telling you how to set up EMONCMS: https://www.youtube.com/watch?v=VOGLjONINqM
 
 
 ---
