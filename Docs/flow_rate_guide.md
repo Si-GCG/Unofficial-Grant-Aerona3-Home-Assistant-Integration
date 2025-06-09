@@ -217,4 +217,4 @@ Accurate flow rate measurement transforms your COP readings from estimates to pr
 
 ---
 
-**Need help?** See [Troubleshooting Guide](troubleshooting.md) or ask on [GitHub Issues](https://github.com/yourusername/grant-aerona3-hass/issues).
+**Need help?** See [Troubleshooting Guide](troubleshooting.md) or ask on [GitHub Issues](https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration.git/issues).

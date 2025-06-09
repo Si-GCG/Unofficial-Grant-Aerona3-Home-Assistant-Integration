@@ -95,7 +95,7 @@ This integration works with all Grant Aerona3 configurations:
 ![Entities](/Docs/images/entity_list.jpeg)
 
 ### Dashboard Example
-![Dashboard](docs/images/dashboard-example.png)
+![Dashboard](Docs/images/dashboard-example.png)
 
 ### Recommended additional HACS components
 ```
@@ -108,9 +108,9 @@ button-card.js
 ```
 ## 🆘 Support & Contributing
 
-- **🐛 Report Issues**: [GitHub Issues](https://github.com/yourusername/grant-aerona3-hass/issues)
-- **💡 Feature Requests**: [GitHub Discussions](https://github.com/yourusername/grant-aerona3-hass/discussions)
-- **📖 Documentation**: [docs/](docs/) folder
+- **🐛 Report Issues**: [GitHub Issues](https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration.git/issues)
+- **💡 Feature Requests**: [GitHub Discussions](https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration.git/discussions)
+- **📖 Documentation**: [Docs/](Docs/) folder
 - **🤝 Contributing**: Pull requests welcome!
 
 ## 📄 License

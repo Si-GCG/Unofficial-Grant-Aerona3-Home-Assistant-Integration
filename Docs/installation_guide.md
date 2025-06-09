@@ -53,7 +53,7 @@ If you haven't already, install [HACS (Home Assistant Community Store)](https://
 3. Click the **⋮** menu (three dots) in the top right
 4. Select **Custom repositories**
 5. Add this repository:
-   - **Repository**: `https://github.com/yourusername/grant-aerona3-hass`
+   - **Repository**: `https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration.git`
    - **Category**: `Integration`
 6. Click **Add**
 
@@ -75,7 +75,7 @@ button-card.js
 ## Method 2: Manual Installation
 
 ### Step 1: Download Files
-1. Download the latest release from [GitHub Releases](https://github.com/yourusername/grant-aerona3-hass/releases)
+1. Download the latest release from [GitHub Releases](https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration.git/releases)
 2. Extract the ZIP file
 
 ### Step 2: Copy Files
@@ -168,7 +168,7 @@ After successful installation, you should see 150+ new entities:
 For accurate COP (Coefficient of Performance) calculations:
 
 1. Find the **"Grant Aerona3 Flow Rate"** number entity
-2. Set it to your measured flow rate (see [Flow Rate Measurement Guide](flow-rate-measurement.md))
+2. Set it to your measured flow rate (see [Flow Rate Measurement Guide](flow_rate_guide_.md))
 3. Typical values:
    - **6kW model**: 15-18 L/min
    - **8kW model**: 18-22 L/min
@@ -176,7 +176,7 @@ For accurate COP (Coefficient of Performance) calculations:
    - **16kW model**: 25-30 L/min
 
 ### Step 3: Create Dashboard
-Add entities to your dashboard - see [Examples](../examples/) for dashboard card configurations.
+Add entities to your dashboard - see [Examples](../Examples/) for dashboard card configurations.
 
 ## Troubleshooting Installation
 
@@ -209,8 +209,8 @@ Add entities to your dashboard - see [Examples](../examples/) for dashboard card
 If you're still having issues:
 
 1. **Check the logs**: Settings → System → Logs, look for "grant_aerona3" errors
-2. **Review troubleshooting**: See [Troubleshooting Guide](troubleshooting.md)
-3. **Ask for help**: [GitHub Issues](https://github.com/yourusername/grant-aerona3-hass/issues)
+2. **Review troubleshooting**: See [Troubleshooting Guide](troubleshooting_guide.md)
+3. **Ask for help**: [GitHub Issues](https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration.git/issues)
 
 Include this information when asking for help:
 - Home Assistant version
@@ -221,10 +221,10 @@ Include this information when asking for help:
 
 ## Next Steps
 
-- 📏 [Configure flow rate](flow-rate-measurement.md) for accurate COP calculations
+- 📏 [Configure flow rate](flow_rate_guide_.md) for accurate COP calculations
 - ⚙️ [Review configuration options](configuration.md)
-- 🎯 [Set up automations](../examples/automations.yaml)
-- 📊 [Create dashboard cards and install EMONCMS](../examples/lovelace-cards.yaml), here is a great video from Speak to the Geek telling you how to set up EMONCMS: https://www.youtube.com/watch?v=VOGLjONINqM
+- 🎯 [Set up automations](../Examples/automations.yaml)
+- 📊 [Create dashboard cards and install EMONCMS](../Examples/lovelace-cards.yaml), here is a great video from Speak to the Geek telling you how to set up EMONCMS: https://www.youtube.com/watch?v=VOGLjONINqM
 
 
 ---

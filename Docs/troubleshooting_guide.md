@@ -44,13 +44,10 @@ This guide helps you diagnose and resolve common issues with the Grant Aerona3 i
 **Error**: `"Cannot connect to device"`
 
 **Solutions**:
-1. ✅ **Verify IP address**: Ping heat pump from Home Assistant host
+1. ✅ **Check all cables**:
+2. ✅ **Verify IP address**: Ping heat pump from Home Assistant host
    ```bash
    ping 192.168.1.100
-   ```
-2. ✅ **Check port**: Try telnet to Modbus port
-   ```bash
-   telnet 192.168.1.100 502
    ```
 3. ✅ **Verify Modbus enabled**: Check heat pump network settings
 4. ✅ **Try different slave ID**: Try 1, 2, or 3
@@ -334,9 +331,9 @@ docker exec homeassistant ping [heat_pump_ip]
 ### Where to Get Help
 
 1. **📖 Documentation**: Check all docs first
-2. **🔍 Search Issues**: [GitHub Issues](https://github.com/yourusername/grant-aerona3-hass/issues)
+2. **🔍 Search Issues**: [GitHub Issues](https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration.git/issues)
 3. **🆕 New Issue**: Create detailed issue report
-4. **💬 Discussions**: [GitHub Discussions](https://github.com/yourusername/grant-aerona3-hass/discussions)
+4. **💬 Discussions**: [GitHub Discussions](https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration.git/discussions)
 5. **🏠 Community**: Home Assistant Community Forum
 
 ### Issue Templates
