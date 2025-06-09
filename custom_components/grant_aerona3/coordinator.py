@@ -1,7 +1,9 @@
 """Improved data update coordinator for Grant Aerona3 Heat Pump."""
+from __future__ import annotations # THIS IS CRUCIAL FOR LATER TYPE HINTING RESOLUTION
+
 import logging
 from datetime import timedelta
-from typing import Any, Dict # Removed List and Tuple imports
+from typing import Any, Dict # Keep Dict, Any. List and Tuple are now built-in types.
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PORT
@@ -199,7 +201,7 @@ class GrantAerona3Coordinator(DataUpdateCoordinator):
                 data[f"external_sensor_{config_key}"] = {
                     "value": state.state if state else None,
                     "available": state is not None and state.state != "unavailable",
-                    "unit": getattr(state, "unit_of_measurement", None) if state else None,
+                    "unit": state.unit_of_measurement if state else None,
                     "entity_id": entity_id
                 }
                 if not data[f"external_sensor_{config_key}"]["available"]:
@@ -215,6 +217,12 @@ class GrantAerona3Coordinator(DataUpdateCoordinator):
                 }
                 if not data[f"external_control_{config_key}"]["available"]:
                     _LOGGER.debug("External control %s (%s) is unavailable.", config_key, entity_id)
+
+
+        # Add the 'external_sensors' and 'external_controls' nested dictionaries to the main data dict
+        data["external_sensors"] = {k: v for k, v in data.items() if k.startswith("external_sensor_")}
+        data["external_controls"] = {k: v for k, v in data.items() if k.startswith("external_control_")}
+
 
         return data
 
@@ -301,7 +309,7 @@ class GrantAerona3Coordinator(DataUpdateCoordinator):
                 except Exception as close_err:
                     _LOGGER.warning("Error closing client after write: %s", str(close_err))
 
-    def _get_relevant_registers(self, register_map: Dict[int, Dict[str, Any]], selected_elements: list[str]) -> list[tuple[int, Dict[str, Any]]]: # Changed List to list, Tuple to tuple
+    def _get_relevant_registers(self, register_map: dict[int, dict[str, Any]], selected_elements: list[str]) -> list[tuple[int, dict[str, Any]]]: # Changed List to list, Tuple to tuple
         """
         Filter registers based on selected system elements in the configuration.
         This function should be updated to include more specific filtering logic
