@@ -270,7 +270,7 @@ INPUT_REGISTER_MAP = {
     },
     14: {
         "name": "Alarm Code",
-        "unit": None, # No unit, but maps to ERROR_CODE
+        "unit": None, # No unit, but maps to ERROR_CODES
         "device_class": None,
         "state_class": SensorStateClass.MEASUREMENT,
         "scale": 1,
