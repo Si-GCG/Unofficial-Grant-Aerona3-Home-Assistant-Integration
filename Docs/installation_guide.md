@@ -53,7 +53,7 @@ If you haven't already, install [HACS (Home Assistant Community Store)](https://
 3. Click the **⋮** menu (three dots) in the top right
 4. Select **Custom repositories**
 5. Add this repository:
-   - **Repository**: `https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration.git`
+   - **Repository**: `https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration`
    - **Category**: `Integration`
 6. Click **Add**
 
@@ -75,7 +75,7 @@ button-card.js
 ## Method 2: Manual Installation
 
 ### Step 1: Download Files
-1. Download the latest release from [GitHub Releases](https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration.git/releases)
+1. Download the latest release from [GitHub Releases](https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration/releases)
 2. Extract the ZIP file
 
 ### Step 2: Copy Files
@@ -210,7 +210,7 @@ If you're still having issues:
 
 1. **Check the logs**: Settings → System → Logs, look for "grant_aerona3" errors
 2. **Review troubleshooting**: See [Troubleshooting Guide](troubleshooting_guide.md)
-3. **Ask for help**: [GitHub Issues](https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration.git/issues)
+3. **Ask for help**: [GitHub Issues](https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration/issues)
 
 Include this information when asking for help:
 - Home Assistant version
