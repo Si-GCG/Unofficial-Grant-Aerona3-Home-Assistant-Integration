@@ -331,9 +331,9 @@ docker exec homeassistant ping [heat_pump_ip]
 ### Where to Get Help
 
 1. **📖 Documentation**: Check all docs first
-2. **🔍 Search Issues**: [GitHub Issues](https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration.git/issues)
+2. **🔍 Search Issues**: [GitHub Issues](https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration/issues)
 3. **🆕 New Issue**: Create detailed issue report
-4. **💬 Discussions**: [GitHub Discussions](https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration.git/discussions)
+4. **💬 Discussions**: [GitHub Discussions](https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration/discussions)
 5. **🏠 Community**: Home Assistant Community Forum
 
 ### Issue Templates
