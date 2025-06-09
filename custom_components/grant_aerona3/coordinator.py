@@ -199,7 +199,7 @@ class GrantAerona3Coordinator(DataUpdateCoordinator):
                 data[f"external_sensor_{config_key}"] = {
                     "value": state.state if state else None,
                     "available": state is not None and state.state != "unavailable",
-                    "unit": state.unit_of_measurement if state else None,
+                    "unit": getattr(state, "unit_of_measurement", None) if state else None,
                     "entity_id": entity_id
                 }
                 if not data[f"external_sensor_{config_key}"]["available"]:
