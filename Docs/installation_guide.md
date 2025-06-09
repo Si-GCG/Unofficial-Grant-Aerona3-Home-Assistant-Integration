@@ -223,7 +223,7 @@ Include this information when asking for help:
 
 - 📏 [Configure flow rate](flow_rate_guide_.md) for accurate COP calculations
 - ⚙️ [Review configuration options](configuration_guide.md)
-- 🎯 [Set up automations](../Examples/examples_automations.yaml)
+- 🎯 [Set up automations](../Examples/examples_automation.yaml)
 - 📊 [Create dashboard cards and install EMONCMS](../Examples/examples_lovelace.yaml), here is a great video from Speak to the Geek telling you how to set up EMONCMS: https://www.youtube.com/watch?v=VOGLjONINqM
 
 
