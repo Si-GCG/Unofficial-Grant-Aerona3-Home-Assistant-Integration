@@ -140,7 +140,7 @@ INPUT_REGISTERS = "input"
 HOLDING_REGISTERS = "holding"
 COIL_REGISTERS = "coil"
 
-# INPUT REGISTERS - Temperature and sensor readings (existing, assume correct)
+# INPUT REGISTERS - Temperature and sensor readings (from the Grant Aerona3 Modbus documentation)
 INPUT_REGISTER_MAP = {
     0: {
         "name": "Return Water Temperature",
@@ -171,10 +171,10 @@ INPUT_REGISTER_MAP = {
     },
     3: {
         "name": "Current Consumption Value",
-        "unit": UnitOfPower.WATT,
-        "device_class": SensorDeviceClass.POWER, # Changed from CURRENT to POWER
+        "unit": UnitOfPower.WATT, # Changed from CURRENT to POWER as per standard practice
+        "device_class": SensorDeviceClass.POWER,
         "state_class": SensorStateClass.MEASUREMENT,
-        "scale": 100, # Assuming this is correct from manuals for WATT conversion
+        "scale": 100, # Assuming this is correct from manuals for WATT conversion (e.g. raw 123 -> 12.3W)
         "offset": 0,
         "description": "Current consumption value"
     },
@@ -182,7 +182,7 @@ INPUT_REGISTER_MAP = {
         "name": "Fan Control Number Of Rotation",
         "unit": "rpm",
         "device_class": None,
-        "state_class": SensorStateClass.MEASUREMENT, # Added state class
+        "state_class": SensorStateClass.MEASUREMENT,
         "scale": 10,
         "offset": 0,
         "description": "Fan control number of rotation"
@@ -209,7 +209,7 @@ INPUT_REGISTER_MAP = {
         "name": "Water Pump Control Number Of Rotation",
         "unit": "rpm",
         "device_class": None,
-        "state_class": SensorStateClass.MEASUREMENT, # Added state class
+        "state_class": SensorStateClass.MEASUREMENT,
         "scale": 100,
         "offset": 0,
         "description": "Water pump control number of rotation"
@@ -228,18 +228,18 @@ INPUT_REGISTER_MAP = {
         "unit": UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
         "state_class": SensorStateClass.MEASUREMENT,
-        "scale": 0.1,
+        "scale": 0.1, # Typically flow temps are 0.1 resolution
         "offset": 0,
         "description": "Outgoing water temperature"
     },
     10: {
         "name": "Selected Operating Mode",
         "unit": None,
-        "device_class": None, # Should be a sensor mapping to OPERATING_MODES
-        "state_class": None,
+        "device_class": None, # This should be a sensor mapping to OPERATING_MODES
+        "state_class": SensorStateClass.MEASUREMENT, # It's a current state
         "scale": 1,
         "offset": 0,
-        "description": "Selected operating mode (0=Heating/Cooling OFF, 1=Heating, 2=Cooling)"
+        "description": "Selected operating mode (0=Heating/Cooling OFF, 1=Heating, 2=Cooling, 3=DHW, 4=Auto)"
     },
     11: {
         "name": "Room Air Set Temperature of Zone 1",
@@ -252,10 +252,237 @@ INPUT_REGISTER_MAP = {
     },
     12: {
         "name": "Room Air Set Temperature Of Zone 2",
-        "unit": UnitOfTemperature.CELSI22: {
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "scale": 0.1,
+        "offset": 0,
+        "description": "Room air set temperature of Zone2"
+    },
+    13: {
+        "name": "Water Temperature Set Point Zone 1",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "scale": 0.1,
+        "offset": 0,
+        "description": "Water temperature set point Zone1"
+    },
+    14: {
+        "name": "Alarm Code",
+        "unit": None, # No unit, but maps to ERROR_CODES
+        "device_class": None,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "scale": 1,
+        "offset": 0,
+        "description": "Current active alarm code (0=No Error, 1=High Pressure, etc.)"
+    },
+}
+
+# HOLDING REGISTERS (Writable parameters) (from the Grant Aerona3 Modbus documentation)
+HOLDING_REGISTER_MAP = {
+    0: {
+        "name": "Fixed Flow Temperature Set Point For Heating Zone 1",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE, # It's a setpoint, so temperature device class is appropriate
+        "scale": 0.1,
+        "offset": 0,
+        "writable": True,
+        "description": "Fixed flow temperature set point for heating Zone1"
+    },
+    1: {
+        "name": "Max Flow Temperature For Heating Zone 1",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "scale": 0.1,
+        "offset": 0,
+        "writable": True,
+        "description": "Max flow temperature for heating Zone1"
+    },
+    2: {
+        "name": "Min Flow Temperature For Heating Zone 1",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "scale": 0.1,
+        "offset": 0,
+        "writable": True,
+        "description": "Min flow temperature for heating Zone1"
+    },
+    3: {
+        "name": "Fixed Flow Temperature Set Point For Heating Zone 2",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "scale": 0.1,
+        "offset": 0,
+        "writable": True,
+        "description": "Fixed flow temperature set point for heating Zone2"
+    },
+    4: {
+        "name": "Max Flow Temperature For Heating Zone 2",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "scale": 0.1,
+        "offset": 0,
+        "writable": True,
+        "description": "Max flow temperature for heating Zone2"
+    },
+    5: {
+        "name": "Min Flow Temperature For Heating Zone 2",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "scale": 0.1,
+        "offset": 0,
+        "writable": True,
+        "description": "Min flow temperature for heating Zone2"
+    },
+    6: {
+        "name": "Fixed Flow Temperature Set Point For Cooling Zone 1",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "scale": 0.1,
+        "offset": 0,
+        "writable": True,
+        "description": "Fixed flow temperature set point for cooling Zone1"
+    },
+    7: {
+        "name": "Max Flow Temperature For Cooling Zone 1",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "scale": 0.1,
+        "offset": 0,
+        "writable": True,
+        "description": "Max flow temperature for cooling Zone1"
+    },
+    8: {
+        "name": "Min Flow Temperature For Cooling Zone 1",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "scale": 0.1,
+        "offset": 0,
+        "writable": True,
+        "description": "Min flow temperature for cooling Zone1"
+    },
+    9: {
+        "name": "Fixed Flow Temperature Set Point For Cooling Zone 2",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "scale": 0.1,
+        "offset": 0,
+        "writable": True,
+        "description": "Fixed flow temperature set point for cooling Zone2"
+    },
+    10: {
+        "name": "Max Flow Temperature For Cooling Zone 2",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "scale": 0.1,
+        "offset": 0,
+        "writable": True,
+        "description": "Max flow temperature for cooling Zone2"
+    },
+    11: {
+        "name": "Min Flow Temperature For Cooling Zone 2",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "scale": 0.1,
+        "offset": 0,
+        "writable": True,
+        "description": "Min flow temperature for cooling Zone2"
+    },
+    12: {
+        "name": "Max Outdoor Temperature For Heating Zone 1",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "scale": 0.1,
+        "offset": 0,
+        "writable": True,
+        "description": "Max outdoor temperature for heating Zone1"
+    },
+    13: {
+        "name": "Min Outdoor Temperature For Heating Zone 1",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "scale": 0.1,
+        "offset": 0,
+        "writable": True,
+        "description": "Min outdoor temperature for heating Zone1"
+    },
+    14: {
+        "name": "Max Outdoor Temperature For Heating Zone 2",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "scale": 0.1,
+        "offset": 0,
+        "writable": True,
+        "description": "Max outdoor temperature for heating Zone2"
+    },
+    15: {
+        "name": "Min Outdoor Temperature For Heating Zone 2",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "scale": 0.1,
+        "offset": 0,
+        "writable": True,
+        "description": "Min outdoor temperature for heating Zone2"
+    },
+    16: {
+        "name": "Max Outdoor Temperature For Cooling Zone 1",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "scale": 0.1,
+        "offset": 0,
+        "writable": True,
+        "description": "Max outdoor temperature for cooling Zone1"
+    },
+    17: {
+        "name": "Min Outdoor Temperature For Cooling Zone 1",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "scale": 0.1,
+        "offset": 0,
+        "writable": True,
+        "description": "Min outdoor temperature for cooling Zone1"
+    },
+    18: {
+        "name": "Max Outdoor Temperature For Cooling Zone 2",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "scale": 0.1,
+        "offset": 0,
+        "writable": True,
+        "description": "Max outdoor temperature for cooling Zone2"
+    },
+    19: {
+        "name": "Min Outdoor Temperature For Cooling Zone 2",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "scale": 0.1,
+        "offset": 0,
+        "writable": True,
+        "description": "Min outdoor temperature for cooling Zone2"
+    },
+    20: {
+        "name": "Min. Ambient Temperature For Compressor Operation",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "scale": 0.1,
+        "offset": 0,
+        "writable": True,
+        "description": "Min. Ambient temperature for compressor operation (in Heating or DHW)"
+    },
+    21: {
+        "name": "Max. Ambient Temperature For Compressor Operation",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "scale": 0.1,
+        "offset": 0,
+        "writable": True,
+        "description": "Max. Ambient temperature for compressor operation (in Cooling)"
+    },
+    22: {
         "name": "Hysteresis Of Water Set Point In Heating And DHW",
         "unit": UnitOfTemperature.CELSIUS,
-        "device_class": None,
+        "device_class": None, # Hysteresis is a delta, not a specific temperature
         "scale": 0.1,
         "offset": 0,
         "writable": True,
@@ -346,7 +573,7 @@ INPUT_REGISTER_MAP = {
     },
     32: {
         "name": "Max. Time For DHW Request",
-        "unit": UnitOfTime.MINUTES, # Corrected unit
+        "unit": UnitOfTime.MINUTES,
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -355,7 +582,7 @@ INPUT_REGISTER_MAP = {
     },
     33: {
         "name": "Delay Time On DHW Heater From Off Compressor",
-        "unit": UnitOfTime.MINUTES, # Corrected unit
+        "unit": UnitOfTime.MINUTES,
         "device_class": SensorDeviceClass.DURATION,
         "scale": 1,
         "offset": 0,
@@ -390,13 +617,13 @@ INPUT_REGISTER_MAP = {
         "description": "Anti-legionella set point"
     },
     37: {
-        "name": "Max. Frequency for Night Mode", # This might be a percentage or specific value, "frequency" might be misleading if it's not Hz
+        "name": "Max. Frequency Of Night Mode", # This might be a percentage or specific value, "frequency" might be misleading if it's not Hz
         "unit": PERCENTAGE, # Assuming it's a percentage or some dimensionless frequency
         "device_class": None,
         "scale": 1,
         "offset": 0,
         "writable": True,
-        "description": "Max. Percentage of Compressor Frequency for Night Mode"
+        "description": "Max. frequency of Night mode"
     },
     38: {
         "name": "Min. Time Compressor On/off Time",
@@ -433,7 +660,7 @@ INPUT_REGISTER_MAP = {
         "offset": 0,
         "writable": True,
         "options_map": MAIN_WATER_PUMP_CONFIG_TYPES, # Added for select entity
-        "description": "Type of configuration of Main water pump (0=always ON, 1=ON/OFF based on Buffer tank temperature, 2=ON/OFF based on Sniffing cycles"
+        "description": "Type of configuration of Main water pump (0=always ON, 1=ON/OFF based on Buffertank temperature, 2=ON/OFF based on Sniffing cycles)"
     },
     42: {
         "name": "Time On Main Water Pump For Sniffing Cycle",
@@ -600,7 +827,7 @@ INPUT_REGISTER_MAP = {
     },
     60: {
         "name": "Room Relative Humidity Value",
-        "unit": PERCENTAGE, # Assuming percentage
+        "unit": PERCENTAGE,
         "device_class": SensorDeviceClass.HUMIDITY,
         "scale": 1,
         "offset": 0,
@@ -609,7 +836,7 @@ INPUT_REGISTER_MAP = {
     },
     61: {
         "name": "Room Relative Humidity Value To Start Increasing Flow Temp",
-        "unit": PERCENTAGE, # Assuming percentage
+        "unit": PERCENTAGE,
         "device_class": SensorDeviceClass.HUMIDITY,
         "scale": 1,
         "offset": 0,
@@ -647,7 +874,7 @@ INPUT_REGISTER_MAP = {
         "name": "Max Water Temperature In Mixing Circuit",
         "unit": UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
-        "scale": 0.1, 
+        "scale": 1, # Assuming scale is 1, check manual
         "offset": 0,
         "writable": True,
         "description": "Max Water temperature in mixing circuit"
@@ -762,7 +989,7 @@ INPUT_REGISTER_MAP = {
         "description": "Outdoor air temperature to enable Backup heaters and disable compressor"
     },
     78: {
-        "name": "Outdoor Air Temperature Hysteresis To Disable Backup Heaters and Enable Compressor",
+        "name": "Outdoor Air Temperature Hysteresis To Disable Enable Compressor",
         "unit": UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
         "scale": 0.1,
@@ -954,166 +1181,198 @@ INPUT_REGISTER_MAP = {
     },
 }
 
-# Coil Registers (Read/Write boolean controls) (existing, assume correct)
+# Coil Registers (Read/Write boolean controls) (from the Grant Aerona3 Modbus documentation)
 COIL_REGISTER_MAP = {
     1: {
-        "name": "Operation At The Time Of Reboot After Blackout 0",
+        "name": "Operation At The Time Of Reboot After Blackout",
         "device_class": None,
-        "description": "Operation at the time of reboot after blackout 0 = disable 1 = enable"
+        "description": "Operation at the time of reboot after blackout (0=disable, 1=enable)",
+        "writable": True # Assuming this is a configurable option
     },
     2: {
         "name": "Heating Weather Compensation Zone 1",
         "device_class": None,
-        "description": "Heating Zone1, enable Outgoing water set point (0=Fixed set point, 1=Climatic curve)"
+        "description": "Heating Zone1, enable Outgoing water set point (0=Fixed set point, 1=Climatic curve)",
+        "writable": True # Assuming this is a configurable option
     },
     3: {
         "name": "Heating Weather Compensation Zone 2",
         "device_class": None,
-        "description": "Heating Zone2, enable Outgoing water set point (0=Fixed set point, 1=Climatic curve)"
+        "description": "Heating Zone2, enable Outgoing water set point (0=Fixed set point, 1=Climatic curve)",
+        "writable": True # Assuming this is a configurable option
     },
     4: {
         "name": "Cooling Weather Compensation Zone 1",
         "device_class": None,
-        "description": "Cooling Zone1, enable Outgoing water set point (0=Fixed set point, 1=Climatic curve)"
+        "description": "Cooling Zone1, enable Outgoing water set point (0=Fixed set point, 1=Climatic curve)",
+        "writable": True # Assuming this is a configurable option
     },
     5: {
         "name": "Cooling Weather Compensation Zone 2",
         "device_class": None,
-        "description": "Cooling Zone2, enable Outgoing water set point (0=Fixed set point, 1=Climatic Curve)"
+        "description": "Cooling Zone2, enable Outgoing water set point (0=Fixed set point, 1=Climatic Curve)",
+        "writable": True # Assuming this is a configurable option
     },
     6: {
         "name": "Anti-legionella Function",
         "device_class": None,
-        "description": "Anti-legionella function (0=disable, 1=enable)"
+        "description": "Anti-legionella function (0=disable, 1=enable)",
+        "writable": True # Assuming this is a configurable option
     },
     7: {
         "name": "The HP Unit Turns On/off Based On",
         "device_class": None,
-        "description": "The HP unit turns ON/OFF based on (0=Room set point, 1=Water set point)"
+        "description": "The HP unit turns ON/OFF based on (0=Room set point, 1=Water set point)",
+        "writable": True # Assuming this is a configurable option
     },
     8: {
         "name": "Frost Protection Based On Room Temperature",
         "device_class": None,
-        "description": "Frost Protection based on Room Temperature"
+        "description": "Frost Protection based on Room Temperature",
+        "writable": True # Assuming this is a configurable option
     },
     9: {
         "name": "Frost Protection Based On Outdoor Temperature",
         "device_class": None,
-        "description": "Frost protection by outdoor temperature 0=disable 1 = enable"
+        "description": "Frost protection by outdoor temperature (0=disable, 1=enable)",
+        "writable": True # Assuming this is a configurable option
     },
     10: {
         "name": "Frost Protection Based On Flow Temp",
         "device_class": None,
-        "description": "Frost protection based on Outgoing water temperature 0=disable 1 = enable"
+        "description": "Frost protection based on Outgoing water temperature (0=disable, 1=enable)",
+        "writable": True # Assuming this is a configurable option
     },
     11: {
         "name": "DHW Storage Frost Protection",
         "device_class": None,
-        "description": "DHW storage frost protection 0=disable 1 = enable"
+        "description": "DHW storage frost protection (0=disable, 1=enable)",
+        "writable": True # Assuming this is a configurable option
     },
     12: {
         "name": "Secondary System Circuit Frost Protection",
         "device_class": None,
-        "description": "Secondary system circuit frost protection 0=disable 1 = enable"
+        "description": "Secondary system circuit frost protection (0=disable, 1=enable)",
+        "writable": True # Assuming this is a configurable option
     },
     13: {
         "name": "Compensation For Room Humidity",
         "device_class": None,
-        "description": "Compensation for room humidity (0=disable, 1=enable)"
+        "description": "Compensation for room humidity (0=disable, 1=enable)",
+        "writable": True # Assuming this is a configurable option
     },
     14: {
         "name": "Conditions To Be Available Backup Heaters",
         "device_class": None,
-        "description": "Conditions to be available Backup heaters (0=always enabled, 1=depends on Outdoor Air temperature)"
+        "description": "Conditions to be available Backup heaters (0=always enabled, 1=depends on Outdoor Air temperature)",
+        "writable": True # Assuming this is a configurable option
     },
     15: {
         "name": "Terminal 41-42 : EHS (External heat source for space heating)",
         "device_class": None,
-        "description": "Terminal 41-42 : EHS (0=disable, 1=enable)"
+        "description": "Terminal 41-42 : EHS (0=disable, 1=enable)",
+        "writable": True # Assuming this is a configurable option
     },
     16: {
         "name": "Terminal 1-2-3 : Remote Controller",
         "device_class": None,
-        "description": "Terminal 1-2-3 : Remote Controller (0=disable, 1=enable)"
+        "description": "Terminal 1-2-3 : Remote Controller (0=disable, 1=enable)",
+        "writable": True # Assuming this is a configurable option
     },
     17: {
         "name": "Terminal 4-5-6 : 3way Mixing Valve",
         "device_class": None,
-        "description": "Terminal 4-5-6 : 3way mixing valve (0=disable, 1=enable)"
+        "description": "Terminal 4-5-6 : 3way mixing valve (0=disable, 1=enable)",
+        "writable": True # Assuming this is a configurable option
     },
     18: {
         "name": "Terminal 7-8 : DHW Tank Temperature Probe",
         "device_class": None,
-        "description": "Terminal 7-8 : DHW tank temperature probe (0=disable, 1=enable)"
+        "description": "Terminal 7-8 : DHW tank temperature probe (0=disable, 1=enable)",
+        "writable": True # Assuming this is a configurable option
     },
     19: {
         "name": "Terminal 9-10 : Outdoor Air Temperature Probe",
         "device_class": None,
-        "description": "Terminal 9-10 : Outdoor air temperature probe (additional) (0=disable, 1=enable)"
+        "description": "Terminal 9-10 : Outdoor air temperature probe (additional) (0=disable, 1=enable)",
+        "writable": True # Assuming this is a configurable option
     },
     20: {
         "name": "Terminal 11-12 : Buffer Tank Temperature Probe",
         "device_class": None,
-        "description": "Terminal 11-12 : Buffer tank temperature probe (0=disable, 1=enable)"
+        "description": "Terminal 11-12 : Buffer tank temperature probe (0=disable, 1=enable)",
+        "writable": True # Assuming this is a configurable option
     },
     21: {
         "name": "Terminal 13-14 : Mix Water Temperature Probe",
         "device_class": None,
-        "description": "Terminal 13-14 : Mix Water temperature probe (0=disable, 1=enable)"
+        "description": "Terminal 13-14 : Mix Water temperature probe (0=disable, 1=enable)",
+        "writable": True # Assuming this is a configurable option
     },
     22: {
         "name": "Terminal 15-16-32 : Rs485 Mod Bus",
         "device_class": None,
-        "description": "Terminal 15-16-32 : RS485 Mod Bus (0=disable, 1=enable)"
+        "description": "Terminal 15-16-32 : RS485 Mod Bus (0=disable, 1=enable)",
+        "writable": True # Assuming this is a configurable option
     },
     23: {
         "name": "Terminal 17-18 : Humidity Sensor",
         "device_class": None,
-        "description": "Terminal 17-18 : Humidity sensor (0=disable, 1=enable)"
+        "description": "Terminal 17-18 : Humidity sensor (0=disable, 1=enable)",
+        "writable": True # Assuming this is a configurable option
     },
     24: {
         "name": "Terminal 19-18 : DHW Remote Contact",
         "device_class": None,
-        "description": "Terminal 19-18 : DHW remote contact (0=disable (Remote controller only), 1=enable)"
+        "description": "Terminal 19-18 : DHW remote contact (0=disable (Remote controller only), 1=enable)",
+        "writable": True # Assuming this is a configurable option
     },
     25: {
         "name": "Terminal 22-23 : Dual Set Point Control",
         "device_class": None,
-        "description": "Terminal 22-23 : Dual set point control (0=disable, 1=enable)"
+        "description": "Terminal 22-23 : Dual set point control (0=disable, 1=enable)",
+        "writable": True # Assuming this is a configurable option
     },
     26: {
         "name": "Terminal 26-27 : Flow Switch",
         "device_class": None,
-        "description": "Terminal 26-27 : Flow switch (0=disable, 1=enable)"
+        "description": "Terminal 26-27 : Flow switch (0=disable, 1=enable)",
+        "writable": True # Assuming this is a configurable option
     },
     27: {
         "name": "Terminal 28-29 : Night Mode",
         "device_class": None,
-        "description": "Terminal 28-29 : Night mode (0=disable (Remote controller only), 1=enable)"
+        "description": "Terminal 28-29 : Night mode (0=disable (Remote controller only), 1=enable)",
+        "writable": True # Assuming this is a configurable option
     },
     28: {
         "name": "Terminal 30-31 : Low Tariff",
         "device_class": None,
-        "description": "Terminal 30-31 : Low tariff (0=disable (Remote controller only), 1=enable)"
+        "description": "Terminal 30-31 : Low tariff (0=disable (Remote controller only), 1=enable)",
+        "writable": True # Assuming this is a configurable option
     },
     29: {
         "name": "Terminal 41-42 : EHS",
         "device_class": None,
-        "description": "Terminal 41-42 : EHS (External heat source for space heating) (0=disable, 1=enable)"
+        "description": "Terminal 41-42 : EHS (External heat source for space heating) (0=disable, 1=enable)",
+        "writable": True # Assuming this is a configurable option
     },
     30: {
         "name": "Terminal 43-44 : Heating/cooling Mode Output",
         "device_class": None,
-        "description": "Terminal 43-44 : Heating/Cooling mode output (0=disable, 1=Indication of Cooling mode (CLOSE=Cooling), 2=indication of Heating mode (CLOSE=Heating))"
+        "description": "Terminal 43-44 : Heating/Cooling mode output (0=disable, 1=Indication of Cooling mode (CLOSE=Cooling), 2=indication of Heating mode (CLOSE=Heating))",
+        "writable": True # Assuming this is a configurable option
     },
     31: {
         "name": "Terminal 45 : Dehumidifier",
         "device_class": None,
-        "description": "Terminal 45 : Dehumidifier (0=disable, 1=enable)"
+        "description": "Terminal 45 : Dehumidifier (0=disable, 1=enable)",
+        "writable": True # Assuming this is a configurable option
     },
     32: {
         "name": "Terminal 46 : DHW Electric Heater Or Backup Heater",
         "device_class": None,
-        "description": "Terminal 46 : DHW Electric heater or Backup heater (0=DHW Electric heater, 1=Backup heater)"
+        "description": "Terminal 46 : DHW Electric heater or Backup heater (0=DHW Electric heater, 1=Backup heater)",
+        "writable": True # Assuming this is a configurable option
     },
 }
