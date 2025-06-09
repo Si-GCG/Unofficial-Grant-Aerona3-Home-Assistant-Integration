@@ -15,7 +15,6 @@ _LOGGER = logging.getLogger(__name__)
 # These selections will influence which other configuration options or entities become relevant.
 SYSTEM_ELEMENTS = {
     "hot_water_cylinder": "Hot Water Cylinder (DHW)",
-    # Removed "underfloor_heating" and "radiators" from here to avoid redundancy with HEATING_TYPES
     "buffer_tank": "Buffer Tank",
     "cooling_mode_enabled": "ASHP unit supports Cooling Mode (e.g., AEYC-1242XU)",
     "backup_electric_heater": "Backup Electric Heater (Immersion/External)",
@@ -72,7 +71,9 @@ class GrantAerona3ConfigFlow(config_entries.ConfigFlow):
     """Grant Aerona3 config flow for initial setup."""
 
     VERSION = 1
-    DOMAIN = "grant_aerona3"  # Add this line
+    # IMPORTANT: This DOMAIN attribute is crucial for Home Assistant to correctly
+    # identify and load your configuration flow. Make sure it matches your integration's domain.
+    DOMAIN = "grant_aerona3"
     CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_PUSH
 
     async def async_step_user(self, user_input=None):
@@ -295,7 +296,7 @@ class GrantAerona3OptionsFlow(config_entries.OptionsFlow):
                 CONF_THREE_WAY_MIXING_VALVE_ENTITY,
                 default=current_options.get(CONF_THREE_WAY_MIXING_VALVE_ENTITY, "")
             )] = selector.EntitySelector(
-                selector.EntitySelectorConfig(domain="valve", multiple=False) # Assuming a valve entity type
+                selector.EntitySelectorConfig(domain="valve", multiple=False)
             )
 
         if "backup_electric_heater" in selected_elements:
@@ -319,7 +320,7 @@ class GrantAerona3OptionsFlow(config_entries.OptionsFlow):
                 CONF_EXTERNAL_FLOW_SWITCH_ENTITY,
                 default=current_options.get(CONF_EXTERNAL_FLOW_SWITCH_ENTITY, "")
             )] = selector.EntitySelector(
-                selector.EntitySelectorConfig(domain="binary_sensor", device_class="motion", multiple=False) # motion for flow detection
+                selector.EntitySelectorConfig(domain="binary_sensor", device_class="motion", multiple=False)
             )
 
         if "humidity_sensor_present" in selected_elements:
