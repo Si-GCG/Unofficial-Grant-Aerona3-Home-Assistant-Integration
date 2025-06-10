@@ -82,7 +82,7 @@ class GrantAerona3InputSensor(CoordinatorEntity, SensorEntity):
         # Device info
         self._attr_device_info = {
             "identifiers": {(DOMAIN, config_entry.entry_id)},
-            "name": "Grant Aerona3 Heat Pump",
+            "name": "ASHP",
             "manufacturer": MANUFACTURER,
             "model": MODEL,
             "sw_version": "1.0.0",
@@ -182,7 +182,7 @@ class GrantAerona3HoldingSensor(CoordinatorEntity, SensorEntity):
         # Device info
         self._attr_device_info = {
             "identifiers": {(DOMAIN, config_entry.entry_id)},
-            "name": "Grant Aerona3 Heat Pump",
+            "name": "ASHP",
             "manufacturer": MANUFACTURER,
             "model": MODEL,
             "sw_version": "1.0.0",
@@ -260,14 +260,14 @@ class GrantAerona3PowerSensor(CoordinatorEntity, SensorEntity):
         super().__init__(coordinator)
 
         self._attr_unique_id = f"{config_entry.entry_id}_power_consumption"
-        self._attr_name = "Grant Aerona3 Power Consumption"
+        self._attr_name = "Power Consumption"
         self._attr_native_unit_of_measurement = UnitOfPower.WATT
         self._attr_device_class = SensorDeviceClass.POWER
         self._attr_state_class = SensorStateClass.MEASUREMENT
 
         self._attr_device_info = {
             "identifiers": {(DOMAIN, config_entry.entry_id)},
-            "name": "Grant Aerona3 Heat Pump",
+            "name": "ASHP",
             "manufacturer": MANUFACTURER,
             "model": MODEL,
             "sw_version": "1.0.0",
@@ -295,14 +295,14 @@ class GrantAerona3COPSensor(CoordinatorEntity, SensorEntity):
         super().__init__(coordinator)
 
         self._attr_unique_id = f"{config_entry.entry_id}_cop"
-        self._attr_name = "Grant Aerona3 COP"
+        self._attr_name = "COP"
         self._attr_native_unit_of_measurement = None
         self._attr_state_class = SensorStateClass.MEASUREMENT
         self._attr_icon = "mdi:thermometer-chevron-up"
 
         self._attr_device_info = {
             "identifiers": {(DOMAIN, config_entry.entry_id)},
-            "name": "Grant Aerona3 Heat Pump",
+            "name": "ASHP",
             "manufacturer": MANUFACTURER,
             "model": MODEL,
             "sw_version": "1.0.0",
@@ -381,7 +381,7 @@ class GrantAerona3COPSensor(CoordinatorEntity, SensorEntity):
             attributes.update({
                 "calculation_method": "simplified_estimation",
                 "note": "Simplified COP calculation - configure flow rate for accuracy",
-                "how_to_improve": "Set the 'Grant Aerona3 Flow Rate' number entity to your measured flow rate"
+                "how_to_improve": "Set the 'Flow Rate' number entity to your measured flow rate"
             })
 
         return attributes
@@ -399,13 +399,13 @@ class GrantAerona3EfficiencySensor(CoordinatorEntity, SensorEntity):
         super().__init__(coordinator)
 
         self._attr_unique_id = f"{config_entry.entry_id}_system_efficiency"
-        self._attr_name = "Grant Aerona3 System Efficiency"
+        self._attr_name = "System Efficiency"
         self._attr_native_unit_of_measurement = PERCENTAGE
         self._attr_icon = "mdi:gauge"
 
         self._attr_device_info = {
             "identifiers": {(DOMAIN, config_entry.entry_id)},
-            "name": "Grant Aerona3 Heat Pump",
+            "name": "ASHP",
             "manufacturer": MANUFACTURER,
             "model": MODEL,
             "sw_version": "1.0.0",
@@ -458,14 +458,14 @@ class GrantAerona3EnergySensor(CoordinatorEntity, SensorEntity):
         super().__init__(coordinator)
 
         self._attr_unique_id = f"{config_entry.entry_id}_energy_consumption"
-        self._attr_name = "Grant Aerona3 Energy Consumption"
+        self._attr_name = "Energy Consumption"
         self._attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
         self._attr_device_class = SensorDeviceClass.ENERGY
         self._attr_state_class = SensorStateClass.TOTAL_INCREASING
 
         self._attr_device_info = {
             "identifiers": {(DOMAIN, config_entry.entry_id)},
-            "name": "Grant Aerona3 Heat Pump",
+            "name": "ASHP",
             "manufacturer": MANUFACTURER,
             "model": MODEL,
             "sw_version": "1.0.0",

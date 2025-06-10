@@ -64,7 +64,7 @@ class GrantAerona3HoldingNumber(CoordinatorEntity, NumberEntity):
         # Device info
         self._attr_device_info = {
             "identifiers": {(DOMAIN, config_entry.entry_id)},
-            "name": "Grant Aerona3 Heat Pump",
+            "name": "ASHP",
             "manufacturer": MANUFACTURER,
             "model": MODEL,
             "sw_version": "1.0.0",
@@ -215,7 +215,7 @@ class GrantAerona3FlowRateNumber(CoordinatorEntity, NumberEntity):
         super().__init__(coordinator)
 
         self._attr_unique_id = f"{config_entry.entry_id}_flow_rate_config"
-        self._attr_name = "Grant Aerona3 Flow Rate"
+        self._attr_name = "Flow Rate"
         self._attr_native_unit_of_measurement = "L/min"
         self._attr_mode = NumberMode.BOX
         self._attr_native_min_value = 10.0
@@ -227,7 +227,7 @@ class GrantAerona3FlowRateNumber(CoordinatorEntity, NumberEntity):
         # Device info
         self._attr_device_info = {
             "identifiers": {(DOMAIN, config_entry.entry_id)},
-            "name": "Grant Aerona3 Heat Pump",
+            "name": "ASHP",
             "manufacturer": MANUFACTURER,
             "model": MODEL,
             "sw_version": "1.0.0",

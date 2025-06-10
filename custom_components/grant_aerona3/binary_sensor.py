@@ -67,7 +67,7 @@ class GrantAerona3CoilBinarySensor(CoordinatorEntity, BinarySensorEntity):
         # Device info
         self._attr_device_info = {
             "identifiers": {(DOMAIN, config_entry.entry_id)},
-            "name": "Grant Aerona3 Heat Pump",
+            "name": "ASHP",
             "manufacturer": MANUFACTURER,
             "model": MODEL,
             "sw_version": "1.0.0",
