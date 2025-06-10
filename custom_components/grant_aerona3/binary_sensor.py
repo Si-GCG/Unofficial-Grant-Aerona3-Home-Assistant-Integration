@@ -267,7 +267,7 @@ class GrantAerona3ErrorStatusSensor(CoordinatorEntity, BinarySensorEntity):
         super().__init__(coordinator)
 
         self._attr_unique_id = f"{config_entry.entry_id}_error_status"
-        self._attr_name = Error Status"
+        self._attr_name = "Error Status"
         self._attr_device_class = BinarySensorDeviceClass.PROBLEM
         self._attr_entity_category = EntityCategory.DIAGNOSTIC
 
