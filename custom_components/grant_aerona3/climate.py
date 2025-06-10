@@ -56,7 +56,7 @@ class GrantAerona3Climate(CoordinatorEntity, ClimateEntity):
         self._zone = zone
 
         self._attr_unique_id = f"{config_entry.entry_id}_climate_zone_{zone}"
-        self._attr_name = f"Grant Aerona3 Zone {zone}"
+        self._attr_name = f"Zone {zone}"
 
         # Device info
         self._attr_device_info = {

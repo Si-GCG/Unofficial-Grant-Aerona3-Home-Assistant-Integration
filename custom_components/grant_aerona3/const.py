@@ -167,7 +167,7 @@ INPUT_REGISTER_MAP = {
         "unit": UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
         "state_class": SensorStateClass.MEASUREMENT,
-        "scale": 0.1,
+        "scale": 1,
         "offset": 0,
         "description": "Outgoing water temperature"
     },

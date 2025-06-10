@@ -66,7 +66,7 @@ async def validate_connection(hass: HomeAssistant, data: Dict[str, Any]) -> Dict
     await hass.async_add_executor_job(_test_connection)
 
     # Return info that you want to store in the config entry
-    return {"title": f"Grant Aerona3 ({data[CONF_HOST]})"}
+    return {"title": f"({data[CONF_HOST]})"}
 
 
 class GrantAerona3ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):

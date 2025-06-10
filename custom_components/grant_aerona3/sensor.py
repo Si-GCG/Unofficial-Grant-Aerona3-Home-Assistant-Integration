@@ -77,7 +77,7 @@ class GrantAerona3InputSensor(CoordinatorEntity, SensorEntity):
         self._register_config = INPUT_REGISTER_MAP[register_id]
 
         self._attr_unique_id = f"{config_entry.entry_id}_input_{register_id}"
-        self._attr_name = f"Grant Aerona3 {self._register_config['name']}"
+        self._attr_name = f"{self._register_config['name']}"
 
         # Device info
         self._attr_device_info = {
@@ -177,7 +177,7 @@ class GrantAerona3HoldingSensor(CoordinatorEntity, SensorEntity):
         self._register_config = HOLDING_REGISTER_MAP[register_id]
 
         self._attr_unique_id = f"{config_entry.entry_id}_holding_{register_id}"
-        self._attr_name = f"Grant Aerona3 {self._register_config['name']}"
+        self._attr_name = f"{self._register_config['name']}"
 
         # Device info
         self._attr_device_info = {
