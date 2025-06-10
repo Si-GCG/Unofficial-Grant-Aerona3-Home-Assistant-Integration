@@ -152,12 +152,12 @@ class GrantAerona3SystemStatusSensor(CoordinatorEntity, BinarySensorEntity):
         super().__init__(coordinator)
 
         self._attr_unique_id = f"{config_entry.entry_id}_system_status"
-        self._attr_name = "Grant Aerona3 System Status"
+        self._attr_name = "System Status"
         self._attr_device_class = BinarySensorDeviceClass.RUNNING
 
         self._attr_device_info = {
             "identifiers": {(DOMAIN, config_entry.entry_id)},
-            "name": "Grant Aerona3 Heat Pump",
+            "name": "ASHP",
             "manufacturer": MANUFACTURER,
             "model": MODEL,
             "sw_version": "1.0.0",
@@ -208,13 +208,13 @@ class GrantAerona3DefrostModeSensor(CoordinatorEntity, BinarySensorEntity):
         super().__init__(coordinator)
 
         self._attr_unique_id = f"{config_entry.entry_id}_defrost_mode"
-        self._attr_name = "Grant Aerona3 Defrost Mode"
+        self._attr_name = "Defrost Mode"
         self._attr_device_class = BinarySensorDeviceClass.RUNNING
         self._attr_icon = "mdi:snowflake-melt"
 
         self._attr_device_info = {
             "identifiers": {(DOMAIN, config_entry.entry_id)},
-            "name": "Grant Aerona3 Heat Pump",
+            "name": "ASHP",
             "manufacturer": MANUFACTURER,
             "model": MODEL,
             "sw_version": "1.0.0",
@@ -267,13 +267,13 @@ class GrantAerona3ErrorStatusSensor(CoordinatorEntity, BinarySensorEntity):
         super().__init__(coordinator)
 
         self._attr_unique_id = f"{config_entry.entry_id}_error_status"
-        self._attr_name = "Grant Aerona3 Error Status"
+        self._attr_name = Error Status"
         self._attr_device_class = BinarySensorDeviceClass.PROBLEM
         self._attr_entity_category = EntityCategory.DIAGNOSTIC
 
         self._attr_device_info = {
             "identifiers": {(DOMAIN, config_entry.entry_id)},
-            "name": "Grant Aerona3 Heat Pump",
+            "name": "ASHP",
             "manufacturer": MANUFACTURER,
             "model": MODEL,
             "sw_version": "1.0.0",
