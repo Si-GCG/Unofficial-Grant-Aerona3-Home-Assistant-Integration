@@ -10,18 +10,18 @@
   description: "Notify when heat pump COP is consistently low"
   trigger:
     - platform: numeric_state
-      entity_id: sensor.grant_aerona3_cop
+      entity_id: sensor.cop
       below: 2.0
       for: "00:30:00"
   condition:
     - condition: state
-      entity_id: binary_sensor.grant_aerona3_system_status
+      entity_id: binary_sensor.system_status
       state: "on"  # Only alert when system is running
   action:
     - service: notify.mobile_app_your_phone
       data:
         title: "🔥 Heat Pump Efficiency Low"
-        message: "COP has been {{ states('sensor.grant_aerona3_cop') }} for 30 minutes. Check system operation."
+        message: "COP has been {{ states('sensor.cop') }} for 30 minutes. Check system operation."
         data:
           actions:
             - action: "VIEW_DASHBOARD"
@@ -35,17 +35,17 @@
       at: "22:00:00"
   condition:
     - condition: template
-      value_template: "{{ states('sensor.grant_aerona3_cop') not in ['unknown', 'unavailable'] }}"
+      value_template: "{{ states('sensor.cop') not in ['unknown', 'unavailable'] }}"
   action:
     - service: notify.mobile_app_your_phone
       data:
         title: "📊 Daily Heat Pump Report"
         message: |
           Today's Performance:
-          • Average COP: {{ states('sensor.grant_aerona3_cop') }}
-          • Power Usage: {{ states('sensor.grant_aerona3_power_consumption') }}W
-          • Outdoor Temp: {{ states('sensor.grant_aerona3_outdoor_air_temperature') }}°C
-          • Energy Today: {{ state_attr('sensor.grant_aerona3_energy_consumption', 'daily_total') | default('N/A') }}kWh
+          • Average COP: {{ states('sensor.cop') }}
+          • Power Usage: {{ states('sensor.power_consumption') }}W
+          • Outdoor Temp: {{ states('sensor.outdoor_air_temperature') }}°C
+          • Energy Today: {{ state_attr('sensor.energy_consumption', 'daily_total') | default('N/A') }}kWh
 
 #==============================================================================
 # SEASONAL OPTIMIZATION
@@ -56,34 +56,34 @@
   description: "Turn on weather compensation when temperatures drop"
   trigger:
     - platform: numeric_state
-      entity_id: sensor.grant_aerona3_outdoor_air_temperature
+      entity_id: sensor.outdoor_air_temperature
       below: 10
       for: "02:00:00"  # Wait 2 hours to avoid false triggers
   condition:
     - condition: state
-      entity_id: switch.grant_aerona3_heating_weather_compensation_zone_1
+      entity_id: switch.heating_weather_compensation_zone_1
       state: "off"
   action:
     - service: switch.turn_on
       target:
-        entity_id: switch.grant_aerona3_heating_weather_compensation_zone_1
+        entity_id: switch.heating_weather_compensation_zone_1
     - service: notify.mobile_app_your_phone
       data:
         title: "❄️ Weather Compensation Enabled"
-        message: "Outdoor temperature is {{ states('sensor.grant_aerona3_outdoor_air_temperature') }}°C. Weather compensation activated for better efficiency."
+        message: "Outdoor temperature is {{ states('sensor.outdoor_air_temperature') }}°C. Weather compensation activated for better efficiency."
 
 # Optimize for mild weather
 - alias: "Optimize for Mild Weather"
   description: "Adjust settings when weather is mild"
   trigger:
     - platform: numeric_state
-      entity_id: sensor.grant_aerona3_outdoor_air_temperature
+      entity_id: sensor.outdoor_air_temperature
       above: 15
       for: "04:00:00"
   action:
     - service: number.set_value
       target:
-        entity_id: number.grant_aerona3_fixed_flow_temp_zone_1
+        entity_id: number.fixed_flow_temp_zone_1
       data:
         value: 30  # Lower flow temperature for mild weather
     - service: notify.mobile_app_your_phone
@@ -103,12 +103,12 @@
       at: "06:00:00"
   condition:
     - condition: state
-      entity_id: switch.grant_aerona3_terminal_7_8_dhw_tank_temperature_probe
+      entity_id: switch.terminal_7_8_dhw_tank_temperature_probe
       state: "on"  # Only if DHW is configured
   action:
     - service: number.set_value
       target:
-        entity_id: number.grant_aerona3_dhw_comfort_set_temperature
+        entity_id: number.dhw_comfort_set_temperature
       data:
         value: 55  # Boost to 55°C for morning usage
 
@@ -121,7 +121,7 @@
   action:
     - service: number.set_value
       target:
-        entity_id: number.grant_aerona3_dhw_comfort_set_temperature
+        entity_id: number.dhw_comfort_set_temperature
       data:
         value: 45  # Reduce to 45°C overnight
 
@@ -130,7 +130,7 @@
   description: "Alert when DHW temperature is too low"
   trigger:
     - platform: numeric_state
-      entity_id: sensor.grant_aerona3_dhw_tank_temperature
+      entity_id: sensor.dhw_tank_temperature
       below: 40
       for: "01:00:00"
   condition:
@@ -141,7 +141,7 @@
     - service: notify.mobile_app_your_phone
       data:
         title: "🚿 Low Hot Water Temperature"
-        message: "DHW tank is only {{ states('sensor.grant_aerona3_dhw_tank_temperature') }}°C. Consider boosting temperature."
+        message: "DHW tank is only {{ states('sensor.dhw_tank_temperature') }}°C. Consider boosting temperature."
         data:
           actions:
             - action: "BOOST_DHW"
@@ -156,7 +156,7 @@
   description: "Alert when heat pump reports errors"
   trigger:
     - platform: state
-      entity_id: binary_sensor.grant_aerona3_error_status
+      entity_id: binary_sensor.error_status
       to: "on"
   action:
     - service: notify.mobile_app_your_phone
@@ -175,31 +175,31 @@
   description: "Alert when power consumption is unusually high"
   trigger:
     - platform: numeric_state
-      entity_id: sensor.grant_aerona3_power_consumption
+      entity_id: sensor.power_consumption
       above: 8000  # Adjust based on your heat pump size
       for: "00:15:00"
   action:
     - service: notify.mobile_app_your_phone
       data:
         title: "⚡ High Power Usage"
-        message: "Heat pump using {{ states('sensor.grant_aerona3_power_consumption') }}W for 15 minutes. Check for issues."
+        message: "Heat pump using {{ states('sensor.power_consumption') }}W for 15 minutes. Check for issues."
 
 # Defrost cycle notification (optional - can be normal)
 - alias: "Defrost Cycle Notification"
   description: "Notify about defrost cycles (for monitoring purposes)"
   trigger:
     - platform: state
-      entity_id: binary_sensor.grant_aerona3_defrost_mode
+      entity_id: binary_sensor.defrost_mode
       to: "on"
   condition:
     - condition: numeric_state
-      entity_id: sensor.grant_aerona3_outdoor_air_temperature
+      entity_id: sensor.outdoor_air_temperature
       below: 5  # Only notify in cold weather when defrost is expected
   action:
     - service: notify.mobile_app_your_phone
       data:
         title: "❄️ Defrost Cycle Started"
-        message: "Heat pump entered defrost mode. Outdoor temp: {{ states('sensor.grant_aerona3_outdoor_air_temperature') }}°C"
+        message: "Heat pump entered defrost mode. Outdoor temp: {{ states('sensor.outdoor_air_temperature') }}°C"
         data:
           tag: "defrost_cycle"
 
@@ -215,14 +215,14 @@
       at: "22:30:00"
   condition:
     - condition: numeric_state
-      entity_id: sensor.grant_aerona3_outdoor_air_temperature
+      entity_id: sensor.outdoor_air_temperature
       above: 5  # Only when not too cold
   action:
     - service: number.set_value
       target:
-        entity_id: number.grant_aerona3_fixed_flow_temp_zone_1
+        entity_id: number.fixed_flow_temp_zone_1
       data:
-        value: "{{ states('number.grant_aerona3_fixed_flow_temp_zone_1') | float - 3 }}"  # Reduce by 3°C
+        value: "{{ states('number.fixed_flow_temp_zone_1') | float - 3 }}"  # Reduce by 3°C
 
 # Morning warmup
 - alias: "Heat Pump Morning Warmup"
@@ -233,9 +233,9 @@
   action:
     - service: number.set_value
       target:
-        entity_id: number.grant_aerona3_fixed_flow_temp_zone_1
+        entity_id: number.fixed_flow_temp_zone_1
       data:
-        value: "{{ states('number.grant_aerona3_fixed_flow_temp_zone_1') | float + 3 }}"  # Restore temperature
+        value: "{{ states('number.fixed_flow_temp_zone_1') | float + 3 }}"  # Restore temperature
 
 # Away mode
 - alias: "Heat Pump Away Mode"
@@ -248,7 +248,7 @@
   action:
     - service: number.set_value
       target:
-        entity_id: number.grant_aerona3_fixed_flow_temp_zone_1
+        entity_id: number.fixed_flow_temp_zone_1
       data:
         value: 25  # Minimum heating to prevent pipes freezing
     - service: notify.mobile_app_your_phone
@@ -265,12 +265,12 @@
       to: "home"
   condition:
     - condition: numeric_state
-      entity_id: number.grant_aerona3_fixed_flow_temp_zone_1
+      entity_id: number.fixed_flow_temp_zone_1
       below: 30  # Only if currently in away mode
   action:
     - service: number.set_value
       target:
-        entity_id: number.grant_aerona3_fixed_flow_temp_zone_1
+        entity_id: number.fixed_flow_temp_zone_1
       data:
         value: 35  # Restore normal heating
     - service: notify.mobile_app_your_phone
@@ -290,12 +290,12 @@
       at: "23:30:00"  # Start of cheap rate (adjust for your tariff)
   condition:
     - condition: numeric_state
-      entity_id: sensor.grant_aerona3_dhw_tank_temperature
+      entity_id: sensor.dhw_tank_temperature
       below: 50  # Only if DHW needs heating
   action:
     - service: number.set_value
       target:
-        entity_id: number.grant_aerona3_dhw_comfort_set_temperature
+        entity_id: number.dhw_comfort_set_temperature
       data:
         value: 60  # Heat to maximum during cheap rate
 
@@ -307,14 +307,14 @@
       at: "17:00:00"  # Start of peak rate (adjust for your tariff)
   condition:
     - condition: numeric_state
-      entity_id: sensor.grant_aerona3_outdoor_air_temperature
+      entity_id: sensor.outdoor_air_temperature
       above: 0  # Only when not too cold
   action:
     - service: number.set_value
       target:
-        entity_id: number.grant_aerona3_fixed_flow_temp_zone_1
+        entity_id: number.fixed_flow_temp_zone_1
       data:
-        value: "{{ [states('number.grant_aerona3_fixed_flow_temp_zone_1') | float - 2, 25] | max }}"  # Reduce by 2°C, minimum 25°C
+        value: "{{ [states('number.fixed_flow_temp_zone_1') | float - 2, 25] | max }}"  # Reduce by 2°C, minimum 25°C
 
 #==============================================================================
 # MAINTENANCE REMINDERS
@@ -333,7 +333,7 @@
     - service: notify.mobile_app_your_phone
       data:
         title: "🔧 Monthly Maintenance"
-        message: "Time to check and clean heat pump filters. Current system runtime: {{ states('sensor.grant_aerona3_compressor_operating_frequency') }}Hz"
+        message: "Time to check and clean heat pump filters. Current system runtime: {{ states('sensor.compressor_operating_frequency') }}Hz"
         data:
           actions:
             - action: "MAINTENANCE_DONE"
@@ -352,7 +352,7 @@
     - service: notify.mobile_app_your_phone
       data:
         title: "🔧 Annual Service Due"
-        message: "Time to book annual heat pump service. Current energy consumption: {{ states('sensor.grant_aerona3_energy_consumption') }}kWh total"
+        message: "Time to book annual heat pump service. Current energy consumption: {{ states('sensor.energy_consumption') }}kWh total"
 
 #==============================================================================
 # ADVANCED OPTIMIZATION
@@ -366,41 +366,41 @@
       hours: "/1"  # Check every hour
   condition:
     - condition: state
-      entity_id: binary_sensor.grant_aerona3_system_status
+      entity_id: binary_sensor.system_status
       state: "on"
     - condition: numeric_state
-      entity_id: sensor.grant_aerona3_cop
+      entity_id: sensor.cop
       above: 0  # Valid COP reading
   action:
     - choose:
         # If COP is very high, try reducing flow temperature
         - conditions:
             - condition: numeric_state
-              entity_id: sensor.grant_aerona3_cop
+              entity_id: sensor.cop
               above: 4.5
             - condition: numeric_state
-              entity_id: number.grant_aerona3_fixed_flow_temp_zone_1
+              entity_id: number.fixed_flow_temp_zone_1
               above: 30
           sequence:
             - service: number.set_value
               target:
-                entity_id: number.grant_aerona3_fixed_flow_temp_zone_1
+                entity_id: number.fixed_flow_temp_zone_1
               data:
-                value: "{{ states('number.grant_aerona3_fixed_flow_temp_zone_1') | float - 1 }}"
+                value: "{{ states('number.fixed_flow_temp_zone_1') | float - 1 }}"
         # If COP is low, try increasing flow temperature slightly
         - conditions:
             - condition: numeric_state
-              entity_id: sensor.grant_aerona3_cop
+              entity_id: sensor.cop
               below: 2.5
             - condition: numeric_state
-              entity_id: number.grant_aerona3_fixed_flow_temp_zone_1
+              entity_id: number.fixed_flow_temp_zone_1
               below: 45
           sequence:
             - service: number.set_value
               target:
-                entity_id: number.grant_aerona3_fixed_flow_temp_zone_1
+                entity_id: number.fixed_flow_temp_zone_1
               data:
-                value: "{{ states('number.grant_aerona3_fixed_flow_temp_zone_1') | float + 1 }}"
+                value: "{{ states('number.fixed_flow_temp_zone_1') | float + 1 }}"
 
 # Weather forecast optimization
 - alias: "Weather Forecast Heat Pump Optimization"
@@ -414,7 +414,7 @@
   action:
     - service: number.set_value
       target:
-        entity_id: number.grant_aerona3_dhw_comfort_set_temperature
+        entity_id: number.dhw_comfort_set_temperature
       data:
         value: 55  # Pre-heat DHW before cold snap
     - service: notify.mobile_app_your_phone
@@ -436,14 +436,14 @@
       for: "00:10:00"
   condition:
     - condition: numeric_state
-      entity_id: sensor.grant_aerona3_outdoor_air_temperature
+      entity_id: sensor.outdoor_air_temperature
       below: 15  # Only when heating might be beneficial
   action:
     - service: number.set_value
       target:
-        entity_id: number.grant_aerona3_fixed_flow_temp_zone_1
+        entity_id: number.fixed_flow_temp_zone_1
       data:
-        value: "{{ [states('number.grant_aerona3_fixed_flow_temp_zone_1') | float + 3, 50] | min }}"  # Boost by 3°C, max 50°C
+        value: "{{ [states('number.fixed_flow_temp_zone_1') | float + 3, 50] | min }}"  # Boost by 3°C, max 50°C
     - service: notify.mobile_app_your_phone
       data:
         title: "☀️ Solar Boost Active"
@@ -464,7 +464,7 @@
   action:
     - service: number.set_value
       target:
-        entity_id: number.grant_aerona3_fixed_flow_temp_zone_1
+        entity_id: number.fixed_flow_temp_zone_1
       data:
         value: 28  # Reduced heating when unoccupied
 
@@ -483,7 +483,7 @@
   action:
     - service: number.set_value
       target:
-        entity_id: number.grant_aerona3_dhw_comfort_set_temperature
+        entity_id: number.dhw_comfort_set_temperature
       data:
         value: 60
     - service: notify.mobile_app_your_phone
@@ -507,10 +507,10 @@
         name: "Heat Pump Daily Stats"
         message: |
           Daily Summary:
-          • Avg COP: {{ state_attr('sensor.grant_aerona3_cop', 'daily_average') | default('N/A') }}
-          • Peak Power: {{ state_attr('sensor.grant_aerona3_power_consumption', 'daily_max') | default('N/A') }}W
-          • Runtime: {{ state_attr('sensor.grant_aerona3_compressor_operating_frequency', 'daily_runtime') | default('N/A') }}h
-          • Outdoor Range: {{ state_attr('sensor.grant_aerona3_outdoor_air_temperature', 'daily_min') | default('N/A') }}°C to {{ state_attr('sensor.grant_aerona3_outdoor_air_temperature', 'daily_max') | default('N/A') }}°C
+          • Avg COP: {{ state_attr('sensor.cop', 'daily_average') | default('N/A') }}
+          • Peak Power: {{ state_attr('sensor.power_consumption', 'daily_max') | default('N/A') }}W
+          • Runtime: {{ state_attr('sensor.compressor_operating_frequency', 'daily_runtime') | default('N/A') }}h
+          • Outdoor Range: {{ state_attr('sensor.outdoor_air_temperature', 'daily_min') | default('N/A') }}°C to {{ state_attr('sensor.outdoor_air_temperature', 'daily_max') | default('N/A') }}°C
 
 #==============================================================================
 # USAGE NOTES

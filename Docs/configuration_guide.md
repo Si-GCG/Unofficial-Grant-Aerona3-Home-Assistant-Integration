@@ -38,68 +38,68 @@ The integration automatically creates **150+ entities** across multiple platform
 ### Temperature Sensors
 | Entity | Description | Typical Range | Units |
 |--------|-------------|---------------|-------|
-| `sensor.grant_aerona3_return_water_temperature` | Water returning to heat pump | 25-45°C | °C |
-| `sensor.grant_aerona3_outgoing_water_temperature` | Water leaving heat pump | 30-55°C | °C |
-| `sensor.grant_aerona3_outdoor_air_temperature` | Outside air temperature | -20 to 35°C | °C |
-| `sensor.grant_aerona3_dhw_tank_temperature` | Hot water cylinder temp | 40-70°C | °C |
-| `sensor.grant_aerona3_discharge_temperature` | Compressor discharge | 40-80°C | °C |
-| `sensor.grant_aerona3_suction_temperature` | Compressor suction | -10 to 20°C | °C |
-| `sensor.grant_aerona3_defrost_temperature` | Defrost sensor | -20 to 20°C | °C |
+| `sensor.return_water_temperature` | Water returning to heat pump | 25-45°C | °C |
+| `sensor.outgoing_water_temperature` | Water leaving heat pump | 30-55°C | °C |
+| `sensor.outdoor_air_temperature` | Outside air temperature | -20 to 35°C | °C |
+| `sensor.dhw_tank_temperature` | Hot water cylinder temp | 40-70°C | °C |
+| `sensor.discharge_temperature` | Compressor discharge | 40-80°C | °C |
+| `sensor.suction_temperature` | Compressor suction | -10 to 20°C | °C |
+| `sensor.defrost_temperature` | Defrost sensor | -20 to 20°C | °C |
 
 ### Performance Sensors
 | Entity | Description | Typical Range | Units |
 |--------|-------------|---------------|-------|
-| `sensor.grant_aerona3_power_consumption` | Electrical power input | 1-8 kW | W |
-| `sensor.grant_aerona3_cop` | Coefficient of Performance | 2.0-6.0 | - |
-| `sensor.grant_aerona3_system_efficiency` | Overall efficiency | 50-85% | % |
-| `sensor.grant_aerona3_energy_consumption` | Cumulative energy | Increasing | kWh |
+| `sensor.power_consumption` | Electrical power input | 1-8 kW | W |
+| `sensor.cop` | Coefficient of Performance | 2.0-6.0 | - |
+| `sensor.system_efficiency` | Overall efficiency | 50-85% | % |
+| `sensor.energy_consumption` | Cumulative energy | Increasing | kWh |
 
 ### System Status Sensors
 | Entity | Description | Values |
 |--------|-------------|--------|
-| `sensor.grant_aerona3_selected_operating_mode` | Current operation mode | Off, Heating, Cooling |
-| `sensor.grant_aerona3_compressor_operating_frequency` | Compressor speed | 0-120 Hz |
-| `sensor.grant_aerona3_fan_control_number_of_rotation` | Fan speed | 0-1500 RPM |
-| `sensor.grant_aerona3_water_pump_control_number_of_rotation` | Pump speed | 0-2500 RPM |
+| `sensor.selected_operating_mode` | Current operation mode | Off, Heating, Cooling |
+| `sensor.compressor_operating_frequency` | Compressor speed | 0-120 Hz |
+| `sensor.fan_control_number_of_rotation` | Fan speed | 0-1500 RPM |
+| `sensor.water_pump_control_number_of_rotation` | Pump speed | 0-2500 RPM |
 
 ## Binary Sensor Entities
 
 ### System Status
 | Entity | Description |
 |--------|-------------|
-| `binary_sensor.grant_aerona3_system_status` | Overall system running state |
-| `binary_sensor.grant_aerona3_defrost_mode` | Defrost cycle active |
-| `binary_sensor.grant_aerona3_error_status` | Any errors present |
+| `binary_sensor.system_status` | Overall system running state |
+| `binary_sensor.defrost_mode` | Defrost cycle active |
+| `binary_sensor.error_status` | Any errors present |
 
 ### Configuration Status
 | Entity | Description |
 |--------|-------------|
-| `binary_sensor.grant_aerona3_heating_weather_compensation_zone_1` | Zone 1 weather compensation |
-| `binary_sensor.grant_aerona3_anti_legionella_function` | Anti-legionella cycle |
-| `binary_sensor.grant_aerona3_frost_protection_based_on_outdoor_temperature` | Frost protection active |
+| `binary_sensor.heating_weather_compensation_zone_1` | Zone 1 weather compensation |
+| `binary_sensor.anti_legionella_function` | Anti-legionella cycle |
+| `binary_sensor.frost_protection_based_on_outdoor_temperature` | Frost protection active |
 
 ## Switch Entities
 
 ### Weather Compensation Controls
 | Entity | Description | Impact |
 |--------|-------------|--------|
-| `switch.grant_aerona3_heating_weather_compensation_zone_1` | Zone 1 weather compensation | 10-15% energy savings |
-| `switch.grant_aerona3_heating_weather_compensation_zone_2` | Zone 2 weather compensation | Zone-specific savings |
-| `switch.grant_aerona3_cooling_weather_compensation_zone_1` | Zone 1 cooling compensation | Summer efficiency |
+| `switch.heating_weather_compensation_zone_1` | Zone 1 weather compensation | 10-15% energy savings |
+| `switch.heating_weather_compensation_zone_2` | Zone 2 weather compensation | Zone-specific savings |
+| `switch.cooling_weather_compensation_zone_1` | Zone 1 cooling compensation | Summer efficiency |
 
 ### Safety & Protection
 | Entity | Description | Recommendation |
 |--------|-------------|----------------|
-| `switch.grant_aerona3_frost_protection_based_on_outdoor_temperature` | Outdoor frost protection | ✅ Keep enabled |
-| `switch.grant_aerona3_frost_protection_based_on_room_temperature` | Indoor frost protection | ✅ Keep enabled |
-| `switch.grant_aerona3_anti_legionella_function` | DHW legionella protection | ✅ Keep enabled (if DHW) |
+| `switch.frost_protection_based_on_outdoor_temperature` | Outdoor frost protection | ✅ Keep enabled |
+| `switch.frost_protection_based_on_room_temperature` | Indoor frost protection | ✅ Keep enabled |
+| `switch.anti_legionella_function` | DHW legionella protection | ✅ Keep enabled (if DHW) |
 
 ### Terminal Configuration
 | Entity | Description | When to Enable |
 |--------|-------------|----------------|
-| `switch.grant_aerona3_terminal_7_8_dhw_tank_temperature_probe` | DHW temperature sensor | If you have thermistor on your hot water cylinder |
-| `switch.grant_aerona3_terminal_11_12_buffer_tank_temperature_probe` | Buffer tank sensor | If you have buffer tank and have a Thermistor on the buffer tank |
-| `switch.grant_aerona3_terminal_26_27_flow_switch` | Flow switch monitoring | ✅ Usually enabled |
+| `switch.terminal_7_8_dhw_tank_temperature_probe` | DHW temperature sensor | If you have thermistor on your hot water cylinder |
+| `switch.terminal_11_12_buffer_tank_temperature_probe` | Buffer tank sensor | If you have buffer tank and have a Thermistor on the buffer tank |
+| `switch.terminal_26_27_flow_switch` | Flow switch monitoring | ✅ Usually enabled |
 
 ![PCB Diagram](https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration/blob/main/Docs/images/PCB_Diag.jpeg)
 
@@ -108,35 +108,35 @@ The integration automatically creates **150+ entities** across multiple platform
 ### Zone 1 Temperature Controls
 | Entity | Description | Typical Range | Units |
 |--------|-------------|---------------|-------|
-| `number.grant_aerona3_fixed_flow_temp_zone_1` | Fixed flow temperature | 25-45°C | °C |
-| `number.grant_aerona3_max_flow_temp_zone1` | Maximum flow temp | 35-60°C | °C |
-| `number.grant_aerona3_min_flow_temp_zone1` | Minimum flow temp | 20-35°C | °C |
+| `number.fixed_flow_temp_zone_1` | Fixed flow temperature | 25-45°C | °C |
+| `number.max_flow_temp_zone1` | Maximum flow temp | 35-60°C | °C |
+| `number.min_flow_temp_zone1` | Minimum flow temp | 20-35°C | °C |
 
 ### DHW (Hot Water) Controls
 | Entity | Description | Typical Range | Notes |
 |--------|-------------|---------------|-------|
-| `number.grant_aerona3_dhw_comfort_set_temperature` | Comfort mode temperature | 45-65°C | Daily use |
-| `number.grant_aerona3_dhw_economy_set_temperature` | Economy mode temperature | 40-55°C | Energy saving |
-| `number.grant_aerona3_anti_legionella_set_point` | Legionella protection temp | 60-70°C | Weekly cycle |
+| `number.dhw_comfort_set_temperature` | Comfort mode temperature | 45-65°C | Daily use |
+| `number.dhw_economy_set_temperature` | Economy mode temperature | 40-55°C | Energy saving |
+| `number.anti_legionella_set_point` | Legionella protection temp | 60-70°C | Weekly cycle |
 
 ### Weather Compensation Settings
 | Entity | Description | Typical Range | Purpose |
 |--------|-------------|---------------|---------|
-| `number.grant_aerona3_min_outdoor_air_temperature_zone1` | Design outdoor temp (cold) | -5 to 5°C | Curve bottom |
-| `number.grant_aerona3_max_outdoor_air_temperature_zone1` | Design outdoor temp (mild) | 15-20°C | Curve top |
+| `number.min_outdoor_air_temperature_zone1` | Design outdoor temp (cold) | -5 to 5°C | Curve bottom |
+| `number.max_outdoor_air_temperature_zone1` | Design outdoor temp (mild) | 15-20°C | Curve top |
 
 ### Flow Rate Configuration
 | Entity | Description | Range | Notes |
 |--------|-------------|-------|-------|
-| `number.grant_aerona3_flow_rate` | System flow rate | 10-50 L/min | **Important for accurate COP** |
+| `number.flow_rate` | System flow rate | 10-50 L/min | **Important for accurate COP** |
 
 ## Climate Entities
 
 ### Zone Controls
 | Entity | Description | Features |
 |--------|-------------|----------|
-| `climate.grant_aerona3_zone_1` | Main heating zone | Temperature control, mode switching |
-| `climate.grant_aerona3_zone_2` | Secondary zone | Available if Zone 2 configured |
+| `climate.zone_1` | Main heating zone | Temperature control, mode switching |
+| `climate.zone_2` | Secondary zone | Available if Zone 2 configured |
 
 #### Climate Features
 - **Temperature Control**: Set target flow temperature
@@ -168,17 +168,17 @@ Entities are automatically created based on available data. To manage them:
 ### Recommended Entity Customizations
 
 #### High Priority (Dashboard)
-- `sensor.grant_aerona3_cop` - Main efficiency metric
-- `sensor.grant_aerona3_power_consumption` - Current power usage
-- `sensor.grant_aerona3_outdoor_air_temperature` - Weather reference
-- `sensor.grant_aerona3_outgoing_water_temperature` - Flow temperature
-- `climate.grant_aerona3_zone_1` - Zone control
+- `sensor.cop` - Main efficiency metric
+- `sensor.power_consumption` - Current power usage
+- `sensor.outdoor_air_temperature` - Weather reference
+- `sensor.outgoing_water_temperature` - Flow temperature
+- `climate.zone_1` - Zone control
 
 #### Medium Priority (Monitoring)
-- `binary_sensor.grant_aerona3_system_status` - Running state
-- `binary_sensor.grant_aerona3_defrost_mode` - Defrost indicator
-- `sensor.grant_aerona3_compressor_operating_frequency` - System load
-- `sensor.grant_aerona3_dhw_tank_temperature` - Hot water status
+- `binary_sensor.system_status` - Running state
+- `binary_sensor.defrost_mode` - Defrost indicator
+- `sensor.compressor_operating_frequency` - System load
+- `sensor.dhw_tank_temperature` - Hot water status
 
 #### Low Priority (Diagnostic)
 - Most holding register sensors (setpoint displays)
@@ -194,14 +194,14 @@ Weather compensation automatically adjusts flow temperature based on outdoor con
 #### Zone 1 Configuration
 1. **Enable weather compensation**:
    ```
-   switch.grant_aerona3_heating_weather_compensation_zone_1: ON
+   switch.heating_weather_compensation_zone_1: ON
    ```
 
 2. **Set curve parameters**:
-   - `number.grant_aerona3_min_outdoor_air_temperature_zone1`: `-5°C` (coldest design day)
-   - `number.grant_aerona3_max_outdoor_air_temperature_zone1`: `18°C` (mild weather cutoff)
-   - `number.grant_aerona3_max_flow_temp_zone1`: `45°C` (coldest day flow temp)
-   - `number.grant_aerona3_min_flow_temp_zone1`: `25°C` (mild day flow temp)
+   - `number.min_outdoor_air_temperature_zone1`: `-5°C` (coldest design day)
+   - `number.max_outdoor_air_temperature_zone1`: `18°C` (mild weather cutoff)
+   - `number.max_flow_temp_zone1`: `45°C` (coldest day flow temp)
+   - `number.min_flow_temp_zone1`: `25°C` (mild day flow temp)
 
 #### Example Weather Compensation Curve
 ```
@@ -221,16 +221,16 @@ If you have a hot water cylinder:
 #### Enable DHW Components
 1. **Enable DHW temperature probe**:
    ```
-   switch.grant_aerona3_terminal_7_8_dhw_tank_temperature_probe: ON
+   switch.terminal_7_8_dhw_tank_temperature_probe: ON
    ```
 
 2. **Configure temperatures**:
-   - `number.grant_aerona3_dhw_comfort_set_temperature`: `50°C`
-   - `number.grant_aerona3_dhw_economy_set_temperature`: `45°C`
-   - `number.grant_aerona3_anti_legionella_set_point`: `65°C`
+   - `number.dhw_comfort_set_temperature`: `50°C`
+   - `number.dhw_economy_set_temperature`: `45°C`
+   - `number.anti_legionella_set_point`: `65°C`
 
 3. **Set DHW priority**:
-   - `number.grant_aerona3_dhw_production_priority_setting`: 
+   - `number.dhw_production_priority_setting`: 
      - `1` = DHW priority over heating
      - `2` = Heating priority over DHW
 
@@ -245,7 +245,7 @@ automation:
     action:
       - service: number.set_value
         target:
-          entity_id: number.grant_aerona3_dhw_comfort_set_temperature
+          entity_id: number.dhw_comfort_set_temperature
         data:
           value: 55
 ```
@@ -257,16 +257,16 @@ For systems with two heating zones or those wishing to set a dual set point:
 #### Enable Zone 2
 1. **Enable weather compensation**:
    ```
-   switch.grant_aerona3_heating_weather_compensation_zone_2: ON
+   switch.heating_weather_compensation_zone_2: ON
    ```
 
 2. **Configure Zone 2 curve** (typically 5°C lower than Zone 1):
-   - `number.grant_aerona3_max_flow_temp_zone2`: `40°C`
-   - `number.grant_aerona3_min_flow_temp_zone2`: `20°C`
+   - `number.max_flow_temp_zone2`: `40°C`
+   - `number.min_flow_temp_zone2`: `20°C`
 
 3. **Enable Zone 2 pump**:
    ```
-   switch.grant_aerona3_terminal_49_pump2: ON
+   switch.terminal_49_pump2: ON
    ```
 
 ### Frost Protection Configuration
@@ -275,15 +275,15 @@ Essential for system protection:
 
 #### Outdoor Frost Protection
 ```
-switch.grant_aerona3_frost_protection_based_on_outdoor_temperature: ON
-number.grant_aerona3_start_temperature_of_frost_protection_on_outdoor_air_temp: 2°C
-number.grant_aerona3_hysteresis_of_outdoor_air_temperature: 2°C
+switch.frost_protection_based_on_outdoor_temperature: ON
+number.start_temperature_of_frost_protection_on_outdoor_air_temp: 2°C
+number.hysteresis_of_outdoor_air_temperature: 2°C
 ```
 
 #### Water System Frost Protection
 ```
-switch.grant_aerona3_frost_protection_based_on_flow_temp: ON
-number.grant_aerona3_water_temperature_of_frost_protection: 35°C
+switch.frost_protection_based_on_flow_temp: ON
+number.water_temperature_of_frost_protection: 35°C
 ```
 
 ## Performance Optimization
@@ -298,13 +298,13 @@ number.grant_aerona3_water_temperature_of_frost_protection: 35°C
 
 #### Night Mode Setup
 ```
-switch.grant_aerona3_terminal_28_29_night_mode: ON
-number.grant_aerona3_max_frequency_of_night_mode: 60  # Hz (reduced for quiet operation)
+switch.terminal_28_29_night_mode: ON
+number.max_frequency_of_night_mode: 60  # Hz (reduced for quiet operation)
 ```
 
 #### Pump Optimization
 ```
-number.grant_aerona3_type_of_configuration_of_main_water_pump: 1  # Temperature based
+number.type_of_configuration_of_main_water_pump: 1  # Temperature based
 ```
 
 ### Monitoring Setup
@@ -316,13 +316,13 @@ automation:
   - alias: "Heat pump high power consumption"
     trigger:
       - platform: numeric_state
-        entity_id: sensor.grant_aerona3_power_consumption
+        entity_id: sensor.power_consumption
         above: 6000  # Watts
         for: "00:10:00"
     action:
       - service: notify.mobile_app
         data:
-          message: "Heat pump power consumption high: {{ states('sensor.grant_aerona3_power_consumption') }}W"
+          message: "Heat pump power consumption high: {{ states('sensor.power_consumption') }}W"
 ```
 
 2. **Low COP warning**:
@@ -331,19 +331,19 @@ automation:
   - alias: "Heat pump low efficiency"
     trigger:
       - platform: numeric_state
-        entity_id: sensor.grant_aerona3_cop
+        entity_id: sensor.cop
         below: 2.0
         for: "00:30:00"
     action:
       - service: notify.mobile_app
         data:
-          message: "Heat pump COP low: {{ states('sensor.grant_aerona3_cop') }}"
+          message: "Heat pump COP low: {{ states('sensor.cop') }}"
 ```
 
 #### Energy Monitoring Dashboard
 Add these entities to your energy dashboard:
-- `sensor.grant_aerona3_power_consumption` (Power)
-- `sensor.grant_aerona3_energy_consumption` (Energy)
+- `sensor.power_consumption` (Power)
+- `sensor.energy_consumption` (Energy)
 
 ## Entity State Management
 

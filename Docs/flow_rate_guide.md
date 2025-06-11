@@ -182,7 +182,7 @@ automation:
     action:
       - service: number.set_value
         target:
-          entity_id: number.grant_aerona3_flow_rate
+          entity_id: number.flow_rate
         data:
           value: 22  # Winter flow rate
 ```

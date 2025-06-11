@@ -10,22 +10,22 @@ type: entities
 title: 🔥 Heat Pump Overview
 show_header_toggle: false
 entities:
-  - entity: binary_sensor.grant_aerona3_system_status
+  - entity: binary_sensor.system_status
     name: System Status
     icon: mdi:power
-  - entity: sensor.grant_aerona3_cop
+  - entity: sensor.cop
     name: Efficiency (COP)
     icon: mdi:gauge
-  - entity: sensor.grant_aerona3_power_consumption
+  - entity: sensor.power_consumption
     name: Power Usage
     icon: mdi:flash
-  - entity: sensor.grant_aerona3_outdoor_air_temperature
+  - entity: sensor.outdoor_air_temperature
     name: Outdoor Temperature
     icon: mdi:thermometer
-  - entity: sensor.grant_aerona3_outgoing_water_temperature
+  - entity: sensor.outgoing_water_temperature
     name: Flow Temperature
     icon: mdi:thermometer-water
-  - entity: climate.grant_aerona3_zone_1
+  - entity: climate.zone_1
     name: Zone 1 Control
     icon: mdi:home-thermometer
 
@@ -35,7 +35,7 @@ entities:
 
 # COP Efficiency Gauge
 type: gauge
-entity: sensor.grant_aerona3_cop
+entity: sensor.cop
 name: Heat Pump Efficiency
 unit: COP
 min: 0
@@ -50,7 +50,7 @@ needle: true
 
 # Power Consumption Gauge
 type: gauge
-entity: sensor.grant_aerona3_power_consumption
+entity: sensor.power_consumption
 name: Power Consumption
 min: 0
 max: 8000  # Adjust based on your heat pump size
@@ -64,7 +64,7 @@ needle: true
 
 # Outdoor Temperature Gauge
 type: gauge
-entity: sensor.grant_aerona3_outdoor_air_temperature
+entity: sensor.outdoor_air_temperature
 name: Outdoor Temperature
 min: -20
 max: 30
@@ -84,9 +84,9 @@ title: 📈 Heat Pump Efficiency Trend
 hours_to_show: 24
 refresh_interval: 300
 entities:
-  - entity: sensor.grant_aerona3_cop
+  - entity: sensor.cop
     name: COP
-  - entity: sensor.grant_aerona3_outdoor_air_temperature
+  - entity: sensor.outdoor_air_temperature
     name: Outdoor Temp
     y_axis: secondary
 
@@ -98,12 +98,12 @@ title: 📊 Power & Temperature History
 hours_to_show: 48
 refresh_interval: 300
 entities:
-  - entity: sensor.grant_aerona3_power_consumption
+  - entity: sensor.power_consumption
     name: Power (W)
-  - entity: sensor.grant_aerona3_outgoing_water_temperature
+  - entity: sensor.outgoing_water_temperature
     name: Flow Temp (°C)
     y_axis: secondary
-  - entity: sensor.grant_aerona3_return_water_temperature
+  - entity: sensor.return_water_temperature
     name: Return Temp (°C)
     y_axis: secondary
 
@@ -116,22 +116,22 @@ type: entities
 title: 🔍 System Status Details
 show_header_toggle: false
 entities:
-  - entity: sensor.grant_aerona3_selected_operating_mode
+  - entity: sensor.selected_operating_mode
     name: Operating Mode
     icon: mdi:cog
-  - entity: sensor.grant_aerona3_compressor_operating_frequency
+  - entity: sensor.compressor_operating_frequency
     name: Compressor Frequency
     icon: mdi:sine-wave
-  - entity: binary_sensor.grant_aerona3_defrost_mode
+  - entity: binary_sensor.defrost_mode
     name: Defrost Mode
     icon: mdi:snowflake-melt
-  - entity: binary_sensor.grant_aerona3_error_status
+  - entity: binary_sensor.error_status
     name: Error Status
     icon: mdi:alert-circle
-  - entity: sensor.grant_aerona3_fan_control_number_of_rotation
+  - entity: sensor.fan_control_number_of_rotation
     name: Fan Speed
     icon: mdi:fan
-  - entity: sensor.grant_aerona3_water_pump_control_number_of_rotation
+  - entity: sensor.water_pump_control_number_of_rotation
     name: Pump Speed
     icon: mdi:pump
 
@@ -142,30 +142,30 @@ type: entities
 title: 🌡️ Temperature Sensors
 show_header_toggle: false
 entities:
-  - entity: sensor.grant_aerona3_outdoor_air_temperature
+  - entity: sensor.outdoor_air_temperature
     name: Outdoor Air
     icon: mdi:thermometer
-  - entity: sensor.grant_aerona3_outgoing_water_temperature
+  - entity: sensor.outgoing_water_temperature
     name: Flow Water
     icon: mdi:thermometer-water
-  - entity: sensor.grant_aerona3_return_water_temperature
+  - entity: sensor.return_water_temperature
     name: Return Water
     icon: mdi:thermometer-water
-  - entity: sensor.grant_aerona3_discharge_temperature
+  - entity: sensor.discharge_temperature
     name: Compressor Discharge
     icon: mdi:thermometer-high
-  - entity: sensor.grant_aerona3_suction_temperature
+  - entity: sensor.suction_temperature
     name: Compressor Suction
     icon: mdi:thermometer-low
-  - entity: sensor.grant_aerona3_defrost_temperature
+  - entity: sensor.defrost_temperature
     name: Defrost Sensor
     icon: mdi:snowflake
   - type: conditional
     conditions:
-      - entity: sensor.grant_aerona3_dhw_tank_temperature
+      - entity: sensor.dhw_tank_temperature
         state_not: unavailable
     row:
-      entity: sensor.grant_aerona3_dhw_tank_temperature
+      entity: sensor.dhw_tank_temperature
       name: DHW Tank
       icon: mdi:water-thermometer
 
@@ -178,19 +178,19 @@ type: entities
 title: ⚙️ Heat Pump Controls
 show_header_toggle: false
 entities:
-  - entity: climate.grant_aerona3_zone_1
+  - entity: climate.zone_1
     name: Zone 1 Control
   - type: conditional
     conditions:
-      - entity: climate.grant_aerona3_zone_2
+      - entity: climate.zone_2
         state_not: unavailable
     row:
-      entity: climate.grant_aerona3_zone_2
+      entity: climate.zone_2
       name: Zone 2 Control
-  - entity: number.grant_aerona3_fixed_flow_temp_zone_1
+  - entity: number.fixed_flow_temp_zone_1
     name: Zone 1 Flow Temperature
     icon: mdi:thermometer-water
-  - entity: number.grant_aerona3_flow_rate
+  - entity: number.flow_rate
     name: Flow Rate Configuration
     icon: mdi:water-pump
 
@@ -201,27 +201,27 @@ type: entities
 title: 🌤️ Weather Compensation
 show_header_toggle: false
 entities:
-  - entity: switch.grant_aerona3_heating_weather_compensation_zone_1
+  - entity: switch.heating_weather_compensation_zone_1
     name: Zone 1 Weather Compensation
     icon: mdi:weather-partly-cloudy
   - type: conditional
     conditions:
-      - entity: switch.grant_aerona3_heating_weather_compensation_zone_2
+      - entity: switch.heating_weather_compensation_zone_2
         state_not: unavailable
     row:
-      entity: switch.grant_aerona3_heating_weather_compensation_zone_2
+      entity: switch.heating_weather_compensation_zone_2
       name: Zone 2 Weather Compensation
       icon: mdi:weather-partly-cloudy
-  - entity: number.grant_aerona3_min_outdoor_air_temperature_zone1
+  - entity: number.min_outdoor_air_temperature_zone1
     name: Min Outdoor Temperature
     icon: mdi:thermometer-minus
-  - entity: number.grant_aerona3_max_outdoor_air_temperature_zone1
+  - entity: number.max_outdoor_air_temperature_zone1
     name: Max Outdoor Temperature
     icon: mdi:thermometer-plus
-  - entity: number.grant_aerona3_max_flow_temp_zone1
+  - entity: number.max_flow_temp_zone1
     name: Max Flow Temperature
     icon: mdi:thermometer-water
-  - entity: number.grant_aerona3_min_flow_temp_zone1
+  - entity: number.min_flow_temp_zone1
     name: Min Flow Temperature
     icon: mdi:thermometer-water
 
@@ -230,26 +230,26 @@ entities:
 # DHW (Hot Water) Controls
 type: conditional
 conditions:
-  - entity: sensor.grant_aerona3_dhw_tank_temperature
+  - entity: sensor.dhw_tank_temperature
     state_not: unavailable
 card:
   type: entities
   title: 🚿 Hot Water Controls
   show_header_toggle: false
   entities:
-    - entity: sensor.grant_aerona3_dhw_tank_temperature
+    - entity: sensor.dhw_tank_temperature
       name: Tank Temperature
       icon: mdi:water-thermometer
-    - entity: number.grant_aerona3_dhw_comfort_set_temperature
+    - entity: number.dhw_comfort_set_temperature
       name: Comfort Temperature
       icon: mdi:thermometer-water
-    - entity: number.grant_aerona3_dhw_economy_set_temperature
+    - entity: number.dhw_economy_set_temperature
       name: Economy Temperature
       icon: mdi:thermometer-water
-    - entity: switch.grant_aerona3_anti_legionella_function
+    - entity: switch.anti_legionella_function
       name: Anti-Legionella
       icon: mdi:shield-check
-    - entity: number.grant_aerona3_anti_legionella_set_point
+    - entity: number.anti_legionella_set_point
       name: Legionella Temperature
       icon: mdi:thermometer-high
 
@@ -262,19 +262,19 @@ type: entities
 title: ❄️ Frost Protection
 show_header_toggle: false
 entities:
-  - entity: switch.grant_aerona3_frost_protection_based_on_outdoor_temperature
+  - entity: switch.frost_protection_based_on_outdoor_temperature
     name: Outdoor Frost Protection
     icon: mdi:snowflake
-  - entity: switch.grant_aerona3_frost_protection_based_on_room_temperature
+  - entity: switch.frost_protection_based_on_room_temperature
     name: Room Frost Protection
     icon: mdi:home-thermometer
-  - entity: switch.grant_aerona3_frost_protection_based_on_flow_temp
+  - entity: switch.frost_protection_based_on_flow_temp
     name: Water Frost Protection
     icon: mdi:pipe-leak
-  - entity: number.grant_aerona3_start_temperature_of_frost_protection_on_outdoor_air_temp
+  - entity: number.start_temperature_of_frost_protection_on_outdoor_air_temp
     name: Outdoor Trigger Temperature
     icon: mdi:thermometer-alert
-  - entity: number.grant_aerona3_water_temperature_of_frost_protection
+  - entity: number.water_temperature_of_frost_protection
     name: Protection Water Temperature
     icon: mdi:thermometer-water
 
@@ -292,7 +292,7 @@ stat_types:
 period: day
 days_to_show: 7
 entities:
-  - sensor.grant_aerona3_power_consumption
+  - sensor.power_consumption
 
 ---
 
@@ -300,7 +300,7 @@ entities:
 type: energy-usage-graph
 title: 📊 Daily Energy Usage
 entities:
-  - entity: sensor.grant_aerona3_energy_consumption
+  - entity: sensor.energy_consumption
     name: Heat Pump
 
 ---
@@ -315,7 +315,7 @@ stat_types:
 period: day
 days_to_show: 14
 entities:
-  - sensor.grant_aerona3_cop
+  - sensor.cop
 
 #==============================================================================
 # DIAGNOSTIC CARDS
@@ -327,23 +327,23 @@ title: 🔧 Diagnostic Information
 show_header_toggle: false
 state_color: true
 entities:
-  - entity: binary_sensor.grant_aerona3_system_status
+  - entity: binary_sensor.system_status
     name: System Running
     icon: mdi:power
-  - entity: binary_sensor.grant_aerona3_error_status
+  - entity: binary_sensor.error_status
     name: Error Status
     icon: mdi:alert-circle
-  - entity: sensor.grant_aerona3_compressor_operating_frequency
+  - entity: sensor.compressor_operating_frequency
     name: Compressor Load
     icon: mdi:gauge
-  - entity: binary_sensor.grant_aerona3_defrost_mode
+  - entity: binary_sensor.defrost_mode
     name: Defrost Active
     icon: mdi:snowflake-melt
   - type: divider
-  - entity: switch.grant_aerona3_terminal_26_27_flow_switch
+  - entity: switch.terminal_26_27_flow_switch
     name: Flow Switch
     icon: mdi:pipe-valve
-  - entity: switch.grant_aerona3_terminal_15_16_32_rs485_mod_bus
+  - entity: switch.terminal_15_16_32_rs485_mod_bus
     name: Modbus Connection
     icon: mdi:connection
 
@@ -358,17 +358,17 @@ columns: 2
 show_name: true
 show_state: true
 entities:
-  - entity: sensor.grant_aerona3_cop
+  - entity: sensor.cop
     name: COP
-  - entity: sensor.grant_aerona3_power_consumption
+  - entity: sensor.power_consumption
     name: Power
-  - entity: sensor.grant_aerona3_outdoor_air_temperature
+  - entity: sensor.outdoor_air_temperature
     name: Outdoor
-  - entity: sensor.grant_aerona3_outgoing_water_temperature
+  - entity: sensor.outgoing_water_temperature
     name: Flow Temp
-  - entity: binary_sensor.grant_aerona3_system_status
+  - entity: binary_sensor.system_status
     name: Status
-  - entity: binary_sensor.grant_aerona3_defrost_mode
+  - entity: binary_sensor.defrost_mode
     name: Defrost
 
 #==============================================================================
@@ -377,7 +377,7 @@ entities:
 
 # COP Status Button (if you have custom:button-card installed)
 type: custom:button-card
-entity: sensor.grant_aerona3_cop
+entity: sensor.cop
 name: Heat Pump Efficiency
 show_state: true
 show_icon: true
@@ -404,7 +404,7 @@ tap_action:
 
 # Power Usage Button
 type: custom:button-card
-entity: sensor.grant_aerona3_power_consumption
+entity: sensor.power_consumption
 name: Power Usage
 show_state: true
 show_icon: true
@@ -437,12 +437,12 @@ title: 🌡️ Weather vs Performance
 hours_to_show: 72
 refresh_interval: 300
 entities:
-  - entity: sensor.grant_aerona3_outdoor_air_temperature
+  - entity: sensor.outdoor_air_temperature
     name: Outdoor Temp
-  - entity: sensor.grant_aerona3_cop
+  - entity: sensor.cop
     name: COP
     y_axis: secondary
-  - entity: sensor.grant_aerona3_power_consumption
+  - entity: sensor.power_consumption
     name: Power
     y_axis: secondary
 
@@ -455,22 +455,22 @@ type: entities
 title: ⚙️ System Configuration
 show_header_toggle: false
 entities:
-  - entity: number.grant_aerona3_flow_rate
+  - entity: number.flow_rate
     name: Flow Rate
     icon: mdi:water-pump
-  - entity: sensor.grant_aerona3_fixed_flow_temp_zone_1_current
+  - entity: sensor.fixed_flow_temp_zone_1
     name: Current Zone 1 Setpoint
     icon: mdi:thermometer-water
   - type: conditional
     conditions:
-      - entity: sensor.grant_aerona3_dhw_comfort_set_temperature_current
+      - entity: sensor.dhw_comfort_set_temperature
         state_not: unavailable
     row:
-      entity: sensor.grant_aerona3_dhw_comfort_set_temperature_current
+      entity: sensor.dhw_comfort_set_temperature
       name: Current DHW Setpoint
       icon: mdi:water-thermometer
   - type: divider
-  - entity: switch.grant_aerona3_heating_weather_compensation_zone_1
+  - entity: switch.heating_weather_compensation_zone_1
     name: Weather Compensation
     icon: mdi:weather-partly-cloudy
 
