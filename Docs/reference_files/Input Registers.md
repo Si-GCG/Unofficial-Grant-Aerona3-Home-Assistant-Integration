@@ -1,4 +1,4 @@
-|Modbus Address|Register Type|Level|Group|Code|Function_Description                                                              |Default|Min  |Max  |Unit  |Read Values|Remarks                                   |
+|Modbus Address|Register Type|Level|Group|Code|Function_Description                                                              |Default|Min  |Max  |Increment  |Read Values|Remarks                                   |
 |--------------|-------------|-----|-----|----|----------------------------------------------------------------------------------|-------|-----|-----|------|-----------|------------------------------------------|
 |0             |Input        |U    |01   |00  |Return water temperature                                                          |-      |-20  |100  |1°C   |19         |monitor display No.d0                     |
 |1             |Input        |U    |01   |01  |Compressor operating frequency                                                    |-      |0    |200  |1Hz   |0          |monitor display No.d1                     |
