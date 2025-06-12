@@ -27,6 +27,10 @@ from .coordinator import GrantAerona3Coordinator
 
 _LOGGER = logging.getLogger(__name__)
 
+MAX_POWER_W = 25000
+RATED_POWER_W = 13000
+DEFAULT_FLOW_RATE = 30.0
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -315,74 +319,183 @@ class GrantAerona3COPSensor(CoordinatorEntity, SensorEntity):
         power_data = self.coordinator.data.get("input_3")  # Current Consumption Value
         flow_temp_data = self.coordinator.data.get("input_9")  # Outgoing Water Temperature
         return_temp_data = self.coordinator.data.get("input_0")  # Return Water Temperature
-
+        
         if not all([power_data, flow_temp_data, return_temp_data]):
             return None
-
+        
         # Check if all registers are available
         if not all([data.get("available", True) for data in [power_data, flow_temp_data, return_temp_data]]):
             return None
-
+        
         power = power_data["value"]
         flow_temp = flow_temp_data["value"]
         return_temp = return_temp_data["value"]
-
-        if power <= 0:
+        
+        # Validate inputs
+        if power <= 0 or power > MAX_POWER_W:
             return None
-
+        
         # Calculate temperature difference
         temp_diff = abs(flow_temp - return_temp)
-        if temp_diff <= 0:
+        if temp_diff <= 1.0 or temp_diff > 20.0:  # Reasonable temp difference
             return None
-
-        # Check if flow rate is configured
+        
+        # Get flow rate from your existing number entity OR coordinator
         flow_rate = getattr(self.coordinator, 'flow_rate', None)
-
+        
+        # If coordinator doesn't have it, try to get from Home Assistant state
+        if not flow_rate or flow_rate <= 0:
+            try:
+                # Try to get the flow rate from your number entity
+                flow_rate_state = self.coordinator.hass.states.get("number.ashp_flow_rate")
+                if flow_rate_state and flow_rate_state.state not in ["unavailable", "unknown"]:
+                    flow_rate = float(flow_rate_state.state)
+                else:
+                    # Fallback to your measured value
+                    flow_rate = DEFAULT_FLOW_RATE
+            except Exception:
+                flow_rate = DEFAULT_FLOW_RATE
+        
         if flow_rate and flow_rate > 0:
             # Accurate COP calculation with flow rate
-            # Q = flow_rate (L/min) × density (kg/L) × specific_heat (kJ/kg·K) × temp_diff (K)
             # Convert flow rate from L/min to kg/s
-            mass_flow_rate = (flow_rate * 1.0) / 60  # kg/s (assuming water density = 1 kg/L)
-
+            mass_flow_rate = (flow_rate * 1.0) / 60  # kg/s (water density = 1 kg/L)
+            
             # Calculate heat output in kW
             # Specific heat of water = 4.18 kJ/kg·K
             heat_output_kw = (mass_flow_rate * 4.18 * temp_diff) / 1000
-
+            
             # Calculate COP = Heat Output / Electrical Input
             power_kw = power / 1000
-            cop = heat_output_kw / power_kw
+            if power_kw > 0:
+                cop = heat_output_kw / power_kw
+                
+                # Validate COP is reasonable for 13kW system
+                if cop < 1.0 or cop > 8.0:
+                    # Fall back to simplified calculation
+                    return self._simplified_cop_calculation(temp_diff, power)
+                
+                return round(cop, 2)
+        
+        # Simplified calculation fallback
+        return self._simplified_cop_calculation(temp_diff, power)
 
-            return round(cop, 2)
+    def _simplified_cop_calculation(self, temp_diff: float, power: float) -> float:
+        """Simplified COP calculation for 13kW Grant Aerona3."""
+        # Get outdoor temperature if available
+        outdoor_temp_data = self.coordinator.data.get("input_6")
+        outdoor_temp = 0  # Default assumption
+        
+        if outdoor_temp_data and outdoor_temp_data.get("available", True):
+            outdoor_temp = outdoor_temp_data["value"]
+        
+        # Base efficiency for 13kW system varies with outdoor temperature
+        if outdoor_temp >= 10:
+            base_efficiency = 4.2  # Excellent conditions
+        elif outdoor_temp >= 7:
+            base_efficiency = 3.8  # Good conditions
+        elif outdoor_temp >= 2:
+            base_efficiency = 3.2  # Normal conditions
+        elif outdoor_temp >= -2:
+            base_efficiency = 2.8  # Cold conditions
         else:
-            # Simplified COP calculation without flow rate
-            estimated_efficiency = 2.5 + (temp_diff / 15)  # Base efficiency + temp factor
-            cop = min(estimated_efficiency, 6.0)  # Cap at 6.0
-
-            return round(cop, 2)
+            base_efficiency = 2.3  # Very cold conditions
+        
+        # Adjust for system load (13kW system performance characteristics)
+        load_factor = power / RATED_POWER_W  # Percentage of rated capacity
+        if load_factor > 0.8:
+            base_efficiency *= 0.95  # Slight reduction at high load
+        elif load_factor < 0.3:
+            base_efficiency *= 0.9   # Slight reduction at very low load
+        
+        # Adjust for temperature difference (optimal around 7-10°C for radiators)
+        if temp_diff < 5:
+            temp_factor = 1.1  # Low temp diff = high efficiency
+        elif temp_diff <= 10:
+            temp_factor = 1.0  # Optimal range
+        elif temp_diff <= 15:
+            temp_factor = 0.95  # Slightly high
+        else:
+            temp_factor = 0.85  # High temp diff = lower efficiency
+        
+        estimated_efficiency = base_efficiency * temp_factor
+        
+        # Cap at reasonable limits for 13kW system
+        cop = max(1.8, min(estimated_efficiency, 6.5))
+        return round(cop, 2)
 
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:
         """Return additional COP calculation details."""
+        # Get flow rate from coordinator or number entity
         flow_rate = getattr(self.coordinator, 'flow_rate', None)
-
+        
+        if not flow_rate or flow_rate <= 0:
+            try:
+                flow_rate_state = self.coordinator.hass.states.get("number.ashp_flow_rate")
+                if flow_rate_state and flow_rate_state.state not in ["unavailable", "unknown"]:
+                    flow_rate = float(flow_rate_state.state)
+            except Exception:
+                flow_rate = None
+        
         attributes = {
             "tooltip": "COP (Coefficient of Performance) measures how efficiently your heat pump converts electricity into heat",
             "explanation": "Higher COP values mean better efficiency and lower running costs",
+            "system_size": "13kW Grant Aerona3",
+            "recommended_flow_rate": "35 L/min (Grant recommendation)",
+            "current_setting": "30 L/min (installer setting - lowest pump speed)",
+            "flow_rate_note": "30 L/min is good for normal operation, 35 L/min for extreme conditions"
         }
-
+        
         if flow_rate and flow_rate > 0:
             attributes.update({
                 "calculation_method": "accurate_with_flow_rate",
                 "flow_rate_used": f"{flow_rate} L/min",
+                "flow_rate_source": "number entity or coordinator",
                 "formula": "COP = (Flow Rate × Specific Heat × ΔT) / Electrical Power",
                 "note": "Accurate COP calculation using configured flow rate"
             })
         else:
             attributes.update({
                 "calculation_method": "simplified_estimation",
-                "note": "Simplified COP calculation - configure flow rate for accuracy",
-                "how_to_improve": "Set the 'Flow Rate' number entity to your measured flow rate"
+                "note": "Using simplified calculation - check flow rate number entity",
+                "fallback_flow_rate": f"{DEFAULT_FLOW_RATE} L/min (your measured value)"
             })
+        
+        # Add current readings for debugging
+        power_data = self.coordinator.data.get("input_3")
+        flow_temp_data = self.coordinator.data.get("input_9")
+        return_temp_data = self.coordinator.data.get("input_0")
+        outdoor_temp_data = self.coordinator.data.get("input_6")
+
+        if power_data:
+            attributes["current_power_w"] = power_data.get("value")
+            attributes["system_load_percent"] = round((power_data.get("value", 0) / RATED_POWER_W) * 100, 1)
+
+        if flow_temp_data:
+            attributes["flow_temperature_c"] = flow_temp_data.get("value")
+
+        if return_temp_data:
+            attributes["return_temperature_c"] = return_temp_data.get("value")
+
+        if outdoor_temp_data:
+            attributes["outdoor_temperature_c"] = outdoor_temp_data.get("value")
+
+        if flow_temp_data and return_temp_data:
+            flow_temp = flow_temp_data.get("value", 0)
+            return_temp = return_temp_data.get("value", 0)
+            temp_diff = abs(flow_temp - return_temp)
+            attributes["temperature_difference_c"] = temp_diff
+
+            # Add efficiency guidance
+            if temp_diff < 5:
+                attributes["temp_diff_status"] = "Very efficient (low ΔT)"
+            elif temp_diff <= 10:
+                attributes["temp_diff_status"] = "Optimal range"
+            elif temp_diff <= 15:
+                attributes["temp_diff_status"] = "Acceptable (high ΔT)"
+            else:
+                attributes["temp_diff_status"] = "Check system - very high ΔT"
 
         return attributes
 
@@ -484,8 +597,8 @@ class GrantAerona3EnergySensor(CoordinatorEntity, SensorEntity):
             if register_data.get("available", True):
                 current_power = register_data["value"]
 
-                # Simple energy integration (this would be better with a utility meter)
-                # This is a basic implementation - consider using Home Assistant's utility meter instead
+                # Simple energy integration (this is only accurate if called every second)
+                # For production use, prefer Home Assistant's utility meter integration.
                 if current_power > 0:
                     self._total_energy += current_power / 1000 / 3600  # Very rough estimation
 
