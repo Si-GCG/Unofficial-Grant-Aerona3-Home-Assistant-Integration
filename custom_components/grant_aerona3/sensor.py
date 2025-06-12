@@ -1,4 +1,4 @@
-"""Improved sensor platform for Grant Aerona3 Heat Pump."""
+"""Improved sensor platform for Grant Aerona3 Heat Pump with ashp_ prefixes."""
 from __future__ import annotations
 
 import logging
@@ -27,47 +27,71 @@ from .coordinator import GrantAerona3Coordinator
 
 _LOGGER = logging.getLogger(__name__)
 
-MAX_POWER_W = 25000
-RATED_POWER_W = 13000
-DEFAULT_FLOW_RATE = 30.0
-
 
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up Grant Aerona3 sensor entities."""
+    """Set up Grant Aerona3 sensor entities with ashp_ prefixes."""
     coordinator: GrantAerona3Coordinator = hass.data[DOMAIN][config_entry.entry_id]
 
     entities = []
 
-    # CRITICAL FIX: Create sensors for ALL input registers, not just available ones
+    # Create sensors for ALL input registers with ashp_ prefix
     for register_id in INPUT_REGISTER_MAP.keys():
         entities.append(
             GrantAerona3InputSensor(coordinator, config_entry, register_id)
         )
 
-    # CRITICAL FIX: Create sensors for ALL holding registers, not just available ones
+    # Create sensors for ALL holding registers with ashp_ prefix
     for register_id in HOLDING_REGISTER_MAP.keys():
         entities.append(
             GrantAerona3HoldingSensor(coordinator, config_entry, register_id)
         )
 
-    # Add calculated sensors
+    # Add calculated sensors with ashp_ prefix
     entities.extend([
         GrantAerona3PowerSensor(coordinator, config_entry),
         GrantAerona3EnergySensor(coordinator, config_entry),
         GrantAerona3COPSensor(coordinator, config_entry),
         GrantAerona3EfficiencySensor(coordinator, config_entry),
+        GrantAerona3WeatherCompSensor(coordinator, config_entry),
+        GrantAerona3DailyCostSensor(coordinator, config_entry),
+        GrantAerona3MonthlyCostSensor(coordinator, config_entry),
     ])
 
-    _LOGGER.info("Creating %d sensor entities", len(entities))
+    _LOGGER.info("Creating %d ASHP sensor entities with ashp_ prefix", len(entities))
     async_add_entities(entities)
 
 
-class GrantAerona3InputSensor(CoordinatorEntity, SensorEntity):
-    """Grant Aerona3 input register sensor entity."""
+class GrantAerona3BaseSensor(CoordinatorEntity, SensorEntity):
+    """Base class for Grant Aerona3 sensors with common properties."""
+
+    def __init__(
+        self,
+        coordinator: GrantAerona3Coordinator,
+        config_entry: ConfigEntry,
+    ) -> None:
+        """Initialize the base sensor."""
+        super().__init__(coordinator)
+        self._config_entry = config_entry
+
+    @property
+    def device_info(self) -> Dict[str, Any]:
+        """Return device information."""
+        return {
+            "identifiers": {(DOMAIN, self._config_entry.entry_id)},
+            "name": "ASHP Grant Aerona3",
+            "manufacturer": MANUFACTURER,
+            "model": MODEL,
+            "sw_version": "2.0.0",
+            "configuration_url": f"http://{self._config_entry.data.get('host', '')}",
+        }
+
+
+class GrantAerona3InputSensor(GrantAerona3BaseSensor):
+    """Grant Aerona3 input register sensor entity with ashp_ prefix."""
 
     def __init__(
         self,
@@ -75,99 +99,79 @@ class GrantAerona3InputSensor(CoordinatorEntity, SensorEntity):
         config_entry: ConfigEntry,
         register_id: int,
     ) -> None:
-        """Initialize the sensor."""
-        super().__init__(coordinator)
+        """Initialize the sensor with ashp_ prefix."""
+        super().__init__(coordinator, config_entry)
         self._register_id = register_id
-        self._register_config = INPUT_REGISTER_MAP[register_id]
-
-        self._attr_unique_id = f"{config_entry.entry_id}_input_{register_id}"
-        self._attr_name = f"{self._register_config['name']}"
-
-        # Device info
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, config_entry.entry_id)},
-            "name": "ASHP",
-            "manufacturer": MANUFACTURER,
-            "model": MODEL,
-            "sw_version": "1.0.0",
-        }
-
-        # Set sensor properties
-        self._attr_native_unit_of_measurement = self._register_config["unit"]
-        self._attr_device_class = self._register_config["device_class"]
-        self._attr_state_class = self._register_config.get("state_class")
-
-        # Set entity category for diagnostic sensors
-        if "error" in self._register_config["name"].lower() or "alarm" in self._register_config["name"].lower():
-            self._attr_entity_category = EntityCategory.DIAGNOSTIC
+        self._register_config = INPUT_REGISTER_MAP.get(register_id, {})
+        
+        # Create entity_id and names with ashp_ prefix
+        register_name = self._register_config.get("name", f"Input Register {register_id}")
+        clean_name = register_name.lower().replace(' ', '_').replace('-', '_').replace('(', '').replace(')', '').replace('/', '_')
+        
+        self._attr_name = f"ASHP {register_name}"
+        self._attr_unique_id = f"ashp_{config_entry.entry_id}_input_{register_id}"
+        self.entity_id = f"sensor.ashp_{clean_name}"
 
     @property
-    def native_value(self) -> Any:
+    def native_value(self) -> Optional[float]:
         """Return the state of the sensor."""
-        register_key = f"input_{self._register_id}"
-        if register_key not in self.coordinator.data:
+        if not self.coordinator.data:
             return None
-
-        register_data = self.coordinator.data[register_key]
         
-        # Check if register is available
-        if not register_data.get("available", True):
+        raw_value = self.coordinator.data.get("input_registers", {}).get(self._register_id)
+        if raw_value is None:
             return None
-            
-        return register_data["value"]
+        
+        scale = self._register_config.get("scale", 1)
+        offset = self._register_config.get("offset", 0)
+        
+        return round((raw_value * scale) + offset, 2)
+
+    @property
+    def native_unit_of_measurement(self) -> Optional[str]:
+        """Return the unit of measurement."""
+        return self._register_config.get("unit")
+
+    @property
+    def device_class(self) -> Optional[SensorDeviceClass]:
+        """Return the device class."""
+        return self._register_config.get("device_class")
+
+    @property
+    def state_class(self) -> Optional[SensorStateClass]:
+        """Return the state class."""
+        return self._register_config.get("state_class")
+
+    @property
+    def icon(self) -> str:
+        """Return the icon for the sensor."""
+        device_class = self._register_config.get("device_class")
+        if device_class == SensorDeviceClass.TEMPERATURE:
+            return "mdi:thermometer"
+        elif device_class == SensorDeviceClass.POWER:
+            return "mdi:flash"
+        elif "frequency" in self._register_config.get("name", "").lower():
+            return "mdi:gauge"
+        elif "pressure" in self._register_config.get("name", "").lower():
+            return "mdi:gauge-low"
+        else:
+            return "mdi:heat-pump"
 
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:
-        """Return additional state attributes."""
-        register_key = f"input_{self._register_id}"
-        if register_key not in self.coordinator.data:
-            return {"register_address": self._register_id, "status": "not_configured"}
-
-        data = self.coordinator.data[register_key]
-
-        attributes = {
-            "register_address": self._register_id,
-            "raw_value": data.get("raw_value"),
-            "description": data.get("description", ""),
-            "available": data.get("available", True),
+        """Return extra state attributes."""
+        return {
+            "register_id": self._register_id,
+            "register_type": "input",
+            "description": self._register_config.get("description", ""),
+            "raw_value": self.coordinator.data.get("input_registers", {}).get(self._register_id) if self.coordinator.data else None,
+            "scale_factor": self._register_config.get("scale", 1),
+            "offset": self._register_config.get("offset", 0),
         }
 
-        # Add error information if register is not available
-        if not data.get("available", True):
-            attributes["error"] = data.get("error", "Register not available")
-            attributes["status"] = "unavailable"
-        else:
-            attributes["status"] = "available"
 
-        # Add helpful tooltips for common terms
-        name_lower = self._register_config["name"].lower()
-        if "cop" in name_lower:
-            attributes["tooltip"] = "COP (Coefficient of Performance) measures heat pump efficiency"
-        elif "dhw" in name_lower:
-            attributes["tooltip"] = "DHW (Domestic Hot Water) refers to your home's hot water system"
-        elif "compressor" in name_lower:
-            attributes["tooltip"] = "The compressor is the heart of your heat pump"
-        elif "defrost" in name_lower:
-            attributes["tooltip"] = "Defrost mode removes ice from the outdoor unit"
-
-        # Add scaling information
-        attributes["scale_factor"] = self._register_config["scale"]
-
-        return attributes
-
-    @property
-    def available(self) -> bool:
-        """Return if entity is available."""
-        register_key = f"input_{self._register_id}"
-        if register_key not in self.coordinator.data:
-            return False
-            
-        # Entity is available even if register is not readable (shows unavailable state)
-        return self.coordinator.last_update_success
-
-
-class GrantAerona3HoldingSensor(CoordinatorEntity, SensorEntity):
-    """Grant Aerona3 holding register sensor entity (read-only display)."""
+class GrantAerona3HoldingSensor(GrantAerona3BaseSensor):
+    """Grant Aerona3 holding register sensor entity with ashp_ prefix."""
 
     def __init__(
         self,
@@ -175,439 +179,383 @@ class GrantAerona3HoldingSensor(CoordinatorEntity, SensorEntity):
         config_entry: ConfigEntry,
         register_id: int,
     ) -> None:
-        """Initialize the sensor."""
-        super().__init__(coordinator)
+        """Initialize the sensor with ashp_ prefix."""
+        super().__init__(coordinator, config_entry)
         self._register_id = register_id
-        self._register_config = HOLDING_REGISTER_MAP[register_id]
-
-        self._attr_unique_id = f"{config_entry.entry_id}_holding_{register_id}"
-        self._attr_name = f"{self._register_config['name']}"
-
-        # Device info
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, config_entry.entry_id)},
-            "name": "ASHP",
-            "manufacturer": MANUFACTURER,
-            "model": MODEL,
-            "sw_version": "1.0.0",
-        }
-
-        # Set sensor properties
-        self._attr_native_unit_of_measurement = self._register_config["unit"]
-        self._attr_device_class = self._register_config.get("device_class")
-
-        # Mark as diagnostic since these are configuration values
-        self._attr_entity_category = EntityCategory.DIAGNOSTIC
+        self._register_config = HOLDING_REGISTER_MAP.get(register_id, {})
+        
+        # Create entity_id and names with ashp_ prefix
+        register_name = self._register_config.get("name", f"Holding Register {register_id}")
+        clean_name = register_name.lower().replace(' ', '_').replace('-', '_').replace('(', '').replace(')', '').replace('/', '_')
+        
+        self._attr_name = f"ASHP {register_name}"
+        self._attr_unique_id = f"ashp_{config_entry.entry_id}_holding_{register_id}"
+        self.entity_id = f"sensor.ashp_{clean_name}"
 
     @property
-    def native_value(self) -> Any:
+    def native_value(self) -> Optional[float]:
         """Return the state of the sensor."""
-        register_key = f"holding_{self._register_id}"
-        if register_key not in self.coordinator.data:
+        if not self.coordinator.data:
             return None
-
-        register_data = self.coordinator.data[register_key]
         
-        # Check if register is available
-        if not register_data.get("available", True):
+        raw_value = self.coordinator.data.get("holding_registers", {}).get(self._register_id)
+        if raw_value is None:
             return None
-            
-        return register_data["value"]
+        
+        scale = self._register_config.get("scale", 1)
+        offset = self._register_config.get("offset", 0)
+        
+        return round((raw_value * scale) + offset, 2)
+
+    @property
+    def native_unit_of_measurement(self) -> Optional[str]:
+        """Return the unit of measurement."""
+        return self._register_config.get("unit")
+
+    @property
+    def device_class(self) -> Optional[SensorDeviceClass]:
+        """Return the device class."""
+        return self._register_config.get("device_class")
+
+    @property
+    def state_class(self) -> Optional[SensorStateClass]:
+        """Return the state class."""
+        return self._register_config.get("state_class")
+
+    @property
+    def entity_category(self) -> Optional[EntityCategory]:
+        """Return the entity category for configuration parameters."""
+        if self._register_config.get("writable", False):
+            return EntityCategory.CONFIG
+        return None
+
+    @property
+    def icon(self) -> str:
+        """Return the icon for the sensor."""
+        if self._register_config.get("writable", False):
+            return "mdi:cog"
+        elif self._register_config.get("device_class") == SensorDeviceClass.TEMPERATURE:
+            return "mdi:thermometer-lines"
+        else:
+            return "mdi:heat-pump-outline"
 
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:
-        """Return additional state attributes."""
-        register_key = f"holding_{self._register_id}"
-        if register_key not in self.coordinator.data:
-            return {"register_address": self._register_id, "status": "not_configured"}
-
-        data = self.coordinator.data[register_key]
-
-        attributes = {
-            "register_address": self._register_id,
-            "raw_value": data.get("raw_value"),
-            "description": data.get("description", ""),
-            "writable": data.get("writable", False),
-            "scale_factor": self._register_config["scale"],
-            "available": data.get("available", True),
+        """Return extra state attributes."""
+        return {
+            "register_id": self._register_id,
+            "register_type": "holding",
+            "writable": self._register_config.get("writable", False),
+            "description": self._register_config.get("description", ""),
+            "raw_value": self.coordinator.data.get("holding_registers", {}).get(self._register_id) if self.coordinator.data else None,
+            "scale_factor": self._register_config.get("scale", 1),
+            "offset": self._register_config.get("offset", 0),
         }
 
-        # Add error information if register is not available
-        if not data.get("available", True):
-            attributes["error"] = data.get("error", "Register not available")
-            attributes["status"] = "unavailable"
-        else:
-            attributes["status"] = "available"
 
-        return attributes
-
-    @property
-    def available(self) -> bool:
-        """Return if entity is available."""
-        register_key = f"holding_{self._register_id}"
-        if register_key not in self.coordinator.data:
-            return False
-            
-        # Entity is available even if register is not readable (shows unavailable state)
-        return self.coordinator.last_update_success
-
-
-class GrantAerona3PowerSensor(CoordinatorEntity, SensorEntity):
-    """Power consumption sensor."""
+class GrantAerona3PowerSensor(GrantAerona3BaseSensor):
+    """Grant Aerona3 calculated power sensor with ashp_ prefix."""
 
     def __init__(
         self,
         coordinator: GrantAerona3Coordinator,
         config_entry: ConfigEntry,
     ) -> None:
-        """Initialize the power sensor."""
-        super().__init__(coordinator)
-
-        self._attr_unique_id = f"{config_entry.entry_id}_power_consumption"
-        self._attr_name = "Power Consumption"
-        self._attr_native_unit_of_measurement = UnitOfPower.WATT
+        """Initialize the power sensor with ashp_ prefix."""
+        super().__init__(coordinator, config_entry)
+        self._attr_name = "ASHP Current Power"
+        self._attr_unique_id = f"ashp_{config_entry.entry_id}_current_power"
+        self.entity_id = "sensor.ashp_current_power"
         self._attr_device_class = SensorDeviceClass.POWER
         self._attr_state_class = SensorStateClass.MEASUREMENT
-
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, config_entry.entry_id)},
-            "name": "ASHP",
-            "manufacturer": MANUFACTURER,
-            "model": MODEL,
-            "sw_version": "1.0.0",
-        }
+        self._attr_native_unit_of_measurement = UnitOfPower.WATT
+        self._attr_icon = "mdi:flash"
 
     @property
     def native_value(self) -> Optional[float]:
-        """Return the power consumption in watts."""
-        if "input_3" in self.coordinator.data:
-            register_data = self.coordinator.data["input_3"]
-            if register_data.get("available", True):
-                return register_data["value"]
-        return None
-
-
-class GrantAerona3COPSensor(CoordinatorEntity, SensorEntity):
-    """COP (Coefficient of Performance) sensor."""
-
-    def __init__(
-        self,
-        coordinator: GrantAerona3Coordinator,
-        config_entry: ConfigEntry,
-    ) -> None:
-        """Initialize the COP sensor."""
-        super().__init__(coordinator)
-
-        self._attr_unique_id = f"{config_entry.entry_id}_cop"
-        self._attr_name = "COP"
-        self._attr_native_unit_of_measurement = None
-        self._attr_state_class = SensorStateClass.MEASUREMENT
-        self._attr_icon = "mdi:thermometer-chevron-up"
-
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, config_entry.entry_id)},
-            "name": "ASHP",
-            "manufacturer": MANUFACTURER,
-            "model": MODEL,
-            "sw_version": "1.0.0",
-        }
-
-    @property
-    def native_value(self) -> Optional[float]:
-        """Return the calculated COP."""
-        # Get required data
-        power_data = self.coordinator.data.get("input_3")  # Current Consumption Value
-        flow_temp_data = self.coordinator.data.get("input_9")  # Outgoing Water Temperature
-        return_temp_data = self.coordinator.data.get("input_0")  # Return Water Temperature
-        
-        if not all([power_data, flow_temp_data, return_temp_data]):
+        """Calculate power consumption from available registers."""
+        if not self.coordinator.data:
             return None
         
-        # Check if all registers are available
-        if not all([data.get("available", True) for data in [power_data, flow_temp_data, return_temp_data]]):
-            return None
+        # Get power from register 3: Current consumption value (100W scale)
+        input_regs = self.coordinator.data.get("input_registers", {})
         
-        power = power_data["value"]
-        flow_temp = flow_temp_data["value"]
-        return_temp = return_temp_data["value"]
+        power = input_regs.get(3)  # Register 3: Current consumption value
+        if power is not None and power >= 0:
+            return round(power * 100, 1)  # Convert from 100W scale to watts
         
-        # Validate inputs
-        if power <= 0 or power > MAX_POWER_W:
-            return None
-        
-        # Calculate temperature difference
-        temp_diff = abs(flow_temp - return_temp)
-        if temp_diff <= 1.0 or temp_diff > 20.0:  # Reasonable temp difference
-            return None
-        
-        # Get flow rate from your existing number entity OR coordinator
-        flow_rate = getattr(self.coordinator, 'flow_rate', None)
-        
-        # If coordinator doesn't have it, try to get from Home Assistant state
-        if not flow_rate or flow_rate <= 0:
-            try:
-                # Try to get the flow rate from your number entity
-                flow_rate_state = self.coordinator.hass.states.get("number.ashp_flow_rate")
-                if flow_rate_state and flow_rate_state.state not in ["unavailable", "unknown"]:
-                    flow_rate = float(flow_rate_state.state)
-                else:
-                    # Fallback to your measured value
-                    flow_rate = DEFAULT_FLOW_RATE
-            except Exception:
-                flow_rate = DEFAULT_FLOW_RATE
-        
-        if flow_rate and flow_rate > 0:
-            # Accurate COP calculation with flow rate
-            # Convert flow rate from L/min to kg/s
-            mass_flow_rate = (flow_rate * 1.0) / 60  # kg/s (water density = 1 kg/L)
-            
-            # Calculate heat output in kW
-            # Specific heat of water = 4.18 kJ/kg·K
-            heat_output_kw = (mass_flow_rate * 4.18 * temp_diff) / 1000
-            
-            # Calculate COP = Heat Output / Electrical Input
-            power_kw = power / 1000
-            if power_kw > 0:
-                cop = heat_output_kw / power_kw
-                
-                # Validate COP is reasonable for 13kW system
-                if cop < 1.0 or cop > 8.0:
-                    # Fall back to simplified calculation
-                    return self._simplified_cop_calculation(temp_diff, power)
-                
-                return round(cop, 2)
-        
-        # Simplified calculation fallback
-        return self._simplified_cop_calculation(temp_diff, power)
-
-    def _simplified_cop_calculation(self, temp_diff: float, power: float) -> float:
-        """Simplified COP calculation for 13kW Grant Aerona3."""
-        # Get outdoor temperature if available
-        outdoor_temp_data = self.coordinator.data.get("input_6")
-        outdoor_temp = 0  # Default assumption
-        
-        if outdoor_temp_data and outdoor_temp_data.get("available", True):
-            outdoor_temp = outdoor_temp_data["value"]
-        
-        # Base efficiency for 13kW system varies with outdoor temperature
-        if outdoor_temp >= 10:
-            base_efficiency = 4.2  # Excellent conditions
-        elif outdoor_temp >= 7:
-            base_efficiency = 3.8  # Good conditions
-        elif outdoor_temp >= 2:
-            base_efficiency = 3.2  # Normal conditions
-        elif outdoor_temp >= -2:
-            base_efficiency = 2.8  # Cold conditions
-        else:
-            base_efficiency = 2.3  # Very cold conditions
-        
-        # Adjust for system load (13kW system performance characteristics)
-        load_factor = power / RATED_POWER_W  # Percentage of rated capacity
-        if load_factor > 0.8:
-            base_efficiency *= 0.95  # Slight reduction at high load
-        elif load_factor < 0.3:
-            base_efficiency *= 0.9   # Slight reduction at very low load
-        
-        # Adjust for temperature difference (optimal around 7-10°C for radiators)
-        if temp_diff < 5:
-            temp_factor = 1.1  # Low temp diff = high efficiency
-        elif temp_diff <= 10:
-            temp_factor = 1.0  # Optimal range
-        elif temp_diff <= 15:
-            temp_factor = 0.95  # Slightly high
-        else:
-            temp_factor = 0.85  # High temp diff = lower efficiency
-        
-        estimated_efficiency = base_efficiency * temp_factor
-        
-        # Cap at reasonable limits for 13kW system
-        cop = max(1.8, min(estimated_efficiency, 6.5))
-        return round(cop, 2)
+        return 0
 
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:
-        """Return additional COP calculation details."""
-        # Get flow rate from coordinator or number entity
-        flow_rate = getattr(self.coordinator, 'flow_rate', None)
+        """Return extra state attributes."""
+        if not self.coordinator.data:
+            return {}
         
-        if not flow_rate or flow_rate <= 0:
-            try:
-                flow_rate_state = self.coordinator.hass.states.get("number.ashp_flow_rate")
-                if flow_rate_state and flow_rate_state.state not in ["unavailable", "unknown"]:
-                    flow_rate = float(flow_rate_state.state)
-            except Exception:
-                flow_rate = None
-        
-        attributes = {
-            "tooltip": "COP (Coefficient of Performance) measures how efficiently your heat pump converts electricity into heat",
-            "explanation": "Higher COP values mean better efficiency and lower running costs",
-            "system_size": "13kW Grant Aerona3",
-            "recommended_flow_rate": "35 L/min (Grant recommendation)",
-            "current_setting": "30 L/min (installer setting - lowest pump speed)",
-            "flow_rate_note": "30 L/min is good for normal operation, 35 L/min for extreme conditions"
+        input_regs = self.coordinator.data.get("input_registers", {})
+        return {
+            "register_source": "Register 3 - Current consumption value",
+            "scale_factor": "100W",
+            "compressor_frequency": input_regs.get(1, 0),
+            "raw_power_value": input_regs.get(3, 0),
         }
-        
-        if flow_rate and flow_rate > 0:
-            attributes.update({
-                "calculation_method": "accurate_with_flow_rate",
-                "flow_rate_used": f"{flow_rate} L/min",
-                "flow_rate_source": "number entity or coordinator",
-                "formula": "COP = (Flow Rate × Specific Heat × ΔT) / Electrical Power",
-                "note": "Accurate COP calculation using configured flow rate"
-            })
-        else:
-            attributes.update({
-                "calculation_method": "simplified_estimation",
-                "note": "Using simplified calculation - check flow rate number entity",
-                "fallback_flow_rate": f"{DEFAULT_FLOW_RATE} L/min (your measured value)"
-            })
-        
-        # Add current readings for debugging
-        power_data = self.coordinator.data.get("input_3")
-        flow_temp_data = self.coordinator.data.get("input_9")
-        return_temp_data = self.coordinator.data.get("input_0")
-        outdoor_temp_data = self.coordinator.data.get("input_6")
-
-        if power_data:
-            attributes["current_power_w"] = power_data.get("value")
-            attributes["system_load_percent"] = round((power_data.get("value", 0) / RATED_POWER_W) * 100, 1)
-
-        if flow_temp_data:
-            attributes["flow_temperature_c"] = flow_temp_data.get("value")
-
-        if return_temp_data:
-            attributes["return_temperature_c"] = return_temp_data.get("value")
-
-        if outdoor_temp_data:
-            attributes["outdoor_temperature_c"] = outdoor_temp_data.get("value")
-
-        if flow_temp_data and return_temp_data:
-            flow_temp = flow_temp_data.get("value", 0)
-            return_temp = return_temp_data.get("value", 0)
-            temp_diff = abs(flow_temp - return_temp)
-            attributes["temperature_difference_c"] = temp_diff
-
-            # Add efficiency guidance
-            if temp_diff < 5:
-                attributes["temp_diff_status"] = "Very efficient (low ΔT)"
-            elif temp_diff <= 10:
-                attributes["temp_diff_status"] = "Optimal range"
-            elif temp_diff <= 15:
-                attributes["temp_diff_status"] = "Acceptable (high ΔT)"
-            else:
-                attributes["temp_diff_status"] = "Check system - very high ΔT"
-
-        return attributes
 
 
-class GrantAerona3EfficiencySensor(CoordinatorEntity, SensorEntity):
-    """System efficiency sensor."""
+class GrantAerona3EnergySensor(GrantAerona3BaseSensor):
+    """Grant Aerona3 energy consumption sensor with ashp_ prefix."""
 
     def __init__(
         self,
         coordinator: GrantAerona3Coordinator,
         config_entry: ConfigEntry,
     ) -> None:
-        """Initialize the efficiency sensor."""
-        super().__init__(coordinator)
-
-        self._attr_unique_id = f"{config_entry.entry_id}_system_efficiency"
-        self._attr_name = "System Efficiency"
-        self._attr_native_unit_of_measurement = PERCENTAGE
-        self._attr_icon = "mdi:gauge"
-
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, config_entry.entry_id)},
-            "name": "ASHP",
-            "manufacturer": MANUFACTURER,
-            "model": MODEL,
-            "sw_version": "1.0.0",
-        }
-
-    @property
-    def native_value(self) -> Optional[float]:
-        """Return the system efficiency percentage."""
-        # Calculate based on COP if available
-        power_data = self.coordinator.data.get("input_3")
-        flow_temp_data = self.coordinator.data.get("input_9")
-        return_temp_data = self.coordinator.data.get("input_0")
-
-        if not all([power_data, flow_temp_data, return_temp_data]):
-            return None
-
-        # Check if all registers are available
-        if not all([data.get("available", True) for data in [power_data, flow_temp_data, return_temp_data]]):
-            return None
-
-        power = power_data["value"]
-        flow_temp = flow_temp_data["value"]
-        return_temp = return_temp_data["value"]
-
-        if power <= 0:
-            return None
-
-        temp_diff = abs(flow_temp - return_temp)
-        if temp_diff <= 0:
-            return None
-
-        # Simple efficiency calculation based on temperature difference and power
-        # Higher temp difference with lower power = better efficiency
-        if temp_diff > 0 and power > 0:
-            efficiency = min((temp_diff / power) * 10000, 100)  # Scale and cap at 100%
-            return round(efficiency, 1)
-
-        return None
-
-
-class GrantAerona3EnergySensor(CoordinatorEntity, SensorEntity):
-    """Energy consumption sensor (calculated from power over time)."""
-
-    def __init__(
-        self,
-        coordinator: GrantAerona3Coordinator,
-        config_entry: ConfigEntry,
-    ) -> None:
-        """Initialize the energy sensor."""
-        super().__init__(coordinator)
-
-        self._attr_unique_id = f"{config_entry.entry_id}_energy_consumption"
-        self._attr_name = "Energy Consumption"
-        self._attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
+        """Initialize the energy sensor with ashp_ prefix."""
+        super().__init__(coordinator, config_entry)
+        self._attr_name = "ASHP Daily Energy"
+        self._attr_unique_id = f"ashp_{config_entry.entry_id}_daily_energy"
+        self.entity_id = "sensor.ashp_daily_energy"
         self._attr_device_class = SensorDeviceClass.ENERGY
         self._attr_state_class = SensorStateClass.TOTAL_INCREASING
-
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, config_entry.entry_id)},
-            "name": "ASHP",
-            "manufacturer": MANUFACTURER,
-            "model": MODEL,
-            "sw_version": "1.0.0",
-        }
-
-        # Energy calculation state
-        self._last_power = None
-        self._last_update = None
-        self._total_energy = 0.0
+        self._attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
+        self._attr_icon = "mdi:lightning-bolt"
 
     @property
-    def native_value(self) -> float:
-        """Return the total energy consumption in kWh."""
-        if "input_3" in self.coordinator.data:
-            register_data = self.coordinator.data["input_3"]
-            if register_data.get("available", True):
-                current_power = register_data["value"]
-
-                # Simple energy integration (this is only accurate if called every second)
-                # For production use, prefer Home Assistant's utility meter integration.
-                if current_power > 0:
-                    self._total_energy += current_power / 1000 / 3600  # Very rough estimation
-
-        return round(self._total_energy, 3)
+    def native_value(self) -> Optional[float]:
+        """Return daily energy consumption."""
+        if not self.coordinator.data:
+            return None
+        
+        # Look for energy register or calculate from power
+        input_regs = self.coordinator.data.get("input_registers", {})
+        
+        # Try to get direct energy reading (adjust register as needed)
+        energy = input_regs.get(10)  # Adjust this register number
+        if energy is not None:
+            return round(energy / 1000, 2) if energy > 0 else 0
+        
+        # Note: For actual energy tracking, users should set up utility_meter
+        # This is just a placeholder
+        return 0
 
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:
-        """Return additional energy attributes."""
+        """Return extra state attributes."""
         return {
-            "calculation_method": "basic_integration",
-            "note": "Energy calculated by basic power integration - consider using utility meter for accuracy"
+            "calculation_method": "direct_register",
+            "note": "Use utility_meter integration with power sensor for accurate daily tracking"
+        }
+
+
+class GrantAerona3COPSensor(GrantAerona3BaseSensor):
+    """Grant Aerona3 Coefficient of Performance sensor with ashp_ prefix."""
+
+    def __init__(
+        self,
+        coordinator: GrantAerona3Coordinator,
+        config_entry: ConfigEntry,
+    ) -> None:
+        """Initialize the COP sensor with ashp_ prefix."""
+        super().__init__(coordinator, config_entry)
+        self._attr_name = "ASHP Coefficient of Performance"
+        self._attr_unique_id = f"ashp_{config_entry.entry_id}_coefficient_of_performance"
+        self.entity_id = "sensor.ashp_coefficient_of_performance"
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+        self._attr_native_unit_of_measurement = None
+        self._attr_icon = "mdi:speedometer"
+
+    @property
+    def native_value(self) -> Optional[float]:
+        """Calculate COP from available data."""
+        if not self.coordinator.data:
+            return None
+        
+        input_regs = self.coordinator.data.get("input_registers", {})
+        
+        # Get temperatures for COP calculation
+        flow_temp = input_regs.get(1)
+        flow_temp = flow_temp * 0.1 if flow_temp is not None else None
+        return_temp = input_regs.get(0, 0) * 0.1 if input_regs.get(0) else None  # Adjust register/scale
+        value = input_regs.get(2)
+        value = value * 0.1 if value is not None else None
+        
+        if flow_temp and return_temp and value:
+            # Simplified COP calculation based on temperatures
+            temp_lift = flow_temp - value
+            if temp_lift > 0:
+                # Basic COP estimation - adjust formula as needed
+                cop = 6.8 - (temp_lift * 0.1)
+                return round(max(cop, 1.0), 2)
+        
+        return None
+
+    @property
+    def extra_state_attributes(self) -> Dict[str, Any]:
+        """Return extra state attributes."""
+        input_regs = self.coordinator.data.get("input_registers", {}) if self.coordinator.data else {}
+        return {
+            "calculation_method": "temperature_based_estimation",
+            "flow_temperature": input_regs.get(1, 0) * 0.1 if input_regs.get(1) else None,
+            "return_temperature": input_regs.get(0, 0) * 0.1 if input_regs.get(0) else None,
+            "outdoor_temperature": input_regs.get(2, 0) * 0.1 if input_regs.get(2) else None,
+        }
+
+
+class GrantAerona3EfficiencySensor(GrantAerona3BaseSensor):
+    """Grant Aerona3 efficiency sensor with ashp_ prefix."""
+
+    def __init__(
+        self,
+        coordinator: GrantAerona3Coordinator,
+        config_entry: ConfigEntry,
+    ) -> None:
+        """Initialize the efficiency sensor with ashp_ prefix."""
+        super().__init__(coordinator, config_entry)
+        self._attr_name = "ASHP System Efficiency"
+        self._attr_unique_id = f"ashp_{config_entry.entry_id}_system_efficiency"
+        self.entity_id = "sensor.ashp_system_efficiency"
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+        self._attr_native_unit_of_measurement = PERCENTAGE
+        self._attr_icon = "mdi:percent"
+
+    @property
+    def native_value(self) -> Optional[float]:
+        """Calculate system efficiency percentage."""
+        if not self.coordinator.data:
+            return None
+        
+        # Get COP and convert to efficiency percentage
+        input_regs = self.coordinator.data.get("input_registers", {})
+        
+        # Simple efficiency based on compressor frequency
+        frequency = input_regs.get(1, 0)
+        if frequency > 0:
+            # Basic efficiency calculation - adjust as needed
+            efficiency = min((frequency / 100) * 85, 95)  # Scale to percentage
+            return round(efficiency, 1)
+        
+        return None
+
+
+class GrantAerona3WeatherCompSensor(GrantAerona3BaseSensor):
+    """Grant Aerona3 weather compensation sensor with ashp_ prefix."""
+
+    def __init__(
+        self,
+        coordinator: GrantAerona3Coordinator,
+        config_entry: ConfigEntry,
+    ) -> None:
+        """Initialize the weather compensation sensor with ashp_ prefix."""
+        super().__init__(coordinator, config_entry)
+        self._attr_name = "ASHP Weather Compensation"
+        self._attr_unique_id = f"ashp_{config_entry.entry_id}_weather_compensation"
+        self.entity_id = "sensor.ashp_weather_compensation"
+        self._attr_device_class = SensorDeviceClass.TEMPERATURE
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+        self._attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
+        self._attr_icon = "mdi:weather-partly-cloudy"
+
+    @property
+    def native_value(self) -> Optional[float]:
+        """Return weather compensation target temperature."""
+        if not self.coordinator.data:
+            return None
+        
+        # Get from holding register or calculate
+        holding_regs = self.coordinator.data.get("holding_registers", {})
+        
+        # Try to get weather compensation setting (adjust register as needed)
+        comp_temp = holding_regs.get(50)  # Adjust register number
+        if comp_temp is not None:
+            return round(comp_temp * 0.1, 1)  # Adjust scale factor
+        
+        return None
+
+
+class GrantAerona3DailyCostSensor(GrantAerona3BaseSensor):
+    """Grant Aerona3 daily cost sensor with ashp_ prefix."""
+
+    def __init__(
+        self,
+        coordinator: GrantAerona3Coordinator,
+        config_entry: ConfigEntry,
+    ) -> None:
+        """Initialize the daily cost sensor with ashp_ prefix."""
+        super().__init__(coordinator, config_entry)
+        self._attr_name = "ASHP Daily Cost Estimate"
+        self._attr_unique_id = f"ashp_{config_entry.entry_id}_daily_cost_estimate"
+        self.entity_id = "sensor.ashp_daily_cost_estimate"
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+        self._attr_native_unit_of_measurement = "GBP"
+        self._attr_icon = "mdi:currency-gbp"
+
+    @property
+    def native_value(self) -> Optional[float]:
+        """Calculate estimated daily cost."""
+        if not self.coordinator.data:
+            return None
+        
+        # Basic cost calculation - this would be enhanced with actual energy tracking
+        input_regs = self.coordinator.data.get("input_registers", {})
+        
+        # Estimate from current power consumption
+        power = input_regs.get(5, 0)  # Adjust register
+        if power > 0:
+            # Estimate daily consumption and cost
+            daily_kwh = (power / 1000) * 24  # Very rough estimate
+            uk_rate = 0.30  # £0.30 per kWh typical rate
+            return round(daily_kwh * uk_rate, 2)
+        
+        return 0
+
+    @property
+    def extra_state_attributes(self) -> Dict[str, Any]:
+        """Return extra state attributes."""
+        return {
+            "electricity_rate": "0.30 GBP/kWh",
+            "note": "Estimated cost - set up utility_meter for accurate tracking"
+        }
+
+
+class GrantAerona3MonthlyCostSensor(GrantAerona3BaseSensor):
+    """Grant Aerona3 monthly cost sensor with ashp_ prefix."""
+
+    def __init__(
+        self,
+        coordinator: GrantAerona3Coordinator,
+        config_entry: ConfigEntry,
+    ) -> None:
+        """Initialize the monthly cost sensor with ashp_ prefix."""
+        super().__init__(coordinator, config_entry)
+        self._attr_name = "ASHP Monthly Cost Projection"
+        self._attr_unique_id = f"ashp_{config_entry.entry_id}_monthly_cost_projection"
+        self.entity_id = "sensor.ashp_monthly_cost_projection"
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+        self._attr_native_unit_of_measurement = "GBP"
+        self._attr_icon = "mdi:calendar-month"
+
+    @property
+    def native_value(self) -> Optional[float]:
+        """Calculate projected monthly cost."""
+        if not self.coordinator.data:
+            return None
+        
+        # Basic monthly projection
+        input_regs = self.coordinator.data.get("input_registers", {})
+        
+        power = input_regs.get(5, 0)  # Adjust register
+        if power > 0:
+            # Estimate monthly consumption and cost
+            monthly_kwh = (power / 1000) * 24 * 30  # Very rough estimate
+            uk_rate = 0.30  # £0.30 per kWh typical rate
+            return round(monthly_kwh * uk_rate, 2)
+        
+        return 0
+
+    @property
+    def extra_state_attributes(self) -> Dict[str, Any]:
+        """Return extra state attributes."""
+        return {
+            "electricity_rate": "0.30 GBP/kWh",
+            "projection_method": "current_power_x30_days",
+            "note": "Projection based on current consumption - actual costs may vary"
         }

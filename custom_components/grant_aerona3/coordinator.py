@@ -1,31 +1,33 @@
-"""Improved data update coordinator for Grant Aerona3 Heat Pump."""
+"""DataUpdateCoordinator for Grant Aerona3 Heat Pump."""
+from __future__ import annotations
+
+import asyncio
 import logging
 from datetime import timedelta
 from typing import Any, Dict
+
+from pymodbus.client import ModbusTcpClient
+from pymodbus.exceptions import ModbusException
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-from pymodbus.client import ModbusTcpClient
-from pymodbus.exceptions import ModbusException
-import pymodbus
 
 from .const import (
-    CONF_SCAN_INTERVAL,
-    CONF_SLAVE_ID,
-    DEFAULT_SCAN_INTERVAL,
     DOMAIN,
+    CONF_SLAVE_ID,
+    CONF_SCAN_INTERVAL,
     INPUT_REGISTER_MAP,
     HOLDING_REGISTER_MAP,
-    COIL_REGISTER_MAP,
+    DEFAULT_SCAN_INTERVAL,
 )
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class GrantAerona3Coordinator(DataUpdateCoordinator):
-    """Grant Aerona3 data update coordinator with improved entity creation."""
+    """Class to manage fetching data from Grant Aerona3 Heat Pump."""
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         """Initialize the coordinator."""
@@ -33,386 +35,248 @@ class GrantAerona3Coordinator(DataUpdateCoordinator):
         self.host = entry.data[CONF_HOST]
         self.port = entry.data[CONF_PORT]
         self.slave_id = entry.data[CONF_SLAVE_ID]
-
-        # Detect pymodbus version for parameter compatibility
-        pymodbus_version = tuple(map(int, pymodbus.__version__.split('.')[:2]))
-        self._use_slave_param = pymodbus_version >= (3, 0)
-
-        _LOGGER.info("Using pymodbus %s, slave parameter: %s",
-                    pymodbus.__version__, self._use_slave_param)
-
+        
+        # Get scan interval, with fallback
         scan_interval = entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
-
+        
         super().__init__(
             hass,
             _LOGGER,
-            name=DOMAIN,
+            name=f"{DOMAIN}_{self.host}",
             update_interval=timedelta(seconds=scan_interval),
         )
-
+        
         self._client = ModbusTcpClient(
             host=self.host,
             port=self.port,
-            timeout=10
+            timeout=10,
+            retry_on_empty=True,
+            retries=3,
+        )
+        
+        _LOGGER.info(
+            "Initialized ASHP coordinator for %s:%s (scan interval: %s seconds)",
+            self.host,
+            self.port,
+            scan_interval
         )
 
-        # Track which registers are available vs unavailable
-        self._available_registers = {
-            'input': set(),
-            'holding': set(),
-            'coil': set()
-        }
-        
-        # Flow rate for COP calculations
-        self.flow_rate = 20.0  # Default flow rate
-
-    def _get_slave_kwargs(self) -> Dict[str, int]:
-        """Get the correct slave/unit parameter for the pymodbus version."""
-        if self._use_slave_param:
-            return {"slave": self.slave_id}
-        else:
-            return {"unit": self.slave_id}
-
     async def _async_update_data(self) -> Dict[str, Any]:
-        """Fetch data from the heat pump."""
+        """Fetch data from heat pump."""
         try:
-            return await self.hass.async_add_executor_job(self._fetch_data)
+            return await asyncio.wait_for(self._fetch_data(), timeout=30.0)
+        except asyncio.TimeoutError as err:
+            raise UpdateFailed(f"Timeout connecting to ASHP at {self.host}") from err
         except Exception as err:
-            raise UpdateFailed(f"Error communicating with heat pump: {err}") from err
+            raise UpdateFailed(f"Error communicating with ASHP: {err}") from err
 
-    def _fetch_data(self) -> Dict[str, Any]:
-        """Fetch data from the heat pump (runs in executor)."""
-        data = {}
+    async def _fetch_data(self) -> Dict[str, Any]:
+        """Fetch all data from the heat pump."""
+        data = {
+            "input_registers": {},
+            "holding_registers": {},
+            "coil_registers": {},
+            "last_update": self.hass.loop.time(),
+        }
 
-        # Use context manager for automatic client cleanup
-        client_connected = False
         try:
-            client_connected = self._client.connect()
-            if not client_connected:
-                raise ModbusException("Failed to connect to Modbus device")
+            # Connect to the heat pump
+            connected = await self.hass.async_add_executor_job(self._client.connect)
+            if not connected:
+                raise UpdateFailed(f"Failed to connect to ASHP at {self.host}:{self.port}")
 
-            # Read all input registers
-            input_data = self._read_input_registers()
-            data.update(input_data)
+            # Read input registers (sensor data)
+            input_data = await self._read_input_registers()
+            data["input_registers"] = input_data
 
-            # Read all holding registers with improved error handling
-            holding_data = self._read_holding_registers_bulk()
-            data.update(holding_data)
+            # Read holding registers (configuration)
+            holding_data = await self._read_holding_registers()
+            data["holding_registers"] = holding_data
 
-            # Read all coil registers
-            coil_data = self._read_coil_registers_bulk()
-            data.update(coil_data)
+            # Add some calculated values
+            data["calculated"] = self._calculate_derived_values(input_data, holding_data)
 
-            # CRITICAL FIX: Create placeholder entries for unavailable registers
-            # This ensures entities are still created even if registers can't be read
-            self._create_placeholder_entries(data)
+            _LOGGER.debug(
+                "Successfully read %d input registers and %d holding registers from ASHP",
+                len(input_data),
+                len(holding_data)
+            )
 
+        except ModbusException as err:
+            _LOGGER.error("Modbus error reading from ASHP: %s", err)
+            raise UpdateFailed(f"Modbus communication error: {err}") from err
         except Exception as err:
-            _LOGGER.error("Error during data fetch: %s", str(err))
-            # Even on error, create placeholder entries so entities can be created
-            self._create_placeholder_entries(data)
-            raise
+            _LOGGER.error("Unexpected error reading from ASHP: %s", err)
+            raise UpdateFailed(f"Unexpected error: {err}") from err
         finally:
-            # Ensure client is always closed, even if connect() failed
-            if client_connected:
-                try:
-                    self._client.close()
-                except Exception as close_err:
-                    _LOGGER.warning("Error closing Modbus client: %s", str(close_err))
+            # Always close the connection
+            try:
+                await self.hass.async_add_executor_job(self._client.close)
+            except Exception:
+                pass  # Ignore close errors
 
-        _LOGGER.info("Successfully read %d total registers", len(data))
         return data
 
-    def _create_placeholder_entries(self, data: Dict[str, Any]) -> None:
-        """Create placeholder entries for registers that couldn't be read.
-        
-        This ensures all entities are created even if some registers are unavailable.
-        """
-        # Create placeholders for missing input registers
-        for addr, config in INPUT_REGISTER_MAP.items():
-            register_key = f"input_{addr}"
-            if register_key not in data:
-                data[register_key] = {
-                    "value": None,
-                    "raw_value": None,
-                    "name": config.get("name", f"Input Register {addr}"),
-                    "unit": config.get("unit"),
-                    "device_class": config.get("device_class"),
-                    "state_class": config.get("state_class"),
-                    "description": config.get("description", ""),
-                    "available": False,
-                    "error": "Register not available"
-                }
-
-        # Create placeholders for missing holding registers
-        for addr, config in HOLDING_REGISTER_MAP.items():
-            register_key = f"holding_{addr}"
-            if register_key not in data:
-                data[register_key] = {
-                    "value": None,
-                    "raw_value": None,
-                    "name": config.get("name", f"Holding Register {addr}"),
-                    "unit": config.get("unit"),
-                    "device_class": config.get("device_class"),
-                    "description": config.get("description", ""),
-                    "writable": config.get("writable", False),
-                    "available": False,
-                    "error": "Register not available"
-                }
-
-        # Create placeholders for missing coil registers
-        for addr, config in COIL_REGISTER_MAP.items():
-            register_key = f"coil_{addr}"
-            if register_key not in data:
-                data[register_key] = {
-                    "value": False,  # Default to False for coils
-                    "name": config.get("name", f"Coil Register {addr}"),
-                    "description": config.get("description", ""),
-                    "available": False,
-                    "error": "Register not available"
-                }
-
-    def _read_input_registers(self) -> Dict[str, Any]:
+    async def _read_input_registers(self) -> Dict[int, float]:
         """Read all input registers."""
-        data = {}
-        slave_kwargs = self._get_slave_kwargs()
-
-        # Read input registers individually to avoid index mapping issues
-        for addr, config in INPUT_REGISTER_MAP.items():
-            try:
-                result = self._client.read_input_registers(
-                    address=addr,
-                    count=1,
-                    **slave_kwargs
-                )
-
-                if result is not None and not result.isError():
-                    raw_value = result.registers[0]  # Always use index 0 for single register reads
-
-                    # Handle signed values (temperature can be negative)
-                    if raw_value > 32767:
-                        raw_value = raw_value - 65536
-
-                    # Apply scaling from const.py with safe config access
-                    scale = config.get("scale", 1)
-                    scaled_value = raw_value * scale
-
-                    data[f"input_{addr}"] = {
-                        "value": scaled_value,
-                        "raw_value": result.registers[0],
-                        "name": config.get("name", f"Input Register {addr}"),
-                        "unit": config.get("unit"),
-                        "device_class": config.get("device_class"),
-                        "state_class": config.get("state_class"),
-                        "description": config.get("description", ""),
-                        "available": True
-                    }
-                    self._available_registers['input'].add(addr)
-                elif result is not None:
-                    _LOGGER.debug("Input register %d (%s) not available: %s",
-                                addr, config.get("name", f"Register {addr}"), str(result))
-                else:
-                    _LOGGER.debug("Input register %d (%s) read returned None",
-                                addr, config.get("name", f"Register {addr}"))
-
-            except Exception as err:
-                _LOGGER.debug("Error reading input register %d (%s): %s",
-                            addr, config.get("name", f"Register {addr}"), str(err))
+        input_data = {}
+        
+        # Read registers in chunks to avoid timeouts
+        chunk_size = 20
+        register_ids = list(INPUT_REGISTER_MAP.keys())
+        
+        for i in range(0, len(register_ids), chunk_size):
+            chunk = register_ids[i:i + chunk_size]
+            if not chunk:
                 continue
-
-        _LOGGER.info("Successfully read %d input registers", len(data))
-        return data
-
-    def _read_holding_registers_bulk(self) -> Dict[str, Any]:
-        """Read holding registers individually with robust error handling."""
-        data = {}
-        successful_reads = 0
-        failed_reads = 0
-        slave_kwargs = self._get_slave_kwargs()
-
-        # Read each holding register individually to avoid bulk read failures
-        for addr, config in HOLDING_REGISTER_MAP.items():
+                
+            start_reg = min(chunk)
+            end_reg = max(chunk)
+            count = end_reg - start_reg + 1
+            
             try:
-                result = self._client.read_holding_registers(
-                    address=addr,
-                    count=1,
-                    **slave_kwargs
+                result = await self.hass.async_add_executor_job(
+                    self._client.read_input_registers,
+                    start_reg,
+                    count,
+                    self.slave_id
                 )
-
-                if result is not None and not result.isError():
-                    raw_value = result.registers[0]
-
-                    # Handle signed values
-                    if raw_value > 32767:
-                        raw_value = raw_value - 65536
-
-                    # Apply scaling from const.py with safe config access
-                    scale = config.get("scale", 1)
-                    scaled_value = raw_value * scale
-
-                    data[f"holding_{addr}"] = {
-                        "value": scaled_value,
-                        "raw_value": result.registers[0],
-                        "name": config.get("name", f"Holding Register {addr}"),
-                        "unit": config.get("unit"),
-                        "device_class": config.get("device_class"),
-                        "description": config.get("description", ""),
-                        "writable": config.get("writable", False),
-                        "available": True
-                    }
-                    self._available_registers['holding'].add(addr)
-                    successful_reads += 1
-                elif result is not None:
-                    _LOGGER.debug("Holding register %d (%s) not available: %s",
-                                addr, config.get("name", f"Register {addr}"), str(result))
-                    failed_reads += 1
+                
+                if not result.isError():
+                    for j, reg_id in enumerate(range(start_reg, end_reg + 1)):
+                        if reg_id in INPUT_REGISTER_MAP and j < len(result.registers):
+                            input_data[reg_id] = result.registers[j]
                 else:
-                    _LOGGER.debug("Holding register %d (%s) read returned None",
-                                addr, config.get("name", f"Register {addr}"))
-                    failed_reads += 1
-
+                    _LOGGER.warning("Error reading input registers %d-%d: %s", start_reg, end_reg, result)
+                    
             except Exception as err:
-                _LOGGER.debug("Error reading holding register %d (%s): %s",
-                            addr, config.get("name", f"Register {addr}"), str(err))
-                failed_reads += 1
+                _LOGGER.warning("Failed to read input registers %d-%d: %s", start_reg, end_reg, err)
+                
+        return input_data
+
+    async def _read_holding_registers(self) -> Dict[int, float]:
+        """Read all holding registers."""
+        holding_data = {}
+        
+        # Read registers in chunks
+        chunk_size = 20
+        register_ids = list(HOLDING_REGISTER_MAP.keys())
+        
+        for i in range(0, len(register_ids), chunk_size):
+            chunk = register_ids[i:i + chunk_size]
+            if not chunk:
                 continue
-
-        _LOGGER.info("Successfully read %d holding registers (%d failed/unavailable)",
-                    successful_reads, failed_reads)
-        return data
-
-    def _read_coil_registers_bulk(self) -> Dict[str, Any]:
-        """Read coil registers individually with robust error handling."""
-        data = {}
-        successful_reads = 0
-        failed_reads = 0
-        slave_kwargs = self._get_slave_kwargs()
-
-        # Read each coil register individually to avoid bulk read failures
-        for addr, config in COIL_REGISTER_MAP.items():
+                
+            start_reg = min(chunk)
+            end_reg = max(chunk)
+            count = end_reg - start_reg + 1
+            
             try:
-                result = self._client.read_coils(
-                    address=addr,
-                    count=1,
-                    **slave_kwargs
+                result = await self.hass.async_add_executor_job(
+                    self._client.read_holding_registers,
+                    start_reg,
+                    count,
+                    self.slave_id
                 )
-
-                if result is not None and not result.isError():
-                    data[f"coil_{addr}"] = {
-                        "value": result.bits[0],
-                        "name": config.get("name", f"Coil Register {addr}"),
-                        "description": config.get("description", ""),
-                        "available": True
-                    }
-                    self._available_registers['coil'].add(addr)
-                    successful_reads += 1
-                elif result is not None:
-                    _LOGGER.debug("Coil register %d (%s) not available: %s",
-                                addr, config.get("name", f"Register {addr}"), str(result))
-                    failed_reads += 1
+                
+                if not result.isError():
+                    for j, reg_id in enumerate(range(start_reg, end_reg + 1)):
+                        if reg_id in HOLDING_REGISTER_MAP and j < len(result.registers):
+                            holding_data[reg_id] = result.registers[j]
                 else:
-                    _LOGGER.debug("Coil register %d (%s) read returned None",
-                                addr, config.get("name", f"Register {addr}"))
-                    failed_reads += 1
-
+                    _LOGGER.warning("Error reading holding registers %d-%d: %s", start_reg, end_reg, result)
+                    
             except Exception as err:
-                _LOGGER.debug("Error reading coil register %d (%s): %s",
-                            addr, config.get("name", f"Register {addr}"), str(err))
-                failed_reads += 1
-                continue
+                _LOGGER.warning("Failed to read holding registers %d-%d: %s", start_reg, end_reg, err)
+                
+        return holding_data
 
-        _LOGGER.info("Successfully read %d coil registers (%d failed/unavailable)",
-                    successful_reads, failed_reads)
-        return data
-
-    async def async_write_holding_register(self, address: int, value: int) -> bool:
-        """Write to a holding register."""
+    def _calculate_derived_values(self, input_data: Dict[int, float], holding_data: Dict[int, float]) -> Dict[str, Any]:
+        """Calculate derived values from raw register data."""
+        calculated = {}
         try:
-            return await self.hass.async_add_executor_job(
-                self._write_holding_register, address, value
-            )
+            flow_temp = input_data.get(1)
+            return_temp = input_data.get(0)
+            outdoor_temp = input_data.get(2)
+            if flow_temp is not None:
+                flow_temp = flow_temp * 0.1
+            if return_temp is not None:
+                return_temp = return_temp * 0.1
+            if outdoor_temp is not None:
+                outdoor_temp = outdoor_temp * 0.1
+
+            if (
+                flow_temp is not None
+                and return_temp is not None
+                and outdoor_temp is not None
+            ):
+                temp_lift = flow_temp - outdoor_temp
+                if temp_lift > 0:
+                    cop = max(6.8 - (temp_lift * 0.1), 1.0)
+                    calculated["cop"] = round(cop, 2)
+            # Calculate estimated power if frequency is available
+            frequency = input_data.get(1, 0)
+            if frequency > 0:
+                estimated_power = (frequency / 100) * 3000  # Basic estimation
+                calculated["estimated_power"] = min(estimated_power, 8000)
+            
+            # Calculate daily energy estimate (very basic)
+            if "estimated_power" in calculated:
+                daily_energy = (calculated["estimated_power"] / 1000) * 24
+                calculated["daily_energy"] = round(daily_energy, 2)
+                
+                # Calculate daily cost estimate
+                uk_rate = 0.30  # £0.30 per kWh
+                calculated["daily_cost"] = round(daily_energy * uk_rate, 2)
+            
+            # Add weather compensation calculation
+            if outdoor_temp is not None:
+                indoor_target = 21.0
+                base_flow_temp = 35.0
+                compensation_curve = 1.5
+                
+                if outdoor_temp < indoor_target:
+                    temp_diff = indoor_target - outdoor_temp
+                    target_flow = base_flow_temp + (temp_diff * compensation_curve)
+                    calculated["weather_comp_target"] = min(target_flow, 55.0)
+                else:
+                    calculated["weather_comp_target"] = base_flow_temp
+            
         except Exception as err:
-            _LOGGER.error("Error writing holding register %s: %s", address, err)
-            return False
+            _LOGGER.warning("Error calculating derived values: %s", err)
+        
+        return calculated
 
-    def _write_holding_register(self, address: int, value: int) -> bool:
-        """Write to a holding register (runs in executor)."""
-        client_connected = False
-        slave_kwargs = self._get_slave_kwargs()
-
+    async def async_write_register(self, register: int, value: int) -> bool:
+        """Write a value to a holding register."""
         try:
-            client_connected = self._client.connect()
-            if not client_connected:
-                _LOGGER.error("Failed to connect for writing holding register %d", address)
+            connected = await self.hass.async_add_executor_job(self._client.connect)
+            if not connected:
+                _LOGGER.error("Failed to connect for writing register %d", register)
                 return False
 
-            result = self._client.write_register(
-                address=address,
-                value=value,
-                **slave_kwargs
+            result = await self.hass.async_add_executor_job(
+                self._client.write_register,
+                register,
+                value,
+                self.slave_id
             )
-
-            if result is not None:
-                success = not result.isError()
-                if not success:
-                    _LOGGER.error("Failed to write holding register %d: %s", address, str(result))
-                return success
-            else:
-                _LOGGER.error("Write to holding register %d returned None", address)
+            
+            if result.isError():
+                _LOGGER.error("Error writing register %d: %s", register, result)
                 return False
-
+            
+            _LOGGER.info("Successfully wrote value %d to register %d", value, register)
+            
+            # Trigger a data refresh
+            await self.async_request_refresh()
+            return True
+            
         except Exception as err:
-            _LOGGER.error("Exception writing holding register %d: %s", address, str(err))
+            _LOGGER.error("Failed to write register %d: %s", register, err)
             return False
         finally:
-            if client_connected:
-                try:
-                    self._client.close()
-                except Exception as close_err:
-                    _LOGGER.warning("Error closing client after write: %s", str(close_err))
-
-    async def async_write_coil(self, address: int, value: bool) -> bool:
-        """Write to a coil register."""
-        try:
-            return await self.hass.async_add_executor_job(
-                self._write_coil, address, value
-            )
-        except Exception as err:
-            _LOGGER.error("Error writing coil register %d: %s", address, str(err))
-            return False
-
-    def _write_coil(self, address: int, value: bool) -> bool:
-        """Write to a coil register (runs in executor)."""
-        client_connected = False
-        slave_kwargs = self._get_slave_kwargs()
-
-        try:
-            client_connected = self._client.connect()
-            if not client_connected:
-                _LOGGER.error("Failed to connect for writing coil register %d", address)
-                return False
-
-            result = self._client.write_coil(
-                address=address,
-                value=value,
-                **slave_kwargs
-            )
-
-            if result is not None:
-                success = not result.isError()
-                if not success:
-                    _LOGGER.error("Failed to write coil register %d: %s", address, str(result))
-                return success
-            else:
-                _LOGGER.error("Write to coil register %d returned None", address)
-                return False
-
-        except Exception as err:
-            _LOGGER.error("Exception writing coil register %d: %s", address, str(err))
-            return False
-        finally:
-            if client_connected:
-                try:
-                    self._client.close()
-                except Exception as close_err:
-                    _LOGGER.warning("Error closing client after write: %s", str(close_err))
+            try:
+                await self.hass.async_add_executor_job(self._client.close)
+            except Exception:
+                pass

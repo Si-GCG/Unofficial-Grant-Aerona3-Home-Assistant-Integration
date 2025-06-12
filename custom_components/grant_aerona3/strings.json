@@ -2,22 +2,117 @@
   "config": {
     "step": {
       "user": {
-        "title": "Grant Aerona3 Heat Pump",
-        "description": "Enter your Grant Aerona3 heat pump's network details. All registers will be automatically configured as entities.",
+        "title": "Grant Aerona3 Heat Pump (ASHP)",
+        "description": "Enter your Grant Aerona3 heat pump's network details. All entities will be created with 'ashp_' prefixes for better organisation.\n\nVersion 2.0 features:\n• ASHP entity prefixes\n• Enhanced UK support\n• Dashboard-ready naming\n• Energy & cost monitoring",
         "data": {
           "host": "IP Address",
-          "port": "Port",
-          "slave_id": "Slave ID",
+          "port": "Port (usually 502)",
+          "slave_id": "Slave ID (usually 1)",
           "scan_interval": "Scan Interval (seconds)"
+        },
+        "data_description": {
+          "host": "The IP address of your Grant Aerona3 heat pump",
+          "port": "Modbus TCP port (default: 502)",
+          "slave_id": "Modbus slave ID (default: 1)",
+          "scan_interval": "How often to read data from the heat pump (recommended: 30 seconds)"
         }
       }
     },
     "error": {
-      "cannot_connect": "Failed to connect to the heat pump. Please check the IP address and port.",
-      "unknown": "Unexpected error occurred"
+      "cannot_connect": "Failed to connect to the heat pump. Please check:\n• IP address is correct\n• Heat pump is connected to network\n• Modbus TCP is enabled\n• Port 502 is accessible",
+      "unknown": "Unexpected error occurred during setup"
     },
     "abort": {
-      "already_configured": "Device is already configured"
+      "already_configured": "This heat pump is already configured. Each heat pump can only be added once."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "ASHP Integration Options",
+        "description": "Configure advanced options for your ASHP integration",
+        "data": {
+          "scan_interval": "Scan Interval (seconds)",
+          "enable_diagnostics": "Enable diagnostic entities"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "ashp_return_water_temperature": {
+        "name": "Return Water Temperature"
+      },
+      "ashp_flow_water_temperature": {
+        "name": "Flow Water Temperature"
+      },
+      "ashp_outdoor_air_temperature": {
+        "name": "Outdoor Air Temperature"
+      },
+      "ashp_current_power": {
+        "name": "Current Power"
+      },
+      "ashp_coefficient_of_performance": {
+        "name": "Coefficient of Performance"
+      },
+      "ashp_system_efficiency": {
+        "name": "System Efficiency"
+      },
+      "ashp_daily_energy": {
+        "name": "Daily Energy"
+      },
+      "ashp_daily_cost_estimate": {
+        "name": "Daily Cost Estimate"
+      },
+      "ashp_monthly_cost_projection": {
+        "name": "Monthly Cost Projection"
+      },
+      "ashp_weather_compensation": {
+        "name": "Weather Compensation"
+      },
+      "ashp_compressor_operating_frequency": {
+        "name": "Compressor Operating Frequency"
+      }
+    },
+    "binary_sensor": {
+      "ashp_compressor_running": {
+        "name": "Compressor Running"
+      },
+      "ashp_defrost_active": {
+        "name": "Defrost Active"
+      },
+      "ashp_alarm_status": {
+        "name": "Alarm Status"
+      }
+    },
+    "climate": {
+      "ashp_main_zone": {
+        "name": "Main Zone"
+      }
+    },
+    "switch": {
+      "ashp_heating_mode": {
+        "name": "Heating Mode"
+      },
+      "ashp_dhw_mode": {
+        "name": "DHW Mode"
+      }
+    },
+    "number": {
+      "ashp_target_temperature": {
+        "name": "Target Temperature"
+      },
+      "ashp_flow_temperature_setpoint": {
+        "name": "Flow Temperature Setpoint"
+      }
+    }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "alarm_triggered": "Alarm triggered",
+      "defrost_started": "Defrost cycle started",
+      "defrost_ended": "Defrost cycle ended",
+      "low_cop": "Low COP detected"
     }
   }
 }

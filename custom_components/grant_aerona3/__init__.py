@@ -1,4 +1,4 @@
-"""Simplified Grant Aerona3 Heat Pump integration for Home Assistant."""
+"""Grant Aerona3 Heat Pump integration for Home Assistant with ASHP prefixes."""
 from __future__ import annotations
 
 import logging
@@ -13,7 +13,7 @@ from .coordinator import GrantAerona3Coordinator
 
 _LOGGER = logging.getLogger(__name__)
 
-# All platforms will be set up
+# All platforms supported by the integration
 PLATFORMS = [
     Platform.SENSOR,
     Platform.BINARY_SENSOR,
@@ -41,14 +41,22 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
         
         _LOGGER.info(
-            "Grant Aerona3 integration setup completed for %s",
+            "Grant Aerona3 ASHP integration setup completed for %s (v1.1.0 with ashp_ prefixes)",
             entry.data["host"]
         )
+        
+        # Log entity count for debugging
+        entity_count = (
+            len(coordinator.data.get("input_registers", {}) or {}) +
+            len(coordinator.data.get("holding_registers", {}) or {}) +
+            7
+        )
+        _LOGGER.info("Created %d ASHP entities with ashp_ prefixes", entity_count)
         
         return True
         
     except Exception as err:
-        _LOGGER.error("Failed to setup Grant Aerona3 integration: %s", err)
+        _LOGGER.error("Failed to setup Grant Aerona3 ASHP integration: %s", err)
         raise ConfigEntryNotReady(f"Failed to setup integration: {err}") from err
 
 
@@ -59,8 +67,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     
     if unload_ok:
         # Remove coordinator from hass data
-        hass.data[DOMAIN].pop(entry.entry_id)
-        _LOGGER.info("Grant Aerona3 integration unloaded successfully")
+        hass.data[DOMAIN].pop(entry.entry_id, None)
+        _LOGGER.info("Grant Aerona3 ASHP integration unloaded successfully")
 
     return unload_ok
 

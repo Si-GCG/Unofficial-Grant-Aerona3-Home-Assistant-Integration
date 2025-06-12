@@ -230,11 +230,11 @@ class GrantAerona3FlowRateNumber(CoordinatorEntity, NumberEntity):
             "name": "ASHP",
             "manufacturer": MANUFACTURER,
             "model": MODEL,
-            "sw_version": "1.0.0",
+            "sw_version": "1.1.0",
         }
 
         # Default flow rate - typical for residential Grant Aerona3
-        self._flow_rate = 28.0
+        self._flow_rate = 30.0
 
     @property
     def native_value(self) -> float:
