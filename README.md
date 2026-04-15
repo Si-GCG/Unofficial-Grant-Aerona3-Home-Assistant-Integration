@@ -21,7 +21,7 @@ A comprehensive Home Assistant integration for **Grant Aerona3 Heat Pumps** usin
 - **⚡ Energy Monitoring**: Comprehensive energy usage tracking and cost estimation
 - **🔧 Options Flow**: Configure scan intervals and flow rates through the UI
 
-## 🆕 What's New in v1.1.3
+## 🆕 What's New in v1.1.4
 
 - ✅ **Climate Platform Removed**: Eliminated climate entities that weren't adding value
 - ✅ **Simplified Configuration**: Removed unused zone/DHW options from settings
