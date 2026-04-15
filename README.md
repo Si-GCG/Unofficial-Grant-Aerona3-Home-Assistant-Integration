@@ -11,7 +11,7 @@ A comprehensive Home Assistant integration for **Grant Aerona3 Heat Pumps** usin
 ## ✨ Features
 
 - **🔧 Simple Setup**: Just enter IP address, port, and scan interval - no complex configuration
-- **📊 Complete Monitoring**: All 248 Modbus registers automatically created as entities with `ashp_` prefixes
+- **📊 Complete Monitoring**: All 281 Modbus registers automatically created as entities with `ashp_` prefixes
 - **🌡️ Accurate COP Calculation**: Configure your flow rate for precise efficiency measurements
 - **⚙️ Full Control**: Switches and number entities cover setpoints, DHW and weather compensation
 - **🔢 Setpoint Management**: Number entities for all temperature and timing settings
