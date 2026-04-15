@@ -33,7 +33,7 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-INTEGRATION_VERSION = "1.1.1"
+INTEGRATION_VERSION = "1.1.3"
 
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {

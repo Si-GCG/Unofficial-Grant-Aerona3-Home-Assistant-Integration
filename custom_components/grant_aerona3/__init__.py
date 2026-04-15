@@ -46,7 +46,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         unit_id = entry.data.get("unit_id", entry.data.get("slave_id"))  # fallback for old configs
 
         _LOGGER.info(
-            "Grant Aerona3 ASHP integration setup completed for %s (v1.1.1 with ashp_ prefixes)",
+            "Grant Aerona3 ASHP integration setup completed for %s (v1.1.3 with ashp_ prefixes)",
             host
         )
         
