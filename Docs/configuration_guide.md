@@ -31,7 +31,7 @@ The integration automatically creates **150+ entities** across multiple platform
 - **🔘 Binary Sensors**: 30+ on/off status indicators  
 - **🔄 Switches**: 20+ configuration toggles
 - **🔢 Numbers**: 95+ setpoint controls
-- **🏠 Climate**: 1-2 zone controls
+- **🔧 Control Entities**: Switches and numbers for setpoints and DHW control
 
 ## Sensor Entities
 
@@ -132,17 +132,7 @@ The integration automatically creates **150+ entities** across multiple platform
 
 ## Climate Entities
 
-### Zone Controls
-| Entity | Description | Features |
-|--------|-------------|----------|
-| `climate.zone_1` | Main heating zone | Temperature control, mode switching |
-| `climate.zone_2` | Secondary zone | Available if Zone 2 configured |
-
-#### Climate Features
-- **Temperature Control**: Set target flow temperature
-- **HVAC Modes**: Off, Heat, Cool, Auto
-- **Current Temperature**: Shows return water temperature
-- **Attributes**: Flow temp, outdoor temp, compressor frequency
+This integration does not expose dedicated climate entities. Use the available `switch`, `sensor`, and `number` entities for monitoring and control.
 
 ## Entity Configuration
 
@@ -172,7 +162,6 @@ Entities are automatically created based on available data. To manage them:
 - `sensor.power_consumption` - Current power usage
 - `sensor.outdoor_air_temperature` - Weather reference
 - `sensor.outgoing_water_temperature` - Flow temperature
-- `climate.zone_1` - Zone control
 
 #### Medium Priority (Monitoring)
 - `binary_sensor.system_status` - Running state

@@ -4,17 +4,16 @@
 [![Grant Aerona3](https://img.shields.io/badge/Grant%20Aerona3-Supported-green.svg)](https://www.grantuk.com/)
 [![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://hacs.xyz/)
 [![British Made](https://img.shields.io/badge/British%20Made-🇬🇧-red.svg)](#)
-[![Version](https://img.shields.io/badge/Version-1.1.2-brightgreen.svg)](#)
+[![Version](https://img.shields.io/badge/Version-1.1.3-brightgreen.svg)](#)
 
 A comprehensive Home Assistant integration for **Grant Aerona3 Heat Pumps** using Modbus TCP communication. This integration automatically discovers and creates entities for all available registers, providing complete monitoring and control of your heat pump system with **ASHP** entity prefixes for better organization.
 
 ## ✨ Features
 
 - **🔧 Simple Setup**: Just enter IP address, port, and scan interval - no complex configuration
-- **📊 Complete Monitoring**: All 248 Modbus registers automatically created as entities with `ashp_` prefixes
+- **📊 Complete Monitoring**: All 281 Modbus registers automatically created as entities with `ashp_` prefixes
 - **🌡️ Accurate COP Calculation**: Configure your flow rate for precise efficiency measurements
-- **🏠 Zone Control**: Climate entities for heating zones with temperature control
-- **⚙️ Full Control**: Switches for weather compensation, frost protection, and system settings
+- **⚙️ Full Control**: Switches and number entities cover setpoints, DHW and weather compensation
 - **🔢 Setpoint Management**: Number entities for all temperature and timing settings
 - **📈 Real-time Data**: Temperature sensors, power consumption, compressor frequency, and more
 - **🚨 System Monitoring**: Error detection, defrost mode, and system health indicators
@@ -22,16 +21,12 @@ A comprehensive Home Assistant integration for **Grant Aerona3 Heat Pumps** usin
 - **⚡ Energy Monitoring**: Comprehensive energy usage tracking and cost estimation
 - **🔧 Options Flow**: Configure scan intervals and flow rates through the UI
 
-## 🆕 What's New in v1.1.2
+## 🆕 What's New in v1.1.3
 
-- ✅ **Home Assistant 2025.9.0b5 Compatibility**: Fully tested and compatible
-- ✅ **ASHP Entity Prefixes**: All entities now use `ashp_` prefixes for better organization
-- ✅ **Enhanced Options Flow**: Configure settings through the Home Assistant UI
-- ✅ **Improved Error Handling**: Better connection management and error reporting
-- ✅ **Code Quality**: Modern Python type hints and improved documentation
-- ✅ **Weather Compensation**: Advanced adaptive weather compensation features
-- ✅ **Energy Monitoring**: Enhanced COP calculations and energy tracking
-- ✅ **Modbus Scanner**: Modbus Scanner Tool to find new Registers
+- ✅ **Climate Platform Removed**: Eliminated climate entities that weren't adding value
+- ✅ **Simplified Configuration**: Removed unused zone/DHW options from settings
+- ✅ **Cleaner Integration**: Reduced complexity while maintaining all core features
+- ✅ **Updated Documentation**: Clarified control methods using switches and numbers
 ## 🚀 Quick Start
 
 1. **Install** the integration (see [Installation Guide](Docs/installation_guide.md))
@@ -65,11 +60,6 @@ A comprehensive Home Assistant integration for **Grant Aerona3 Heat Pumps** usin
 - **Weather Compensation**: Curve settings for optimal efficiency
 - **Timing Settings**: Delays, timeouts, and cycle times
 - **Flow Rate Configuration**: Set your measured flow rate for accurate COP
-
-### Climate Entities (with `ashp_` prefix)
-- **ASHP Main Zone**: Primary heating zone control
-- **ASHP Zone 2**: Secondary zone control (if configured)
-- **ASHP DHW**: Domestic hot water control
 
 ## 🌦️ Advanced Weather Compensation
 
@@ -160,6 +150,18 @@ button-card
 - **🤝 Contributing**: Pull requests welcome!
 
 ## 🔄 Changelog
+
+### v1.1.3 (Latest)
+- **Breaking Change**: Removed climate platform and entities
+- Simplified configuration by removing zone/DHW options
+- Updated documentation and examples
+- Maintained all sensor, switch, and number functionality
+
+### v1.1.2
+- Home Assistant 2025.9.0b5 compatibility
+- ASHP entity prefixes for better organization
+- Enhanced options flow and error handling
+- Weather compensation and energy monitoring features
 
 ### v1.1.1 (Latest)
 - ✅ Home Assistant 2025.9.0b5 compatibility
