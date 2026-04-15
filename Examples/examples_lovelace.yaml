@@ -21,11 +21,6 @@ views:
             icon: mdi:gauge
           - entity: sensor.ashp_cop
           - entity: sensor.ashp_delta_t
-          - entity: climate.ashp_zone_1
-            name: Zone 1 Control
-            icon: mdi:home-thermometer
-          - entity: climate.ashp_zone_2
-            icon: mdi:home-thermometer
       - type: entities
         title: 🌡️ Temperature Sensors
         show_header_toggle: false

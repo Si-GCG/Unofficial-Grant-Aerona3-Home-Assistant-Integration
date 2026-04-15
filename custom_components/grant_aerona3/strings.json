@@ -89,11 +89,6 @@
         "name": "Alarm Status"
       }
     },
-    "climate": {
-      "ashp_main_zone": {
-        "name": "Main Zone"
-      }
-    },
     "switch": {
       "ashp_heating_mode": {
         "name": "Heating Mode"

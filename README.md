@@ -13,8 +13,7 @@ A comprehensive Home Assistant integration for **Grant Aerona3 Heat Pumps** usin
 - **🔧 Simple Setup**: Just enter IP address, port, and scan interval - no complex configuration
 - **📊 Complete Monitoring**: All 248 Modbus registers automatically created as entities with `ashp_` prefixes
 - **🌡️ Accurate COP Calculation**: Configure your flow rate for precise efficiency measurements
-- **🏠 Zone Control**: Climate entities for heating zones with temperature control
-- **⚙️ Full Control**: Switches for weather compensation, frost protection, and system settings
+- **⚙️ Full Control**: Switches and number entities cover setpoints, DHW and weather compensation
 - **🔢 Setpoint Management**: Number entities for all temperature and timing settings
 - **📈 Real-time Data**: Temperature sensors, power consumption, compressor frequency, and more
 - **🚨 System Monitoring**: Error detection, defrost mode, and system health indicators
@@ -65,11 +64,6 @@ A comprehensive Home Assistant integration for **Grant Aerona3 Heat Pumps** usin
 - **Weather Compensation**: Curve settings for optimal efficiency
 - **Timing Settings**: Delays, timeouts, and cycle times
 - **Flow Rate Configuration**: Set your measured flow rate for accurate COP
-
-### Climate Entities (with `ashp_` prefix)
-- **ASHP Main Zone**: Primary heating zone control
-- **ASHP Zone 2**: Secondary zone control (if configured)
-- **ASHP DHW**: Domestic hot water control
 
 ## 🌦️ Advanced Weather Compensation
 

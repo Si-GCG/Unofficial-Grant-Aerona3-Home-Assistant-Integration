@@ -2,7 +2,7 @@
   "name": "Grant Aerona3 Heat Pump Integration",
   "description": "Simple and comprehensive Home Assistant integration for Grant Aerona3 Heat Pumps. Automatically creates 150+ entities for complete monitoring and control with accurate COP calculations and flow rate configuration.",
   "render_readme": true,
-  "domains": ["sensor", "binary_sensor", "climate", "switch", "number"],
+  "domains": ["sensor", "binary_sensor", "switch", "number"],
   "homeassistant": "2023.1.0",
   "iot_class": "Local Polling",
   "version": "1.0.0",

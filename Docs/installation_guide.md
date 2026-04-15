@@ -96,7 +96,6 @@ button-card.js
    │       ├── binary_sensor.py
    │       ├── switch.py
    │       ├── number.py
-   │       ├── climate.py
    │       ├── const.py
    │       └── manifest.json
    ```
