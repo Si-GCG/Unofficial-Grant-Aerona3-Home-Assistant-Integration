@@ -279,6 +279,114 @@ INPUT_REGISTER_MAP = {
         "offset": 0,
         "description": "Mix water temperature (Terminal 13-14)"
     },
+    20: {
+        "name": "Humidity Sensor",
+        "unit": PERCENTAGE,
+        "device_class": SensorDeviceClass.HUMIDITY,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "scale": 1,
+        "offset": 0,
+        "description": "Humidity sensor (Terminal 17-18)"
+    },
+    21: {
+        "name": "Current Error Code",
+        "unit": None,
+        "device_class": None,
+        "state_class": None,
+        "scale": 1,
+        "offset": 0,
+        "description": "Current error code"
+    },
+    22: {
+        "name": "Previous Error Code 1",
+        "unit": None,
+        "device_class": None,
+        "state_class": None,
+        "scale": 1,
+        "offset": 0,
+        "description": "Error code from one cycle before"
+    },
+    23: {
+        "name": "Previous Error Code 2",
+        "unit": None,
+        "device_class": None,
+        "state_class": None,
+        "scale": 1,
+        "offset": 0,
+        "description": "Error code from two cycles before"
+    },
+    24: {
+        "name": "Previous Error Code 3",
+        "unit": None,
+        "device_class": None,
+        "state_class": None,
+        "scale": 1,
+        "offset": 0,
+        "description": "Error code from three cycles before"
+    },
+    25: {
+        "name": "Previous Error Code 4",
+        "unit": None,
+        "device_class": None,
+        "state_class": None,
+        "scale": 1,
+        "offset": 0,
+        "description": "Error code from four cycles before"
+    },
+    26: {
+        "name": "Previous Error Code 5",
+        "unit": None,
+        "device_class": None,
+        "state_class": None,
+        "scale": 1,
+        "offset": 0,
+        "description": "Error code from five cycles before"
+    },
+    27: {
+        "name": "Previous Error Code 6",
+        "unit": None,
+        "device_class": None,
+        "state_class": None,
+        "scale": 1,
+        "offset": 0,
+        "description": "Error code from six cycles before"
+    },
+    28: {
+        "name": "Previous Error Code 7",
+        "unit": None,
+        "device_class": None,
+        "state_class": None,
+        "scale": 1,
+        "offset": 0,
+        "description": "Error code from seven cycles before"
+    },
+    29: {
+        "name": "Previous Error Code 8",
+        "unit": None,
+        "device_class": None,
+        "state_class": None,
+        "scale": 1,
+        "offset": 0,
+        "description": "Error code from eight cycles before"
+    },
+    30: {
+        "name": "Previous Error Code 9",
+        "unit": None,
+        "device_class": None,
+        "state_class": None,
+        "scale": 1,
+        "offset": 0,
+        "description": "Error code from nine cycles before"
+    },
+    31: {
+        "name": "Previous Error Code 10",
+        "unit": None,
+        "device_class": None,
+        "state_class": None,
+        "scale": 1,
+        "offset": 0,
+        "description": "Error code from ten cycles before"
+    },
     32: {
         "name": "Plate Heat Exchanger Temperature",
         "unit": UnitOfTemperature.CELSIUS,

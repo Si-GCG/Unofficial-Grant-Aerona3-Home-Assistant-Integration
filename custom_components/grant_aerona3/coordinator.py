@@ -358,8 +358,6 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
             _LOGGER.info("Successfully wrote value %s to coil %d", value, address)
             await self.async_request_refresh()
             return True
-
-            return True
             
         except Exception as err:
             _LOGGER.error("Failed to write coil %d: %s", address, err)

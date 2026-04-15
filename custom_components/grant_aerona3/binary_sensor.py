@@ -118,7 +118,7 @@ class GrantAerona3DefrostSensor(GrantAerona3BaseBinarySensor):
         """Return true if defrost is active."""
         if not self.coordinator.data:
             return False
-        outdoor_temp = get_scaled_input(self.coordinator, 2)
+        outdoor_temp = get_scaled_input(self.coordinator, 6)
         frequency = get_scaled_input(self.coordinator, 1)
         return (outdoor_temp is not None and outdoor_temp <= 5) and (frequency == 0)
 
@@ -126,7 +126,7 @@ class GrantAerona3DefrostSensor(GrantAerona3BaseBinarySensor):
     def extra_state_attributes(self) -> Dict[str, Any]:
         """Return extra state attributes."""
         return {
-            "outdoor_temperature": get_scaled_input(self.coordinator, 2),
+            "outdoor_temperature": get_scaled_input(self.coordinator, 6),
             "compressor_frequency": get_scaled_input(self.coordinator, 1),
         }
 
@@ -147,13 +147,13 @@ class GrantAerona3AlarmSensor(GrantAerona3BaseBinarySensor):
         """Return true if alarm is active."""
         if not self.coordinator.data:
             return False
-        alarm_register = get_scaled_input(self.coordinator, 20)
+        alarm_register = get_scaled_input(self.coordinator, 21)
         return (alarm_register or 0) > 0
 
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:
         """Return extra state attributes."""
-        code = get_scaled_input(self.coordinator, 20)
+        code = get_scaled_input(self.coordinator, 21)
         return {
             "alarm_code": code,
             "alarm_description": self._get_alarm_description(code),
@@ -192,10 +192,10 @@ class GrantAerona3HeatingActiveSensor(GrantAerona3BaseBinarySensor):
         """Return true if heating is active."""
         if not self.coordinator.data:
             return False
-        operation_mode = get_scaled_input(self.coordinator, 13)
-        flow_temp = get_scaled_input(self.coordinator, 1)
+        operation_mode = get_scaled_input(self.coordinator, 10)
+        flow_temp = get_scaled_input(self.coordinator, 9)
         return_temp = get_scaled_input(self.coordinator, 0)
-        return operation_mode == 0 and (flow_temp or 0) > (return_temp or 0) + 1
+        return operation_mode == 1 and (flow_temp or 0) > (return_temp or 0) + 1
 
 class GrantAerona3DHWActiveSensor(GrantAerona3BaseBinarySensor):
     """Binary sensor for DHW active status."""
@@ -234,8 +234,8 @@ class GrantAerona3BackupHeaterSensor(GrantAerona3BaseBinarySensor):
         """Return true if backup heater is active."""
         if not self.coordinator.data:
             return False
-        outdoor_temp = get_scaled_input(self.coordinator, 2)
-        power = get_scaled_input(self.coordinator, 5)
+        outdoor_temp = get_scaled_input(self.coordinator, 6)
+        power = get_scaled_input(self.coordinator, 3)
         return (outdoor_temp is not None and outdoor_temp < -5) and (power or 0) > 5000
 
 class GrantAerona3FrostProtectionSensor(GrantAerona3BaseBinarySensor):
@@ -255,8 +255,8 @@ class GrantAerona3FrostProtectionSensor(GrantAerona3BaseBinarySensor):
         """Return true if frost protection is active."""
         if not self.coordinator.data:
             return False
-        outdoor_temp = get_scaled_input(self.coordinator, 2)
-        flow_temp = get_scaled_input(self.coordinator, 1)
+        outdoor_temp = get_scaled_input(self.coordinator, 6)
+        flow_temp = get_scaled_input(self.coordinator, 9)
         return (outdoor_temp is not None and outdoor_temp < 0) or (flow_temp is not None and flow_temp < 5)
 
 class GrantAerona3WeatherCompActiveSensorZone1(GrantAerona3BaseBinarySensor):

@@ -53,13 +53,10 @@ async def async_setup_entry(
     # Add calculated sensors with ashp_ prefix
     entities.extend([
     GrantAerona3PowerSensor(coordinator, config_entry),
-    GrantAerona3EnergySensor(coordinator, config_entry),
     GrantAerona3COPSensor(coordinator, config_entry),
     GrantAerona3DeltaTSensor(coordinator, config_entry),
     GrantAerona3EfficiencySensor(coordinator, config_entry),
     GrantAerona3WeatherCompSensor(coordinator, config_entry),
-    GrantAerona3DailyCostSensor(coordinator, config_entry),
-    GrantAerona3MonthlyCostSensor(coordinator, config_entry),
     ])
 
     _LOGGER.info("Creating %d ASHP sensor entities with ashp_ prefix", len(entities))
@@ -118,7 +115,7 @@ class GrantAerona3InputSensor(GrantAerona3BaseSensor):
             return None
         
         raw_value = self.coordinator.data.get("input_registers", {}).get(self._register_id)
-        if raw_value is None or raw_value == 65336:
+        if raw_value is None or raw_value == 65535:
             return None
 
         is_signed = self._register_config.get("signed", False)
@@ -201,7 +198,7 @@ class GrantAerona3HoldingSensor(GrantAerona3BaseSensor):
             return None
         
         raw_value = self.coordinator.data.get("holding_registers", {}).get(self._register_id)
-        if raw_value is None or raw_value == 65336:
+        if raw_value is None or raw_value == 65535:
             return None
 
         is_signed = self._register_config.get("signed", False)
@@ -296,50 +293,6 @@ class GrantAerona3PowerSensor(GrantAerona3BaseSensor):
             "scale_factor": "100W",
             "compressor_frequency": input_regs.get(1, 0),
             "raw_power_value": input_regs.get(3, 0),
-        }
-
-class GrantAerona3EnergySensor(GrantAerona3BaseSensor):
-    """Grant Aerona3 energy consumption sensor with ashp_ prefix."""
-
-    def __init__(
-        self,
-        coordinator: GrantAerona3Coordinator,
-        config_entry: ConfigEntry,
-    ) -> None:
-        """Initialize the energy sensor with ashp_ prefix."""
-        super().__init__(coordinator, config_entry)
-        self._attr_name = "ASHP Daily Energy"
-        self._attr_unique_id = f"ashp_{config_entry.entry_id}_daily_energy"
-        self.entity_id = "sensor.ashp_daily_energy"
-        self._attr_device_class = SensorDeviceClass.ENERGY
-        self._attr_state_class = SensorStateClass.TOTAL_INCREASING
-        self._attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
-        self._attr_icon = "mdi:lightning-bolt"
-
-    @property
-    def native_value(self) -> Optional[float]:
-        """Return daily energy consumption."""
-        if not self.coordinator.data:
-            return None
-        
-        # Look for energy register or calculate from power
-        input_regs = self.coordinator.data.get("input_registers", {})
-        
-        # Try to get direct energy reading (adjust register as needed)
-        energy = input_regs.get(10)  # Adjust this register number
-        if energy is not None:
-            return round(energy / 1000, 2) if energy > 0 else 0
-        
-        # Note: For actual energy tracking, users should set up utility_meter
-        # This is just a placeholder
-        return 0
-
-    @property
-    def extra_state_attributes(self) -> Dict[str, Any]:
-        """Return extra state attributes."""
-        return {
-            "calculation_method": "direct_register",
-            "note": "Use utility_meter integration with power sensor for accurate daily tracking"
         }
 
 class GrantAerona3DeltaTSensor(GrantAerona3BaseSensor):
@@ -527,92 +480,4 @@ class GrantAerona3WeatherCompSensor(GrantAerona3BaseSensor):
         
         return None
 
-class GrantAerona3DailyCostSensor(GrantAerona3BaseSensor):
-    """Grant Aerona3 daily cost sensor with ashp_ prefix."""
 
-    def __init__(
-        self,
-        coordinator: GrantAerona3Coordinator,
-        config_entry: ConfigEntry,
-    ) -> None:
-        """Initialize the daily cost sensor with ashp_ prefix."""
-        super().__init__(coordinator, config_entry)
-        self._attr_name = "ASHP Daily Cost Estimate"
-        self._attr_unique_id = f"ashp_{config_entry.entry_id}_daily_cost_estimate"
-        self.entity_id = "sensor.ashp_daily_cost_estimate"
-        self._attr_state_class = SensorStateClass.MEASUREMENT
-        self._attr_native_unit_of_measurement = "GBP"
-        self._attr_icon = "mdi:currency-gbp"
-
-    @property
-    def native_value(self) -> Optional[float]:
-        """Calculate estimated daily cost."""
-        if not self.coordinator.data:
-            return None
-        
-        # Basic cost calculation - this would be enhanced with actual energy tracking
-        input_regs = self.coordinator.data.get("input_registers", {})
-        
-        # Estimate from current power consumption
-        power_raw = input_regs.get(3, 0)  # Register 3
-        if power_raw > 0:
-            power_watts = power_raw * 100  # Apply scaling
-            # Estimate daily consumption and cost
-            daily_kwh = (power_watts / 1000) * 24  # Very rough estimate
-            uk_rate = 0.30  # £0.30 per kWh typical rate
-            return round(daily_kwh * uk_rate, 2)
-        
-        return 0
-
-    @property
-    def extra_state_attributes(self) -> Dict[str, Any]:
-        """Return extra state attributes."""
-        return {
-            "electricity_rate": "0.30 GBP/kWh",
-            "note": "Estimated cost - set up utility_meter for accurate tracking"
-        }
-
-class GrantAerona3MonthlyCostSensor(GrantAerona3BaseSensor):
-    """Grant Aerona3 monthly cost sensor with ashp_ prefix."""
-
-    def __init__(
-        self,
-        coordinator: GrantAerona3Coordinator,
-        config_entry: ConfigEntry,
-    ) -> None:
-        """Initialize the monthly cost sensor with ashp_ prefix."""
-        super().__init__(coordinator, config_entry)
-        self._attr_name = "ASHP Monthly Cost Projection"
-        self._attr_unique_id = f"ashp_{config_entry.entry_id}_monthly_cost_projection"
-        self.entity_id = "sensor.ashp_monthly_cost_projection"
-        self._attr_state_class = SensorStateClass.MEASUREMENT
-        self._attr_native_unit_of_measurement = "GBP"
-        self._attr_icon = "mdi:calendar-month"
-
-    @property
-    def native_value(self) -> Optional[float]:
-        """Calculate projected monthly cost."""
-        if not self.coordinator.data:
-            return None
-        
-        # Basic monthly projection
-        input_regs = self.coordinator.data.get("input_registers", {})
-        
-        power_raw = input_regs.get(3, 0)  # Register 3
-        if power_raw > 0:
-            power_watts = power_raw * 100  # Apply scaling
-            # Estimate monthly consumption and cost
-            monthly_kwh = (power_watts / 1000) * 24 * 30  # Very rough estimate
-            uk_rate = 0.30  # £0.30 per kWh typical rate
-            return round(monthly_kwh * uk_rate, 2)
-        
-        return 0
-
-    @property
-    def extra_state_attributes(self) -> Dict[str, Any]:
-        """Return extra state attributes."""
-        return {
-            "electricity_rate": "0.30 GBP/kWh",
-            "projection_method": "current_power_x30_days",
-            "note": "Projection based on current consumption - actual costs may vary"
-        }
