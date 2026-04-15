@@ -1,4 +1,4 @@
-# Release Notes - v1.1.3
+# Release Notes - v1.1.4
 
 ## 🚀 Major Changes
 
