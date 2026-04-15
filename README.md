@@ -4,7 +4,7 @@
 [![Grant Aerona3](https://img.shields.io/badge/Grant%20Aerona3-Supported-green.svg)](https://www.grantuk.com/)
 [![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://hacs.xyz/)
 [![British Made](https://img.shields.io/badge/British%20Made-🇬🇧-red.svg)](#)
-[![Version](https://img.shields.io/badge/Version-1.1.3-brightgreen.svg)](#)
+[![Version](https://img.shields.io/badge/Version-1.1.4-brightgreen.svg)](#)
 
 A comprehensive Home Assistant integration for **Grant Aerona3 Heat Pumps** using Modbus TCP communication. This integration automatically discovers and creates entities for all available registers, providing complete monitoring and control of your heat pump system with **ASHP** entity prefixes for better organization.
 
@@ -151,7 +151,7 @@ button-card
 
 ## 🔄 Changelog
 
-### v1.1.3 (Latest)
+### v1.1.4 (Latest)
 - **Breaking Change**: Removed climate platform and entities
 - Simplified configuration by removing zone/DHW options
 - Updated documentation and examples
