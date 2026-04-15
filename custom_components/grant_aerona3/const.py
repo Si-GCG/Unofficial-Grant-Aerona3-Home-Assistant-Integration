@@ -379,15 +379,6 @@ INPUT_REGISTER_MAP = {
         "description": "Error code from nine cycles before"
     },
     31: {
-        "name": "Previous Error Code 10",
-        "unit": None,
-        "device_class": None,
-        "state_class": None,
-        "scale": 1,
-        "offset": 0,
-        "description": "Error code from ten cycles before"
-    },
-    32: {
         "name": "Plate Heat Exchanger Temperature",
         "unit": UnitOfTemperature.CELSIUS,
         "device_class": SensorDeviceClass.TEMPERATURE,
@@ -395,6 +386,24 @@ INPUT_REGISTER_MAP = {
         "scale": 1,
         "offset": 0,
         "description": "Plate heat exchanger temperature"
+    },
+    32: {
+        "name": "Remote Room Temperature",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "scale": 0.1,
+        "offset": 0,
+        "description": "Master remote controller room temperature"
+    },
+    33: {
+        "name": "Slave Room Temperature",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+        "state_class": SensorStateClass.MEASUREMENT,
+        "scale": 0.1,
+        "offset": 0,
+        "description": "Slave remote controller room temperature"
     },
 }
 

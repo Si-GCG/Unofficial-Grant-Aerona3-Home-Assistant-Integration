@@ -31,6 +31,7 @@
 |28            |Input        |I    |01   |57  |Unkonwn                                                                           |32381  |     |     |      |32993      |                                          |
 |29            |Input        |I    |01   |58  |Unkonwn                                                                           |       |     |     |32993 |           |                                          |
 |30            |Input        |I    |01   |59  |Unkonwn                                                                           |32381  |     |     |      |32993      |                                          |
-|31            |Input        |I    |01   |60  |Unkonwn                                                                           |32381  |     |     |      |32993      |                                          |
-|32            |Input        |U    |01   |72  |Plate heat exchanger temperature                                                  |-      |-20  |100  |1°C   |20         |monitor display No.d4                     |
+|31            |Input        |U    |01   |72  |Plate heat exchanger temperature                                                  |-      |-20  |100  |1°C   |20         |monitor display No.d4                     |
+|32            |Input        |U    |01   |    |Remote Room Temperature                                                           |-      |0    |40   |0.5°C |250        |Master Remote Controller                  |
+|33            |Input        |U    |01   |    |Slave Room Temperature                                                            |-      |0    |40   |0.5°C |250        |Slave Remote Controller                   |
 
