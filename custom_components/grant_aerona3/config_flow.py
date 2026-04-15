@@ -206,6 +206,26 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                             self.config_entry.data.get("flow_rate_lpm", 34.0)
                         ),
                     ): vol.All(vol.Coerce(float), vol.Range(min=1.0, max=100.0)),
+                    vol.Optional(
+                        "enable_zone_1",
+                        default=self.config_entry.options.get("enable_zone_1", True),
+                    ): cv.boolean,
+                    vol.Optional(
+                        "zone_1_cooling",
+                        default=self.config_entry.options.get("zone_1_cooling", False),
+                    ): cv.boolean,
+                    vol.Optional(
+                        "enable_zone_2",
+                        default=self.config_entry.options.get("enable_zone_2", False),
+                    ): cv.boolean,
+                    vol.Optional(
+                        "zone_2_cooling",
+                        default=self.config_entry.options.get("zone_2_cooling", False),
+                    ): cv.boolean,
+                    vol.Optional(
+                        "enable_dhw",
+                        default=self.config_entry.options.get("enable_dhw", False),
+                    ): cv.boolean,
                 }
             ),
         )
