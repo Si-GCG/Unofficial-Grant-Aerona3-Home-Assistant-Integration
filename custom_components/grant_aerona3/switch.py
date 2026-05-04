@@ -11,7 +11,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.entity import EntityCategory
 
-from .const import DOMAIN, MANUFACTURER, MODEL
+from .const import DOMAIN, MANUFACTURER, MODEL, SW_VERSION
 from .coordinator import GrantAerona3Coordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -91,7 +91,7 @@ class GrantAerona3BaseSwitch(CoordinatorEntity, SwitchEntity):
             "name": "ASHP Grant Aerona3",
             "manufacturer": MANUFACTURER,
             "model": MODEL,
-            "sw_version": "2.0.0",
+            "sw_version": SW_VERSION,
             "configuration_url": f"http://{self._config_entry.data.get('host', '')}",
         }
 
@@ -113,7 +113,6 @@ class GrantAerona3BaseSwitch(CoordinatorEntity, SwitchEntity):
         
         if success:
             _LOGGER.info("Successfully turned on %s", self._attr_name)
-            await self.coordinator.async_request_refresh()
         else:
             _LOGGER.error("Failed to turn on %s", self._attr_name)
 
@@ -135,7 +134,6 @@ class GrantAerona3BaseSwitch(CoordinatorEntity, SwitchEntity):
         
         if success:
             _LOGGER.info("Successfully turned off %s", self._attr_name)
-            await self.coordinator.async_request_refresh()
         else:
             _LOGGER.error("Failed to turn off %s", self._attr_name)
 
@@ -584,17 +582,20 @@ class GrantAerona3Terminal3WayValveSwitch(GrantAerona3BaseSwitch):
         
         self._register_id = 96
         self._on_value = 1
-        self._off_value = 0
+        self._off_value = 1  # Only valid value per spec (min=1, max=1)
 
     @property
     def is_on(self) -> bool:
         if not self.coordinator.data:
             return True  # Default to enabled as per documentation
-        
+
         holding_regs = self.coordinator.data.get("holding_registers", {})
         mode = holding_regs.get(self._register_id, 1)
-        
+
         return mode == 1
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        _LOGGER.warning("DHW 3-way valve (register 96) only supports value 1 per spec — cannot turn off")
 
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:

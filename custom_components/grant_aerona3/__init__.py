@@ -5,7 +5,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
-from .const import DOMAIN
+from .const import DOMAIN, SW_VERSION
 from .coordinator import GrantAerona3Coordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -54,20 +54,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry.async_on_unload(entry.add_update_listener(async_reload_entry))
         
         _LOGGER.info(
-            "Grant Aerona3 ASHP integration setup completed for %s (v1.1.4 with ashp_ prefixes)",
-            host
+            "Grant Aerona3 ASHP integration v%s setup completed for %s (unit_id: %s)",
+            SW_VERSION, host, unit_id
         )
         
-        # Log entity count for debugging
-        try:
-            input_regs = coordinator.data.get("input_registers", {}) or {}
-            holding_regs = coordinator.data.get("holding_registers", {}) or {}
-            entity_count = len(input_regs) + len(holding_regs) + 7
-            _LOGGER.info("Created %d ASHP entities with ashp_ prefixes (unit_id: %s)", entity_count, unit_id)
-        except Exception as e:
-            _LOGGER.warning("Could not calculate entity count: %s", e)
-            _LOGGER.info("Grant Aerona3 integration setup completed for %s", host)
-        
+
+
         return True
         
     except Exception as err:

@@ -12,18 +12,13 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
-    UnitOfEnergy,
     UnitOfPower,
     UnitOfTemperature,
-    UnitOfTime,
-    PERCENTAGE,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from homeassistant.helpers.entity import EntityCategory
-
-from .const import DOMAIN, MANUFACTURER, MODEL, INPUT_REGISTER_MAP, HOLDING_REGISTER_MAP
+from .const import DOMAIN, MANUFACTURER, MODEL, SW_VERSION, INPUT_REGISTER_MAP, HOLDING_REGISTER_MAP
 from .coordinator import GrantAerona3Coordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -52,11 +47,9 @@ async def async_setup_entry(
 
     # Add calculated sensors with ashp_ prefix
     entities.extend([
-    GrantAerona3PowerSensor(coordinator, config_entry),
-    GrantAerona3COPSensor(coordinator, config_entry),
-    GrantAerona3DeltaTSensor(coordinator, config_entry),
-    GrantAerona3EfficiencySensor(coordinator, config_entry),
-    GrantAerona3WeatherCompSensor(coordinator, config_entry),
+        GrantAerona3PowerSensor(coordinator, config_entry),
+        GrantAerona3COPSensor(coordinator, config_entry),
+        GrantAerona3DeltaTSensor(coordinator, config_entry),
     ])
 
     _LOGGER.info("Creating %d ASHP sensor entities with ashp_ prefix", len(entities))
@@ -82,7 +75,7 @@ class GrantAerona3BaseSensor(CoordinatorEntity, SensorEntity):
             "name": "ASHP Grant Aerona3",
             "manufacturer": MANUFACTURER,
             "model": MODEL,
-            "sw_version": "2.0.0",
+            "sw_version": SW_VERSION,
             "configuration_url": f"http://{self._config_entry.data.get('host', '')}",
         }
 
@@ -411,73 +404,5 @@ class GrantAerona3COPSensor(GrantAerona3BaseSensor):
             }
         }
 
-class GrantAerona3EfficiencySensor(GrantAerona3BaseSensor):
-    """Grant Aerona3 efficiency sensor with ashp_ prefix."""
-
-    def __init__(
-        self,
-        coordinator: GrantAerona3Coordinator,
-        config_entry: ConfigEntry,
-    ) -> None:
-        """Initialize the efficiency sensor with ashp_ prefix."""
-        super().__init__(coordinator, config_entry)
-        self._attr_name = "ASHP System Efficiency"
-        self._attr_unique_id = f"ashp_{config_entry.entry_id}_system_efficiency"
-        self.entity_id = "sensor.ashp_system_efficiency"
-        self._attr_state_class = SensorStateClass.MEASUREMENT
-        self._attr_native_unit_of_measurement = PERCENTAGE
-        self._attr_icon = "mdi:percent"
-
-    @property
-    def native_value(self) -> Optional[float]:
-        """Calculate system efficiency percentage."""
-        if not self.coordinator.data:
-            return None
-        
-        # Get COP and convert to efficiency percentage
-        input_regs = self.coordinator.data.get("input_registers", {})
-        
-        # Simple efficiency based on compressor frequency
-        frequency = input_regs.get(1, 0)
-        if frequency > 0:
-            # Basic efficiency calculation - adjust as needed
-            efficiency = min((frequency / 100) * 85, 95)  # Scale to percentage
-            return round(efficiency, 1)
-        
-        return None
-
-class GrantAerona3WeatherCompSensor(GrantAerona3BaseSensor):
-    """Grant Aerona3 weather compensation sensor with ashp_ prefix."""
-
-    def __init__(
-        self,
-        coordinator: GrantAerona3Coordinator,
-        config_entry: ConfigEntry,
-    ) -> None:
-        """Initialize the weather compensation sensor with ashp_ prefix."""
-        super().__init__(coordinator, config_entry)
-        self._attr_name = "ASHP Weather Compensation"
-        self._attr_unique_id = f"ashp_{config_entry.entry_id}_weather_compensation"
-        self.entity_id = "sensor.ashp_weather_compensation"
-        self._attr_device_class = SensorDeviceClass.TEMPERATURE
-        self._attr_state_class = SensorStateClass.MEASUREMENT
-        self._attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
-        self._attr_icon = "mdi:weather-partly-cloudy"
-
-    @property
-    def native_value(self) -> Optional[float]:
-        """Return weather compensation target temperature."""
-        if not self.coordinator.data:
-            return None
-        
-        # Get from holding register or calculate
-        holding_regs = self.coordinator.data.get("holding_registers", {})
-        
-        # Try to get weather compensation setting (adjust register as needed)
-        comp_temp = holding_regs.get(50)  # Adjust register number
-        if comp_temp is not None:
-            return round(comp_temp * 0.1, 1)  # Adjust scale factor
-        
-        return None
 
 

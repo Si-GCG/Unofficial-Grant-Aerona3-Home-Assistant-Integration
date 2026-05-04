@@ -17,6 +17,7 @@ from homeassistant.helpers import config_validation as cv
 
 from .const import (
     DOMAIN,
+    SW_VERSION,
     CONF_UNIT_ID,
     CONF_SCAN_INTERVAL,
     DEFAULT_PORT,
@@ -32,8 +33,6 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
-
-INTEGRATION_VERSION = "1.1.4"
 
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
@@ -99,6 +98,8 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
 
         _LOGGER.info("Successfully connected to Grant Aerona3 (%s)", "serial" if connection_type == "serial" else f"{host}:{port}")
 
+    except CannotConnect:
+        raise
     except ModbusException as err:
         _LOGGER.error("Modbus error connecting - %s", err)
         raise CannotConnect(f"Modbus communication error: {err}") from err
@@ -139,7 +140,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     @callback
     def async_get_options_flow(config_entry):
         """Get the options flow for this handler."""
-        return OptionsFlowHandler()
+        return OptionsFlowHandler(config_entry)
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -172,7 +173,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
             description_placeholders={
                 "integration_name": "Grant Aerona3 Heat Pump (ASHP)",
-                "version": INTEGRATION_VERSION,
+                "version": SW_VERSION,
                 "features": "All entities will have 'ashp_' prefixes for better organisation"
             }
         )
@@ -180,6 +181,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 class OptionsFlowHandler(config_entries.OptionsFlow):
     """Handle Grant Aerona3 options flow."""
+
+    def __init__(self, config_entry) -> None:
+        self.config_entry = config_entry
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None

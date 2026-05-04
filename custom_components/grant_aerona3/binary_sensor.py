@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-import asyncio
+import time
 from typing import Any, Dict, Optional
 
 from homeassistant.components.binary_sensor import (
@@ -13,7 +13,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, MANUFACTURER, MODEL, INPUT_REGISTER_MAP
+from .const import DOMAIN, MANUFACTURER, MODEL, SW_VERSION, INPUT_REGISTER_MAP, ERROR_CODES
 from .coordinator import GrantAerona3Coordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -63,7 +63,7 @@ class GrantAerona3BaseBinarySensor(CoordinatorEntity, BinarySensorEntity):
             "name": "ASHP Grant Aerona3",
             "manufacturer": MANUFACTURER,
             "model": MODEL,
-            "sw_version": "2.0.0",
+            "sw_version": SW_VERSION,
             "configuration_url": f"http://{self._config_entry.data.get('host', '')}",
         }
 
@@ -120,7 +120,7 @@ class GrantAerona3DefrostSensor(GrantAerona3BaseBinarySensor):
             return False
         outdoor_temp = get_scaled_input(self.coordinator, 6)
         frequency = get_scaled_input(self.coordinator, 1)
-        return (outdoor_temp is not None and outdoor_temp <= 5) and (frequency == 0)
+        return (outdoor_temp is not None and outdoor_temp <= 5) and (frequency or 0) > 0
 
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:
@@ -163,17 +163,7 @@ class GrantAerona3AlarmSensor(GrantAerona3BaseBinarySensor):
         """Get alarm description from code."""
         if code is None:
             return "No Data"
-        alarm_codes = {
-            0: "No Alarm",
-            1: "High Pressure",
-            2: "Low Pressure",
-            3: "Compressor Overload",
-            4: "Fan Motor Error",
-            5: "Water Flow Error",
-            6: "Temperature Sensor Error",
-            7: "Communication Error",
-        }
-        return alarm_codes.get(code, f"Unknown Alarm ({code})")
+        return ERROR_CODES.get(int(code), f"Unknown Alarm ({code})")
 
 class GrantAerona3HeatingActiveSensor(GrantAerona3BaseBinarySensor):
     """Binary sensor for heating active status."""
@@ -236,7 +226,9 @@ class GrantAerona3BackupHeaterSensor(GrantAerona3BaseBinarySensor):
             return False
         outdoor_temp = get_scaled_input(self.coordinator, 6)
         power = get_scaled_input(self.coordinator, 3)
-        return (outdoor_temp is not None and outdoor_temp < -5) and (power or 0) > 5000
+        raw_threshold = self.coordinator.data.get("holding_registers", {}).get(77)
+        backup_threshold = raw_threshold * 0.1 if raw_threshold is not None else -5.0
+        return (outdoor_temp is not None and outdoor_temp < backup_threshold) and (power or 0) > 5000
 
 class GrantAerona3FrostProtectionSensor(GrantAerona3BaseBinarySensor):
     """Binary sensor for frost protection active status."""
@@ -317,8 +309,7 @@ class GrantAerona3CommunicationSensor(GrantAerona3BaseBinarySensor):
         if not self.coordinator.data:
             return False
         last_update = self.coordinator.data.get("last_update", 0)
-        current_time = asyncio.get_running_loop().time()
-        return (current_time - last_update) < 120
+        return (time.monotonic() - last_update) < 120
 
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:
@@ -326,7 +317,7 @@ class GrantAerona3CommunicationSensor(GrantAerona3BaseBinarySensor):
         if not self.coordinator.data:
             return {}
         last_update = self.coordinator.data.get("last_update", 0)
-        current_time = asyncio.get_running_loop().time()
+        current_time = time.monotonic()
         return {
             "last_update_seconds_ago": round(current_time - last_update),
             "coordinator_available": self.coordinator.last_update_success,

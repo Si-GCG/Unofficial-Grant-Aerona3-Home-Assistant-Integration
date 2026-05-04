@@ -8,13 +8,12 @@ from typing import Any, Dict, Optional
 
 from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.entity import EntityCategory
 
-from .const import DOMAIN, MANUFACTURER, MODEL, HOLDING_REGISTER_MAP
+from .const import DOMAIN, MANUFACTURER, MODEL, SW_VERSION, HOLDING_REGISTER_MAP
 from .coordinator import GrantAerona3Coordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -102,7 +101,7 @@ class GrantAerona3HoldingNumber(CoordinatorEntity, NumberEntity):
             "name": "ASHP",
             "manufacturer": MANUFACTURER,
             "model": MODEL,
-            "sw_version": "1.0.0",
+            "sw_version": SW_VERSION,
         }
 
         # Set number properties
@@ -175,10 +174,7 @@ class GrantAerona3HoldingNumber(CoordinatorEntity, NumberEntity):
         
         # Use the correct method name from coordinator
         success = await self.coordinator.async_write_register(self._register_id, raw_value)
-        if success:
-            _LOGGER.info("Successfully wrote value to register %d, requesting refresh", self._register_id)
-            await self.coordinator.async_request_refresh()
-        else:
+        if not success:
             _LOGGER.error("Failed to set value %s for %s", value, self._attr_name)
 
     @property
@@ -261,10 +257,10 @@ class GrantAerona3FlowRateNumber(CoordinatorEntity, NumberEntity):
             "name": "ASHP",
             "manufacturer": MANUFACTURER,
             "model": MODEL,
-            "sw_version": "1.1.0",
+            "sw_version": SW_VERSION,
         }
 
-        # Default flow rate - typical for residential Grant Aerona3
+        self._config_entry = config_entry
         self._flow_rate = getattr(coordinator, 'flow_rate_lpm', 34.0)
         
         _LOGGER.debug("Flow rate entity initialized with value: %s L/min", self._flow_rate)
@@ -279,10 +275,9 @@ class GrantAerona3FlowRateNumber(CoordinatorEntity, NumberEntity):
     async def async_set_native_value(self, value: float) -> None:
         """Set the flow rate value."""
         self._flow_rate = value
-        _LOGGER.info("Flow rate set to %.1f L/min", value)
-
-        # Store in coordinator for COP calculations
         self.coordinator.flow_rate_lpm = value
+        new_options = {**self._config_entry.options, "flow_rate_lpm": value}
+        self.hass.config_entries.async_update_entry(self._config_entry, options=new_options)
 
     @property
     def available(self) -> bool:

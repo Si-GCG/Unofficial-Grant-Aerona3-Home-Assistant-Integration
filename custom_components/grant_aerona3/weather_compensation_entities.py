@@ -4,14 +4,14 @@ from __future__ import annotations
 import logging
 from typing import Any, Dict, Optional
 
-from homeassistant.components.sensor import SensorEntity, SensorStateClass
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorStateClass
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfTemperature
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, MANUFACTURER, MODEL
+from .const import DOMAIN, MANUFACTURER, MODEL, SW_VERSION
 from .weather_compensation import WeatherCompensationController
 
 _LOGGER = logging.getLogger(__name__)
@@ -48,7 +48,7 @@ class WeatherCompensationStatusSensor(CoordinatorEntity, SensorEntity):
             "name": "ASHP Grant Aerona3",
             "manufacturer": MANUFACTURER,
             "model": MODEL,
-            "sw_version": "2.0.0",
+            "sw_version": SW_VERSION,
         }
 
     @property
@@ -71,7 +71,7 @@ class WeatherCompensationTargetTempSensor(CoordinatorEntity, SensorEntity):
         self._attr_unique_id = f"{config_entry.entry_id}_weather_compensation_target_temp"
         self._attr_name = "ASHP WC Target Flow Temperature"
         self._attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
-        self._attr_device_class = "temperature"
+        self._attr_device_class = SensorDeviceClass.TEMPERATURE
         self._attr_state_class = SensorStateClass.MEASUREMENT
         self._attr_icon = "mdi:thermometer-water"
         self._attr_device_info = {
@@ -79,7 +79,7 @@ class WeatherCompensationTargetTempSensor(CoordinatorEntity, SensorEntity):
             "name": "ASHP Grant Aerona3",
             "manufacturer": MANUFACTURER,
             "model": MODEL,
-            "sw_version": "2.0.0",
+            "sw_version": SW_VERSION,
         }
 
     @property
@@ -99,7 +99,7 @@ class WeatherCompensationBoostSwitch(CoordinatorEntity, SwitchEntity):
             "name": "ASHP Grant Aerona3",
             "manufacturer": MANUFACTURER,
             "model": MODEL,
-            "sw_version": "2.0.0",
+            "sw_version": SW_VERSION,
         }
 
     @property

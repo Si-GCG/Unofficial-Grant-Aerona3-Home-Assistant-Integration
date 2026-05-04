@@ -1,12 +1,9 @@
 """Constants for Grant Aerona3 Heat Pump integration with ASHP prefixes."""
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
-from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.const import (
     UnitOfTemperature,
     UnitOfPower,
     UnitOfFrequency,
-    UnitOfPressure,
-    UnitOfTime,
     PERCENTAGE,
 )
 # Domain
@@ -14,6 +11,8 @@ DOMAIN = "grant_aerona3"
 # Device information
 MANUFACTURER = "Grant"
 MODEL = "Aerona3"
+SW_VERSION = "2.0.0"
+
 # Operating modes
 OPERATING_MODES = {
 0: "Off",
@@ -826,7 +825,7 @@ HOLDING_REGISTER_MAP = {
 "scale": 1,
 "offset": 0,
 "writable": True,
-"min": 20.0,
+"min": 50.0,
 "max": 100.0,
 "step": 5.0,
 "description": "Max frequency of Night mode"
@@ -1570,15 +1569,10 @@ COIL_REGISTER_MAP = {
 "device_class": None,
 "description": "The HP unit turns ON/OFF based on (0=Room set point, 1=Water set point)"
     },
-8: {
-"name": "Frost Protection Based On Room Temperature",
-"device_class": None,
-"description": "Frost Protection based on Room Temperature"
-    },
-9: {
-"name": "Frost Protection Based On Outdoor Temperature",
-"device_class": None,
-"description": "Frost protection by outdoor temperature 0=disable 1 = enable"
+    9: {
+        "name": "Frost Protection Based On Outdoor Temperature",
+        "device_class": None,
+        "description": "Frost protection by outdoor temperature 0=disable 1 = enable"
     },
 10: {
 "name": "Frost Protection Based On Flow Temp",
@@ -1605,10 +1599,10 @@ COIL_REGISTER_MAP = {
 "device_class": None,
 "description": "Conditions to be available Backup heaters (0=always enabled, 1=depends on Outdoor Air temperature)"
     },
-15: {
-"name": "Terminal 41 42 EHS space heating",
-"device_class": None,
-"description": "Terminal 41-42 : EHS (0=disable, 1=enable)"
+    15: {
+        "name": "Conditions To Be Available EHS",
+        "device_class": None,
+        "description": "Conditions to be available EHS (0=always enabled, 1=depends on Outdoor air temperature)"
     },
 16: {
 "name": "Terminal 1 2 3 Remote Controller",

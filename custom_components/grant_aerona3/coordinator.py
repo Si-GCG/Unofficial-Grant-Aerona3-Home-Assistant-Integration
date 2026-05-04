@@ -2,6 +2,7 @@ from __future__ import annotations
 # custom_components/grant_aerona3/coordinator.py
 import asyncio
 import logging
+import time
 from datetime import timedelta
 from typing import Any, Dict
 
@@ -86,7 +87,7 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
             "input_registers": {},
             "holding_registers": {},
             "coil_registers": {},
-            "last_update": asyncio.get_running_loop().time(),
+            "last_update": time.monotonic(),
         }
         
         # Create a fresh client for each fetch to avoid connection issues
@@ -227,7 +228,7 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
         coil_data = {}
         
         # Read only a few critical coils to avoid timeouts
-        critical_coils = [2, 6, 7, 18]  # Weather compensation and key settings
+        critical_coils = [2, 3, 6, 7, 18]  # Weather compensation zone1/zone2 and key settings
         
         for reg_id in critical_coils:
             if reg_id in COIL_REGISTER_MAP:

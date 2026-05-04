@@ -9,6 +9,7 @@ from enum import Enum
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.event import async_track_time_interval
+from homeassistant.util import dt as dt_util
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -66,6 +67,7 @@ class WeatherCompensationController:
         self.last_update = None
         self.calculation_count = 0
         self._setup_done = False
+        self._cancel_listener = None
 
     async def async_setup(self):
         if not self.enabled:
@@ -90,7 +92,7 @@ class WeatherCompensationController:
                     max_flow_temp=self.config.get("boost_max_flow_temp", 55.0),
                 )
             )
-        async_track_time_interval(self.hass, self._async_update_weather_compensation, timedelta(seconds=60))
+        self._cancel_listener = async_track_time_interval(self.hass, self._async_update_weather_compensation, timedelta(seconds=60))
         self._setup_done = True
         _LOGGER.info("Weather compensation system initialized.")
 
@@ -103,10 +105,10 @@ class WeatherCompensationController:
             target_flow_temp = self._calculate_target_flow_temperature(outdoor_temp)
             self.last_outdoor_temp = outdoor_temp
             self.last_flow_temp = target_flow_temp
-            self.last_update = datetime.now()
+            self.last_update = dt_util.now()
             self.calculation_count += 1
             # Handle boost timeout
-            if self.boost_active and self.boost_end_time and datetime.now() > self.boost_end_time:
+            if self.boost_active and self.boost_end_time and dt_util.now() > self.boost_end_time:
                 await self.deactivate_boost_mode("timeout")
             _LOGGER.debug(
                 "Weather compensation updated: outdoor=%.1f°C, target_flow=%.1f°C, curve=%s",
@@ -134,7 +136,7 @@ class WeatherCompensationController:
             return False
         self.boost_active = True
         self.active_curve = "secondary"
-        self.boost_end_time = datetime.now() + timedelta(minutes=duration_minutes)
+        self.boost_end_time = dt_util.now() + timedelta(minutes=duration_minutes)
         await self._async_update_weather_compensation(None)
         self.hass.bus.async_fire("ashp_weather_compensation_boost_activated", {
             "reason": reason,
@@ -175,8 +177,14 @@ class WeatherCompensationController:
     def _get_boost_remaining_minutes(self) -> Optional[int]:
         if not self.boost_active or not self.boost_end_time:
             return None
-        remaining = (self.boost_end_time - datetime.now()).total_seconds()
+        remaining = (self.boost_end_time - dt_util.now()).total_seconds()
         return max(0, int(remaining / 60))
+
+    def async_stop(self) -> None:
+        """Cancel the periodic update listener."""
+        if self._cancel_listener:
+            self._cancel_listener()
+            self._cancel_listener = None
 
     def is_enabled(self) -> bool:
         return self.enabled and self._setup_done
