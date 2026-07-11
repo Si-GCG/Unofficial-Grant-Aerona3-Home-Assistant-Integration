@@ -13,7 +13,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, MANUFACTURER, MODEL, INPUT_REGISTER_MAP
+from .const import DOMAIN, MANUFACTURER, MODEL, INPUT_REGISTER_MAP, CONF_HAS_DHW_TANK, FEATURE_ZONE2
 from .coordinator import GrantAerona3Coordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -37,13 +37,15 @@ async def async_setup_entry(
         GrantAerona3DefrostSensor(coordinator, config_entry),
         GrantAerona3AlarmSensor(coordinator, config_entry),
         GrantAerona3HeatingActiveSensor(coordinator, config_entry),
-        GrantAerona3DHWActiveSensor(coordinator, config_entry),
         GrantAerona3BackupHeaterSensor(coordinator, config_entry),
         GrantAerona3FrostProtectionSensor(coordinator, config_entry),
         GrantAerona3WeatherCompActiveSensorZone1(coordinator, config_entry),
-        GrantAerona3WeatherCompActiveSensorZone2(coordinator, config_entry),
         GrantAerona3CommunicationSensor(coordinator, config_entry),
     ]
+    if CONF_HAS_DHW_TANK in coordinator.features:
+        entities.append(GrantAerona3DHWActiveSensor(coordinator, config_entry))
+    if FEATURE_ZONE2 in coordinator.features:
+        entities.append(GrantAerona3WeatherCompActiveSensorZone2(coordinator, config_entry))
     _LOGGER.info("Creating %d ASHP binary sensor entities", len(entities))
     async_add_entities(entities)
 

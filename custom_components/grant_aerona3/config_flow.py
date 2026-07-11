@@ -29,7 +29,16 @@ from .const import (
     CONF_METHOD,
     CONF_PARITY,
     CONF_STOPBITS,
+    CONF_HAS_DHW_TANK,
+    CONF_HAS_BUFFER,
+    CONF_HAS_EHS,
+    CONF_HAS_COOLING,
+    CONF_ZONES,
+    DEFAULT_FEATURES,
+    ZONES_SINGLE,
+    ZONES_DUAL,
 )
+from .features import get_feature
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -49,6 +58,16 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
         vol.Optional(CONF_METHOD, default="rtu"): cv.string,
         vol.Optional(CONF_PARITY, default="N"): cv.string,
         vol.Optional(CONF_STOPBITS, default=2): vol.All(vol.Coerce(int)),
+    }
+)
+
+STEP_FEATURES_DATA_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_HAS_DHW_TANK, default=True): cv.boolean,
+        vol.Required(CONF_HAS_BUFFER, default=False): cv.boolean,
+        vol.Required(CONF_HAS_EHS, default=False): cv.boolean,
+        vol.Required(CONF_HAS_COOLING, default=False): cv.boolean,
+        vol.Required(CONF_ZONES, default=ZONES_SINGLE): vol.In([ZONES_SINGLE, ZONES_DUAL]),
     }
 )
 
@@ -135,6 +154,11 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     VERSION = 1  # Home Assistant expects an integer here
 
+    def __init__(self) -> None:
+        """Initialize the config flow."""
+        self._connection_data: dict[str, Any] = {}
+        self._title: str = ""
+
     @staticmethod
     @callback
     def async_get_options_flow(config_entry):
@@ -144,9 +168,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
-        """Handle the initial step."""
+        """Handle the initial (connection) step."""
         errors: dict[str, str] = {}
-        
+
         if user_input is not None:
             try:
                 info = await validate_input(self.hass, user_input)
@@ -164,17 +188,34 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 await self.async_set_unique_id(unique)
                 self._abort_if_unique_id_configured()
 
-                return self.async_create_entry(title=info["title"], data=user_input)
+                self._connection_data = user_input
+                self._title = info["title"]
+                return await self.async_step_features()
 
         return self.async_show_form(
-            step_id="user", 
-            data_schema=STEP_USER_DATA_SCHEMA, 
+            step_id="user",
+            data_schema=STEP_USER_DATA_SCHEMA,
             errors=errors,
             description_placeholders={
                 "integration_name": "Grant Aerona3 Heat Pump (ASHP)",
                 "version": INTEGRATION_VERSION,
                 "features": "All entities will have 'ashp_' prefixes for better organisation"
             }
+        )
+
+    async def async_step_features(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Let the user tick the hardware their installation actually has."""
+        if user_input is not None:
+            return self.async_create_entry(
+                title=self._title,
+                data={**self._connection_data, **user_input},
+            )
+
+        return self.async_show_form(
+            step_id="features",
+            data_schema=STEP_FEATURES_DATA_SCHEMA,
         )
 
 
@@ -188,24 +229,39 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
+        entry = self.config_entry
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema(
                 {
                     vol.Optional(
                         CONF_SCAN_INTERVAL,
-                        default=self.config_entry.options.get(
-                            CONF_SCAN_INTERVAL,
-                            self.config_entry.data.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
-                        ),
+                        default=get_feature(entry, CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
                     ): vol.All(vol.Coerce(int), vol.Range(min=5, max=3600)),
                     vol.Optional(
                         "flow_rate_lpm",
-                        default=self.config_entry.options.get(
-                            "flow_rate_lpm",
-                            self.config_entry.data.get("flow_rate_lpm", 34.0)
-                        ),
+                        default=get_feature(entry, "flow_rate_lpm", 34.0),
                     ): vol.All(vol.Coerce(float), vol.Range(min=1.0, max=100.0)),
+                    vol.Required(
+                        CONF_HAS_DHW_TANK,
+                        default=get_feature(entry, CONF_HAS_DHW_TANK, DEFAULT_FEATURES[CONF_HAS_DHW_TANK]),
+                    ): cv.boolean,
+                    vol.Required(
+                        CONF_HAS_BUFFER,
+                        default=get_feature(entry, CONF_HAS_BUFFER, DEFAULT_FEATURES[CONF_HAS_BUFFER]),
+                    ): cv.boolean,
+                    vol.Required(
+                        CONF_HAS_EHS,
+                        default=get_feature(entry, CONF_HAS_EHS, DEFAULT_FEATURES[CONF_HAS_EHS]),
+                    ): cv.boolean,
+                    vol.Required(
+                        CONF_HAS_COOLING,
+                        default=get_feature(entry, CONF_HAS_COOLING, DEFAULT_FEATURES[CONF_HAS_COOLING]),
+                    ): cv.boolean,
+                    vol.Required(
+                        CONF_ZONES,
+                        default=get_feature(entry, CONF_ZONES, DEFAULT_FEATURES[CONF_ZONES]),
+                    ): vol.In([ZONES_SINGLE, ZONES_DUAL]),
                 }
             ),
         )

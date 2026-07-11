@@ -20,8 +20,12 @@ from .const import (
     INPUT_REGISTER_MAP,
     HOLDING_REGISTER_MAP,
     COIL_REGISTER_MAP,
+    INPUT_REGISTER_FEATURES,
+    HOLDING_REGISTER_FEATURES,
+    COIL_REGISTER_FEATURES,
     DEFAULT_SCAN_INTERVAL,
 )
+from .features import enabled_features, register_enabled
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -52,6 +56,10 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
             else entry.data.get("flow_rate_lpm", 34.0)
         )
         self.flow_rate_lpm = flow_rate_lpm
+
+        # Which hardware features are enabled (options take precedence over data)
+        self.features = enabled_features(entry)
+        _LOGGER.debug("Enabled features: %s", sorted(self.features))
 
         super().__init__(
             hass,
@@ -136,14 +144,23 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
                 pass
         return data
 
+    def _enabled_input_registers(self) -> list[int]:
+        """Input registers to poll, skipping hardware the user hasn't ticked."""
+        return [
+            reg_id
+            for reg_id in INPUT_REGISTER_MAP
+            if register_enabled(self.features, INPUT_REGISTER_FEATURES, reg_id)
+        ]
+
     async def _read_input_registers(self, client: object) -> Dict[int, float]:
         input_data = {}
-        
+        enabled_registers = self._enabled_input_registers()
+
         # Read only the most critical registers first to test connectivity
         critical_registers = [0, 1, 3, 6, 9]  # Return temp, frequency, power, outdoor temp, flow temp
-        
+
         for reg_id in critical_registers:
-            if reg_id in INPUT_REGISTER_MAP:
+            if reg_id in enabled_registers:
                 try:
                     result = await asyncio.wait_for(
                         self.hass.async_add_executor_job(
@@ -164,7 +181,7 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
         
         # If critical registers work, try reading the rest
         if input_data:
-            remaining_registers = [reg for reg in INPUT_REGISTER_MAP.keys() if reg not in critical_registers]
+            remaining_registers = [reg for reg in enabled_registers if reg not in critical_registers]
             for reg_id in remaining_registers:
                 try:
                     result = await asyncio.wait_for(
@@ -188,7 +205,12 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
         holding_data = {}
         
         # Get all writable registers from the map - these are the ones we need for number entities
-        writable_registers = [reg_id for reg_id, config in HOLDING_REGISTER_MAP.items() if config.get("writable", False)]
+        writable_registers = [
+            reg_id
+            for reg_id, config in HOLDING_REGISTER_MAP.items()
+            if config.get("writable", False)
+            and register_enabled(self.features, HOLDING_REGISTER_FEATURES, reg_id)
+        ]
         
         _LOGGER.debug("Reading %d writable holding registers: %s", len(writable_registers), writable_registers)
         
@@ -227,8 +249,12 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
         coil_data = {}
         
         # Read only a few critical coils to avoid timeouts
-        critical_coils = [2, 6, 7, 18]  # Weather compensation and key settings
-        
+        critical_coils = [
+            reg_id
+            for reg_id in (2, 3, 6, 7, 18)  # Weather compensation (zones 1+2) and key settings
+            if register_enabled(self.features, COIL_REGISTER_FEATURES, reg_id)
+        ]
+
         for reg_id in critical_coils:
             if reg_id in COIL_REGISTER_MAP:
                 try:

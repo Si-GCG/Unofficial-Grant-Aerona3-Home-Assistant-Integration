@@ -14,8 +14,9 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.entity import EntityCategory
 
-from .const import DOMAIN, MANUFACTURER, MODEL, HOLDING_REGISTER_MAP
+from .const import DOMAIN, MANUFACTURER, MODEL, HOLDING_REGISTER_MAP, HOLDING_REGISTER_FEATURES
 from .coordinator import GrantAerona3Coordinator
+from .features import register_enabled
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -40,14 +41,18 @@ async def async_setup_entry(
     _LOGGER.info("Coordinator found: %s", type(coordinator).__name__)
 
     entities = []
+    features = coordinator.features
     # Debug: Check what's in HOLDING_REGISTER_MAP
     _LOGGER.info("Total holding registers defined: %d", len(HOLDING_REGISTER_MAP))
-    writable_registers = [reg for reg, config in HOLDING_REGISTER_MAP.items() if config.get("writable", False)]
-    _LOGGER.info("Writable registers: %s", writable_registers)
+    writable_registers = [
+        reg for reg, config in HOLDING_REGISTER_MAP.items()
+        if config.get("writable", False) and register_enabled(features, HOLDING_REGISTER_FEATURES, reg)
+    ]
+    _LOGGER.info("Writable registers for configured hardware: %s", writable_registers)
 
-    # Create number entities for ALL writable holding registers
+    # Create number entities for writable holding registers matching the configured hardware
     for register_id, config in HOLDING_REGISTER_MAP.items():
-        if config.get("writable", False):
+        if config.get("writable", False) and register_enabled(features, HOLDING_REGISTER_FEATURES, register_id):
             _LOGGER.info("Creating number entity for register %d: %s", register_id, config["name"])
             try:
                 entity = GrantAerona3HoldingNumber(coordinator, config_entry, register_id)

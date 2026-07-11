@@ -91,6 +91,29 @@ DEFAULT_PORT = 502
 DEFAULT_UNIT_ID = 1
 DEFAULT_SCAN_INTERVAL = 30
 
+# Feature selection (which hardware the installation actually has)
+CONF_HAS_DHW_TANK = "has_dhw_tank"
+CONF_HAS_BUFFER = "has_buffer"
+CONF_HAS_EHS = "has_ehs"
+CONF_HAS_COOLING = "has_cooling"
+CONF_ZONES = "zones"
+
+ZONES_SINGLE = "single"
+ZONES_DUAL = "dual"
+
+# Pseudo-feature key used in the register feature maps for dual-zone systems
+FEATURE_ZONE2 = "zone2"
+
+# Entries created before feature selection existed have none of these keys;
+# defaulting everything on preserves their existing entities on upgrade.
+DEFAULT_FEATURES = {
+    CONF_HAS_DHW_TANK: True,
+    CONF_HAS_BUFFER: True,
+    CONF_HAS_EHS: True,
+    CONF_HAS_COOLING: True,
+    CONF_ZONES: ZONES_DUAL,
+}
+
 # Register types
 INPUT_REGISTERS = "input"
 HOLDING_REGISTERS = "holding"
@@ -1709,4 +1732,85 @@ COIL_REGISTER_MAP = {
         "device_class": None,
         "description": "Terminal 46 : DHW Electric heater or Backup heater (0=DHW Electric heater, 1=Backup heater)"
     },
+}
+
+# ---------------------------------------------------------------------------
+# Feature gating
+#
+# Registers listed here are only polled and exposed when the user has ticked
+# the matching hardware option(s) in the config/options flow. Registers not
+# listed are core and always included. Values are tuples of feature keys and
+# ALL of them must be enabled (e.g. Zone 2 cooling registers need both
+# cooling and dual zones).
+# ---------------------------------------------------------------------------
+INPUT_REGISTER_FEATURES = {
+    12: (FEATURE_ZONE2,),        # Room air set temperature Zone 2
+    13: (CONF_HAS_DHW_TANK,),    # Selected DHW operating mode
+    14: (CONF_HAS_DHW_TANK,),    # Legionella cycle day
+    15: (CONF_HAS_DHW_TANK,),    # Legionella cycle
+    16: (CONF_HAS_DHW_TANK,),    # DHW tank temperature
+    18: (CONF_HAS_BUFFER,),      # Buffer tank temperature
+    34: (FEATURE_ZONE2,),        # Slave room temperature
+}
+
+HOLDING_REGISTER_FEATURES = {
+    # Zone 2 heating curve
+    7: (FEATURE_ZONE2,),
+    8: (FEATURE_ZONE2,),
+    9: (FEATURE_ZONE2,),
+    10: (FEATURE_ZONE2,),
+    11: (FEATURE_ZONE2,),
+    # Zone 1 cooling curve
+    12: (CONF_HAS_COOLING,),
+    13: (CONF_HAS_COOLING,),
+    14: (CONF_HAS_COOLING,),
+    15: (CONF_HAS_COOLING,),
+    16: (CONF_HAS_COOLING,),
+    # Zone 2 cooling curve
+    17: (CONF_HAS_COOLING, FEATURE_ZONE2),
+    18: (CONF_HAS_COOLING, FEATURE_ZONE2),
+    19: (CONF_HAS_COOLING, FEATURE_ZONE2),
+    20: (CONF_HAS_COOLING, FEATURE_ZONE2),
+    21: (CONF_HAS_COOLING, FEATURE_ZONE2),
+    23: (CONF_HAS_COOLING,),     # Cooling set point hysteresis
+    25: (CONF_HAS_COOLING,),     # Low tariff differential set point, cooling
+    # DHW configuration
+    26: (CONF_HAS_DHW_TANK,),
+    27: (CONF_HAS_DHW_TANK,),
+    28: (CONF_HAS_DHW_TANK,),
+    29: (CONF_HAS_DHW_TANK,),
+    30: (CONF_HAS_DHW_TANK,),
+    31: (CONF_HAS_DHW_TANK,),
+    32: (CONF_HAS_DHW_TANK,),
+    33: (CONF_HAS_DHW_TANK,),
+    34: (CONF_HAS_DHW_TANK,),
+    35: (CONF_HAS_DHW_TANK,),
+    36: (CONF_HAS_DHW_TANK,),    # Anti-legionella set point
+    58: (CONF_HAS_DHW_TANK,),    # DHW tank frost protection start temperature
+    59: (CONF_HAS_DHW_TANK,),    # DHW tank frost protection hysteresis
+    # EHS (external heat source)
+    84: (CONF_HAS_EHS,),
+    85: (CONF_HAS_EHS,),
+    86: (CONF_HAS_EHS,),
+    87: (CONF_HAS_EHS,),
+    88: (CONF_HAS_EHS,),
+    89: (CONF_HAS_EHS,),
+    90: (CONF_HAS_EHS,),
+    96: (CONF_HAS_DHW_TANK,),    # Terminal 50-51-52: DHW 3-way valve
+    # Buffer tank set points
+    99: (CONF_HAS_BUFFER,),
+    100: (CONF_HAS_BUFFER, CONF_HAS_COOLING),
+}
+
+COIL_REGISTER_FEATURES = {
+    3: (FEATURE_ZONE2,),                     # Heating weather compensation Zone 2
+    4: (CONF_HAS_COOLING,),                  # Cooling weather compensation Zone 1
+    5: (CONF_HAS_COOLING, FEATURE_ZONE2),    # Cooling weather compensation Zone 2
+    6: (CONF_HAS_DHW_TANK,),                 # Anti-legionella function
+    11: (CONF_HAS_DHW_TANK,),                # DHW storage frost protection
+    15: (CONF_HAS_EHS,),                     # Terminal 41-42: EHS
+    18: (CONF_HAS_DHW_TANK,),                # Terminal 7-8: DHW tank probe
+    20: (CONF_HAS_BUFFER,),                  # Terminal 11-12: buffer tank probe
+    24: (CONF_HAS_DHW_TANK,),                # Terminal 19-18: DHW remote contact
+    29: (CONF_HAS_EHS,),                     # Terminal 41-42: EHS
 }

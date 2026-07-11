@@ -23,8 +23,17 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.entity import EntityCategory
 
-from .const import DOMAIN, MANUFACTURER, MODEL, INPUT_REGISTER_MAP, HOLDING_REGISTER_MAP
+from .const import (
+    DOMAIN,
+    MANUFACTURER,
+    MODEL,
+    INPUT_REGISTER_MAP,
+    HOLDING_REGISTER_MAP,
+    INPUT_REGISTER_FEATURES,
+    HOLDING_REGISTER_FEATURES,
+)
 from .coordinator import GrantAerona3Coordinator
+from .features import register_enabled
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -37,18 +46,21 @@ async def async_setup_entry(
     coordinator: GrantAerona3Coordinator = hass.data[DOMAIN][config_entry.entry_id]
 
     entities = []
+    features = coordinator.features
 
-    # Create sensors for ALL input registers with ashp_ prefix
+    # Create sensors for input registers matching the configured hardware
     for register_id in INPUT_REGISTER_MAP.keys():
-        entities.append(
-            GrantAerona3InputSensor(coordinator, config_entry, register_id)
-        )
+        if register_enabled(features, INPUT_REGISTER_FEATURES, register_id):
+            entities.append(
+                GrantAerona3InputSensor(coordinator, config_entry, register_id)
+            )
 
-    # Create sensors for ALL holding registers with ashp_ prefix
+    # Create sensors for holding registers matching the configured hardware
     for register_id in HOLDING_REGISTER_MAP.keys():
-        entities.append(
-            GrantAerona3HoldingSensor(coordinator, config_entry, register_id)
-        )
+        if register_enabled(features, HOLDING_REGISTER_FEATURES, register_id):
+            entities.append(
+                GrantAerona3HoldingSensor(coordinator, config_entry, register_id)
+            )
 
     # Add calculated sensors with ashp_ prefix
     entities.extend([
