@@ -29,7 +29,7 @@
 |26            |Input        |I    |01   |55  |Unkonwn                                                                           |-32543 |     |     |      |32993      |                                          |
 |27            |Input        |I    |01   |56  |Unkonwn                                                                           |-32591 |     |     |      |32993      |                                          |
 |28            |Input        |I    |01   |57  |Unkonwn                                                                           |32381  |     |     |      |32993      |                                          |
-|29            |Input        |I    |01   |58  |Unkonwn                                                                           |       |     |     |32993 |           |                                          |
+|29            |Input        |I    |01   |58  |Unkonwn                                                                           |32381  |     |     |      |32993      |                                          |
 |30            |Input        |I    |01   |59  |Unkonwn                                                                           |32381  |     |     |      |32993      |                                          |
 |31            |Input        |I    |01   |60  |Unkonwn                                                                           |32381  |     |     |      |32993      |                                          |
 |32            |Input        |U    |01   |72  |Plate heat exchanger temperature                                                  |-      |-20  |100  |1°C   |20         |monitor display No.d4                     |
