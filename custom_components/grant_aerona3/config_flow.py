@@ -7,6 +7,7 @@ from typing import Any
 import voluptuous as vol
 from pymodbus.client import ModbusTcpClient, ModbusSerialClient
 from pymodbus.exceptions import ModbusException
+from pymodbus.framer import FramerType
 
 from homeassistant import config_entries
 from homeassistant.const import CONF_HOST, CONF_PORT
@@ -42,7 +43,7 @@ from .features import get_feature
 
 _LOGGER = logging.getLogger(__name__)
 
-INTEGRATION_VERSION = "1.1.4"
+INTEGRATION_VERSION = "1.1.5"
 
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
@@ -87,6 +88,9 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
     method = data.get(CONF_METHOD)
     parity = data.get(CONF_PARITY)
     stopbits = data.get(CONF_STOPBITS)
+    # pymodbus >= 3.7 dropped the `method=` kwarg on ModbusSerialClient in
+    # favour of `framer=`; translate the stored "rtu"/"ascii" string.
+    framer = FramerType.ASCII if str(method).lower() == "ascii" else FramerType.RTU
 
     # Test the connection
     if connection_type == "tcp":
@@ -95,7 +99,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
         client = ModbusTcpClient(host=host, port=port, timeout=5)
     else:
         client = ModbusSerialClient(
-            method=method,
+            framer=framer,
             port=serial_port,
             baudrate=baudrate,
             bytesize=bytesize,
