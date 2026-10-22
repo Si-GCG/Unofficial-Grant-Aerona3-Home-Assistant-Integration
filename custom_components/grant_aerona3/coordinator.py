@@ -7,6 +7,7 @@ from typing import Any, Dict
 
 from pymodbus.client import ModbusTcpClient, ModbusSerialClient
 from pymodbus.exceptions import ModbusException
+from pymodbus.framer import FramerType
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PORT
@@ -41,6 +42,11 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
         self.baudrate = entry.data.get("baudrate")
         self.bytesize = entry.data.get("bytesize")
         self.method = entry.data.get("method")
+        # pymodbus >= 3.7 dropped the `method=` kwarg on ModbusSerialClient
+        # in favour of `framer=`; translate the stored "rtu"/"ascii" string.
+        self.framer = (
+            FramerType.ASCII if str(self.method).lower() == "ascii" else FramerType.RTU
+        )
         self.parity = entry.data.get("parity")
         self.stopbits = entry.data.get("stopbits")
         self.unit_id = entry.data[CONF_UNIT_ID]
@@ -72,7 +78,7 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
             self._client = ModbusTcpClient(host=self.host, port=self.port, timeout=10)
         else:
             self._client = ModbusSerialClient(
-                method=self.method,
+                framer=self.framer,
                 port=self.serial_port,
                 baudrate=self.baudrate,
                 bytesize=self.bytesize,
@@ -102,7 +108,7 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
             client = ModbusTcpClient(host=self.host, port=self.port, timeout=5)
         else:
             client = ModbusSerialClient(
-                method=self.method,
+                framer=self.framer,
                 port=self.serial_port,
                 baudrate=self.baudrate,
                 bytesize=self.bytesize,
@@ -303,7 +309,7 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
             client = ModbusTcpClient(host=self.host, port=self.port, timeout=5)
         else:
             client = ModbusSerialClient(
-                method=self.method,
+                framer=self.framer,
                 port=self.serial_port,
                 baudrate=self.baudrate,
                 bytesize=self.bytesize,
@@ -352,7 +358,7 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
             client = ModbusTcpClient(host=self.host, port=self.port, timeout=5)
         else:
             client = ModbusSerialClient(
-                method=self.method,
+                framer=self.framer,
                 port=self.serial_port,
                 baudrate=self.baudrate,
                 bytesize=self.bytesize,
