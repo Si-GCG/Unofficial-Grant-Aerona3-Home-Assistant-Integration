@@ -113,7 +113,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry.async_on_unload(entry.add_update_listener(async_reload_entry))
         
         _LOGGER.info(
-            "Grant Aerona3 ASHP integration setup completed for %s (v1.1.5 with ashp_ prefixes)",
+            "Grant Aerona3 ASHP integration setup completed for %s (v1.1.7 with ashp_ prefixes)",
             host
         )
         

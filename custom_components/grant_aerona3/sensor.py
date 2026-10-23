@@ -89,14 +89,17 @@ class GrantAerona3BaseSensor(CoordinatorEntity, SensorEntity):
     @property
     def device_info(self) -> Dict[str, Any]:
         """Return device information."""
-        return {
+        info = {
             "identifiers": {(DOMAIN, self._config_entry.entry_id)},
             "name": "ASHP Grant Aerona3",
             "manufacturer": MANUFACTURER,
             "model": MODEL,
             "sw_version": "2.0.0",
-            "configuration_url": f"http://{self._config_entry.data.get('host', '')}",
         }
+        host = self._config_entry.data.get("host")
+        if host:
+            info["configuration_url"] = f"http://{host}"
+        return info
 
 class GrantAerona3InputSensor(GrantAerona3BaseSensor):
     """Grant Aerona3 input register sensor entity with ashp_ prefix."""
