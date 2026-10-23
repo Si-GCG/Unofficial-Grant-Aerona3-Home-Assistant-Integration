@@ -79,7 +79,8 @@ Note: the coordinator only polls a small, fixed subset of the coil registers on 
 ## Screenshots
 
 ### Integration Setup
-![Config Flow](Docs/images/Initial_setup.jpeg)
+![Config Flow](Docs/images/initial_setup.png)
+![Config Flow2](Docs/images/initial_config.png)
 
 ### Hardware Configuration
 ![Entities](Docs/images/entity_list.jpeg)
