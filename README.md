@@ -151,7 +151,12 @@ button-card
 
 ## 🔄 Changelog
 
-### v1.1.4 (Latest)
+### v1.2.0 (Latest)
+- **Breaking change**: Removed the duplicate read-only `sensor.*` entity for every writable holding register (setpoints) — only the `number.*` entity remains, since it already showed the same value. If a dashboard, automation, or template referenced one of these sensors, point it at the matching `number.*` entity instead (see the [troubleshooting guide](Docs/troubleshooting_guide.md#dashboard-card-shows-entity-not-available-after-updating)).
+- Added 7 new optional-hardware toggles (Settings → Devices & Services → Grant Aerona3 → Configure): backup/immersion heater, humidity sensor, mixing valve/secondary circuit, additional outdoor sensor, low-tariff/night-mode signal, dehumidifier, and a bundled "advanced/installer" group (frost-protection tuning, pump timing, error history, terminal wiring switches). Each hides the matching entities **and** stops polling those registers — fewer unnecessary Modbus transactions per scan.
+- Existing installs keep every entity on upgrade; new installs default the optional toggles off.
+
+### v1.1.4
 - **Breaking Change**: Removed climate platform and entities
 - Simplified configuration by removing zone/DHW options
 - Updated documentation and examples

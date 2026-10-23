@@ -170,9 +170,16 @@ Entities are automatically created based on available data. To manage them:
 - `sensor.dhw_tank_temperature` - Hot water status
 
 #### Low Priority (Diagnostic)
-- Most holding register sensors (setpoint displays)
 - Terminal configuration binary sensors
 - Advanced timing and control numbers
+
+> **Note:** As of v1.2.0, setpoint-style holding registers no longer have a
+> separate read-only sensor — only the `number.*` entity exists, since it
+> already showed the same value. If a dashboard or automation references a
+> `sensor.*` entity for a setpoint and now shows "unavailable", point it at
+> the matching `number.*` entity instead. See the
+> [troubleshooting guide](troubleshooting_guide.md#dashboard-card-shows-entity-not-available-after-updating)
+> for details.
 
 ## Advanced Configuration
 
