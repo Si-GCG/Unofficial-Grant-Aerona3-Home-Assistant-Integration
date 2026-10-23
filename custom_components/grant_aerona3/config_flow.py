@@ -43,7 +43,7 @@ from .features import get_feature
 
 _LOGGER = logging.getLogger(__name__)
 
-INTEGRATION_VERSION = "1.1.5"
+INTEGRATION_VERSION = "1.1.7"
 
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {

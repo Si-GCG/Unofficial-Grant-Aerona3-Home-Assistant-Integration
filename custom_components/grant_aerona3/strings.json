@@ -44,7 +44,7 @@
       }
     },
     "error": {
-      "cannot_connect": "Failed to connect to the heat pump. Please check:\n• IP address is correct\n• Heat pump is connected to network\n• Modbus TCP is enabled\n• Port 502 is accessible",
+      "cannot_connect": "Failed to connect to the heat pump. Please check:\n• TCP: IP address is correct, the heat pump is on the network, Modbus TCP is enabled, and port 502 is accessible\n• Serial: the serial port path is correct, baud rate/parity/stop bits match the heat pump, and Home Assistant has permission to access the device",
       "unknown": "Unexpected error occurred during setup"
     },
     "abort": {
