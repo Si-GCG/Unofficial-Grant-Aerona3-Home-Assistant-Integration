@@ -9,9 +9,15 @@ from homeassistant.helpers import entity_registry as er
 
 from .const import (
     DOMAIN,
+    CONF_HAS_ADVANCED_CONFIG,
+    CONF_HAS_BACKUP_HEATER,
     CONF_HAS_BUFFER,
     CONF_HAS_DHW_TANK,
     CONF_HAS_EHS,
+    CONF_HAS_HUMIDITY_SENSOR,
+    CONF_HAS_MIXING_VALVE,
+    CONF_HAS_REMOTE_OUTDOOR_SENSOR,
+    CONF_HAS_TARIFF_CONTROL,
     FEATURE_ZONE2,
     INPUT_REGISTER_MAP,
     HOLDING_REGISTER_MAP,
@@ -41,6 +47,16 @@ FEATURE_UNIQUE_ID_SUFFIXES = {
     CONF_HAS_BUFFER: ("buffer_tank_probe",),
     CONF_HAS_EHS: ("ehs_function", "ehs_terminal"),
     FEATURE_ZONE2: ("weather_compensation_active_zone2",),
+    CONF_HAS_BACKUP_HEATER: ("backup_heater_enable", "backup_heater_active"),
+    CONF_HAS_HUMIDITY_SENSOR: ("humidity_comp", "humidity_sensor"),
+    CONF_HAS_MIXING_VALVE: ("mixing_valve", "mix_water_probe"),
+    CONF_HAS_REMOTE_OUTDOOR_SENSOR: ("outdoor_probe",),
+    CONF_HAS_TARIFF_CONTROL: ("night_mode", "low_tariff"),
+    CONF_HAS_ADVANCED_CONFIG: (
+        "freeze_protection", "terminal_20_21", "terminal_24_25",
+        "terminal_47_alarm", "terminal_48_pump1", "terminal_49_pump2",
+        "frost_outdoor", "frost_water", "dual_set_point", "flow_switch",
+    ),
 }
 
 
@@ -54,10 +70,14 @@ def _remove_disabled_entities(hass: HomeAssistant, entry: ConfigEntry, features:
     for reg_id in INPUT_REGISTER_MAP:
         if not register_enabled(features, INPUT_REGISTER_FEATURES, reg_id):
             stale_ids.add(f"ashp_{entry.entry_id}_input_{reg_id}")
-    for reg_id in HOLDING_REGISTER_MAP:
+    for reg_id, config in HOLDING_REGISTER_MAP.items():
         if not register_enabled(features, HOLDING_REGISTER_FEATURES, reg_id):
             stale_ids.add(f"ashp_{entry.entry_id}_holding_{reg_id}")
             stale_ids.add(f"{entry.entry_id}_number_holding_{reg_id}")
+        elif config.get("writable", False):
+            # sensor.py no longer creates a sensor for writable registers -
+            # the number entity already exposes the same value.
+            stale_ids.add(f"ashp_{entry.entry_id}_holding_{reg_id}")
     for feature, suffixes in FEATURE_UNIQUE_ID_SUFFIXES.items():
         if feature not in features:
             for suffix in suffixes:

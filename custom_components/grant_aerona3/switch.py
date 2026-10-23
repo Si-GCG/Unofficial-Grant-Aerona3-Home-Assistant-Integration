@@ -11,7 +11,20 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.entity import EntityCategory
 
-from .const import DOMAIN, MANUFACTURER, MODEL, CONF_HAS_BUFFER, CONF_HAS_DHW_TANK, CONF_HAS_EHS
+from .const import (
+    DOMAIN,
+    MANUFACTURER,
+    MODEL,
+    CONF_HAS_ADVANCED_CONFIG,
+    CONF_HAS_BACKUP_HEATER,
+    CONF_HAS_BUFFER,
+    CONF_HAS_DHW_TANK,
+    CONF_HAS_EHS,
+    CONF_HAS_HUMIDITY_SENSOR,
+    CONF_HAS_MIXING_VALVE,
+    CONF_HAS_REMOTE_OUTDOOR_SENSOR,
+    CONF_HAS_TARIFF_CONTROL,
+)
 from .coordinator import GrantAerona3Coordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -30,17 +43,23 @@ async def async_setup_entry(
     has_dhw = CONF_HAS_DHW_TANK in features
     has_buffer = CONF_HAS_BUFFER in features
     has_ehs = CONF_HAS_EHS in features
+    has_backup_heater = CONF_HAS_BACKUP_HEATER in features
+    has_humidity_sensor = CONF_HAS_HUMIDITY_SENSOR in features
+    has_mixing_valve = CONF_HAS_MIXING_VALVE in features
+    has_remote_outdoor_sensor = CONF_HAS_REMOTE_OUTDOOR_SENSOR in features
+    has_tariff_control = CONF_HAS_TARIFF_CONTROL in features
+    has_advanced_config = CONF_HAS_ADVANCED_CONFIG in features
 
     # Holding Register switches (configuration parameters)
-    entities.extend([
-        GrantAerona3BackupHeaterSwitch(coordinator, config_entry),
-        GrantAerona3FrostProtectionSwitch(coordinator, config_entry),
-        GrantAerona3Terminal2021Switch(coordinator, config_entry),
-        GrantAerona3Terminal2425Switch(coordinator, config_entry),
-        GrantAerona3Terminal47AlarmSwitch(coordinator, config_entry),
-        GrantAerona3Terminal48Pump1Switch(coordinator, config_entry),
-        GrantAerona3Terminal49Pump2Switch(coordinator, config_entry),
-    ])
+    if has_advanced_config:
+        entities.extend([
+            GrantAerona3FrostProtectionSwitch(coordinator, config_entry),
+            GrantAerona3Terminal2021Switch(coordinator, config_entry),
+            GrantAerona3Terminal2425Switch(coordinator, config_entry),
+            GrantAerona3Terminal47AlarmSwitch(coordinator, config_entry),
+            GrantAerona3Terminal48Pump1Switch(coordinator, config_entry),
+            GrantAerona3Terminal49Pump2Switch(coordinator, config_entry),
+        ])
     if has_dhw:
         entities.extend([
             GrantAerona3DHWPrioritySwitch(coordinator, config_entry),
@@ -49,26 +68,40 @@ async def async_setup_entry(
         ])
     if has_ehs:
         entities.append(GrantAerona3EHSFunctionSwitch(coordinator, config_entry))
+    if has_backup_heater:
+        entities.append(GrantAerona3BackupHeaterSwitch(coordinator, config_entry))
 
     # Coil Register switches (enable/disable features)
     entities.extend([
         GrantAerona3ClimateCompensationZone1Switch(coordinator, config_entry),
         GrantAerona3WaterSetpointControlSwitch(coordinator, config_entry),
-        GrantAerona3FrostProtectionOutdoorSwitch(coordinator, config_entry),
-        GrantAerona3FrostProtectionWaterSwitch(coordinator, config_entry),
-        GrantAerona3HumidityCompensationSwitch(coordinator, config_entry),
-        # Terminal enable switches
         GrantAerona3RemoteControllerSwitch(coordinator, config_entry),
-        GrantAerona3MixingValveSwitch(coordinator, config_entry),
-        GrantAerona3OutdoorProbeSwitch(coordinator, config_entry),
-        GrantAerona3MixWaterProbeSwitch(coordinator, config_entry),
         GrantAerona3RS485ModbusSwitch(coordinator, config_entry),
-        GrantAerona3HumiditySensorSwitch(coordinator, config_entry),
-        GrantAerona3DualSetPointSwitch(coordinator, config_entry),
-        GrantAerona3FlowSwitchSwitch(coordinator, config_entry),
-        GrantAerona3NightModeSwitch(coordinator, config_entry),
-        GrantAerona3LowTariffSwitch(coordinator, config_entry),
     ])
+    if has_advanced_config:
+        entities.extend([
+            GrantAerona3FrostProtectionOutdoorSwitch(coordinator, config_entry),
+            GrantAerona3FrostProtectionWaterSwitch(coordinator, config_entry),
+            GrantAerona3DualSetPointSwitch(coordinator, config_entry),
+            GrantAerona3FlowSwitchSwitch(coordinator, config_entry),
+        ])
+    if has_humidity_sensor:
+        entities.extend([
+            GrantAerona3HumidityCompensationSwitch(coordinator, config_entry),
+            GrantAerona3HumiditySensorSwitch(coordinator, config_entry),
+        ])
+    if has_mixing_valve:
+        entities.extend([
+            GrantAerona3MixingValveSwitch(coordinator, config_entry),
+            GrantAerona3MixWaterProbeSwitch(coordinator, config_entry),
+        ])
+    if has_remote_outdoor_sensor:
+        entities.append(GrantAerona3OutdoorProbeSwitch(coordinator, config_entry))
+    if has_tariff_control:
+        entities.extend([
+            GrantAerona3NightModeSwitch(coordinator, config_entry),
+            GrantAerona3LowTariffSwitch(coordinator, config_entry),
+        ])
     if has_dhw:
         entities.extend([
             GrantAerona3AntiLegionellaSwitch(coordinator, config_entry),

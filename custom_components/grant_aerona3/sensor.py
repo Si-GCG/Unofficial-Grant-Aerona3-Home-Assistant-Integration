@@ -55,8 +55,12 @@ async def async_setup_entry(
                 GrantAerona3InputSensor(coordinator, config_entry, register_id)
             )
 
-    # Create sensors for holding registers matching the configured hardware
-    for register_id in HOLDING_REGISTER_MAP.keys():
+    # Create sensors for read-only holding registers matching the configured
+    # hardware. Writable registers already get a number entity (number.py)
+    # exposing the same value, so a sensor here would just be a duplicate.
+    for register_id, config in HOLDING_REGISTER_MAP.items():
+        if config.get("writable", False):
+            continue
         if register_enabled(features, HOLDING_REGISTER_FEATURES, register_id):
             entities.append(
                 GrantAerona3HoldingSensor(coordinator, config_entry, register_id)

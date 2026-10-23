@@ -34,6 +34,13 @@ from .const import (
     CONF_HAS_BUFFER,
     CONF_HAS_EHS,
     CONF_HAS_COOLING,
+    CONF_HAS_BACKUP_HEATER,
+    CONF_HAS_HUMIDITY_SENSOR,
+    CONF_HAS_MIXING_VALVE,
+    CONF_HAS_REMOTE_OUTDOOR_SENSOR,
+    CONF_HAS_TARIFF_CONTROL,
+    CONF_HAS_DEHUMIDIFIER,
+    CONF_HAS_ADVANCED_CONFIG,
     CONF_ZONES,
     DEFAULT_FEATURES,
     ZONES_SINGLE,
@@ -43,7 +50,7 @@ from .features import get_feature
 
 _LOGGER = logging.getLogger(__name__)
 
-INTEGRATION_VERSION = "1.1.7"
+INTEGRATION_VERSION = "1.2.0"
 
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
@@ -69,6 +76,13 @@ STEP_FEATURES_DATA_SCHEMA = vol.Schema(
         vol.Required(CONF_HAS_EHS, default=False): cv.boolean,
         vol.Required(CONF_HAS_COOLING, default=False): cv.boolean,
         vol.Required(CONF_ZONES, default=ZONES_SINGLE): vol.In([ZONES_SINGLE, ZONES_DUAL]),
+        vol.Required(CONF_HAS_BACKUP_HEATER, default=False): cv.boolean,
+        vol.Required(CONF_HAS_HUMIDITY_SENSOR, default=False): cv.boolean,
+        vol.Required(CONF_HAS_MIXING_VALVE, default=False): cv.boolean,
+        vol.Required(CONF_HAS_REMOTE_OUTDOOR_SENSOR, default=False): cv.boolean,
+        vol.Required(CONF_HAS_TARIFF_CONTROL, default=False): cv.boolean,
+        vol.Required(CONF_HAS_DEHUMIDIFIER, default=False): cv.boolean,
+        vol.Required(CONF_HAS_ADVANCED_CONFIG, default=False): cv.boolean,
     }
 )
 
@@ -266,6 +280,34 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                         CONF_ZONES,
                         default=get_feature(entry, CONF_ZONES, DEFAULT_FEATURES[CONF_ZONES]),
                     ): vol.In([ZONES_SINGLE, ZONES_DUAL]),
+                    vol.Required(
+                        CONF_HAS_BACKUP_HEATER,
+                        default=get_feature(entry, CONF_HAS_BACKUP_HEATER, DEFAULT_FEATURES[CONF_HAS_BACKUP_HEATER]),
+                    ): cv.boolean,
+                    vol.Required(
+                        CONF_HAS_HUMIDITY_SENSOR,
+                        default=get_feature(entry, CONF_HAS_HUMIDITY_SENSOR, DEFAULT_FEATURES[CONF_HAS_HUMIDITY_SENSOR]),
+                    ): cv.boolean,
+                    vol.Required(
+                        CONF_HAS_MIXING_VALVE,
+                        default=get_feature(entry, CONF_HAS_MIXING_VALVE, DEFAULT_FEATURES[CONF_HAS_MIXING_VALVE]),
+                    ): cv.boolean,
+                    vol.Required(
+                        CONF_HAS_REMOTE_OUTDOOR_SENSOR,
+                        default=get_feature(entry, CONF_HAS_REMOTE_OUTDOOR_SENSOR, DEFAULT_FEATURES[CONF_HAS_REMOTE_OUTDOOR_SENSOR]),
+                    ): cv.boolean,
+                    vol.Required(
+                        CONF_HAS_TARIFF_CONTROL,
+                        default=get_feature(entry, CONF_HAS_TARIFF_CONTROL, DEFAULT_FEATURES[CONF_HAS_TARIFF_CONTROL]),
+                    ): cv.boolean,
+                    vol.Required(
+                        CONF_HAS_DEHUMIDIFIER,
+                        default=get_feature(entry, CONF_HAS_DEHUMIDIFIER, DEFAULT_FEATURES[CONF_HAS_DEHUMIDIFIER]),
+                    ): cv.boolean,
+                    vol.Required(
+                        CONF_HAS_ADVANCED_CONFIG,
+                        default=get_feature(entry, CONF_HAS_ADVANCED_CONFIG, DEFAULT_FEATURES[CONF_HAS_ADVANCED_CONFIG]),
+                    ): cv.boolean,
                 }
             ),
         )

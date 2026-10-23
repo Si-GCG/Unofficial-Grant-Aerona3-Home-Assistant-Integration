@@ -32,14 +32,28 @@
           "has_buffer": "Buffer tank / volumiser",
           "has_ehs": "External heat source (EHS / hybrid boiler)",
           "has_cooling": "Cooling mode",
-          "zones": "Heating zones"
+          "zones": "Heating zones",
+          "has_backup_heater": "Backup / immersion heater",
+          "has_humidity_sensor": "Humidity sensor",
+          "has_mixing_valve": "Mixing valve / secondary circuit",
+          "has_remote_outdoor_sensor": "Additional outdoor sensor",
+          "has_tariff_control": "Low tariff / night mode signal",
+          "has_dehumidifier": "Dehumidifier",
+          "has_advanced_config": "Advanced / installer settings"
         },
         "data_description": {
           "has_dhw_tank": "Domestic hot water cylinder heated by the heat pump",
           "has_buffer": "Buffer tank with temperature probe (terminals 11-12)",
           "has_ehs": "External heat source for space heating (terminals 41-42)",
           "has_cooling": "System is configured to provide cooling as well as heating",
-          "zones": "Choose 'dual' if you have a second (slave) heating zone"
+          "zones": "Choose 'dual' if you have a second (slave) heating zone",
+          "has_backup_heater": "Electric backup/immersion heater fitted alongside the heat pump",
+          "has_humidity_sensor": "Room humidity sensor wired to terminals 17-18",
+          "has_mixing_valve": "3-way mixing valve / low-loss header on terminals 4-5-6 and 13-14",
+          "has_remote_outdoor_sensor": "Additional outdoor temperature probe wired to terminals 9-10",
+          "has_tariff_control": "Wired to an economy-tariff or night-time noise-limiting signal (terminals 28-31)",
+          "has_dehumidifier": "Dehumidifier wired to terminal 45",
+          "has_advanced_config": "Installer-only commissioning settings: frost-protection tuning, pump timing, error history, and terminal wiring switches. Set once, rarely touched again."
         }
       }
     },
@@ -63,7 +77,14 @@
           "has_buffer": "Buffer tank / volumiser",
           "has_ehs": "External heat source (EHS / hybrid boiler)",
           "has_cooling": "Cooling mode",
-          "zones": "Heating zones"
+          "zones": "Heating zones",
+          "has_backup_heater": "Backup / immersion heater",
+          "has_humidity_sensor": "Humidity sensor",
+          "has_mixing_valve": "Mixing valve / secondary circuit",
+          "has_remote_outdoor_sensor": "Additional outdoor sensor",
+          "has_tariff_control": "Low tariff / night mode signal",
+          "has_dehumidifier": "Dehumidifier",
+          "has_advanced_config": "Advanced / installer settings"
         },
         "data_description": {
           "scan_interval": "How often to poll the heat pump for data updates (5-3600 seconds)",
@@ -72,7 +93,14 @@
           "has_buffer": "Buffer tank with temperature probe (terminals 11-12)",
           "has_ehs": "External heat source for space heating (terminals 41-42)",
           "has_cooling": "System is configured to provide cooling as well as heating",
-          "zones": "Choose 'dual' if you have a second (slave) heating zone"
+          "zones": "Choose 'dual' if you have a second (slave) heating zone",
+          "has_backup_heater": "Electric backup/immersion heater fitted alongside the heat pump",
+          "has_humidity_sensor": "Room humidity sensor wired to terminals 17-18",
+          "has_mixing_valve": "3-way mixing valve / low-loss header on terminals 4-5-6 and 13-14",
+          "has_remote_outdoor_sensor": "Additional outdoor temperature probe wired to terminals 9-10",
+          "has_tariff_control": "Wired to an economy-tariff or night-time noise-limiting signal (terminals 28-31)",
+          "has_dehumidifier": "Dehumidifier wired to terminal 45",
+          "has_advanced_config": "Installer-only commissioning settings: frost-protection tuning, pump timing, error history, and terminal wiring switches. Set once, rarely touched again."
         }
       }
     }
