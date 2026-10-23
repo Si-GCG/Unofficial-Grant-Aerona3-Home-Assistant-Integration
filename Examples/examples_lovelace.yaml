@@ -125,22 +125,22 @@ views:
               - entity: sensor.dhw_legionella_cycle_day_display
                 name: Legionella Cycle Day
                 icon: mdi:calendar
-              - entity: sensor.anti_legionella_set_point
+              - entity: number.antilegionella_set_point
                 name: Legionella Set Point
                 icon: mdi:clock
           - type: entities
             title: DHW Temperature Settings
             entities:
-              - entity: sensor.dhw_comfort_set_temperature
+              - entity: number.dhw_comfort_set_temperature
                 name: Comfort Temperature
                 icon: mdi:thermometer-plus
-              - entity: sensor.dhw_economy_set_temperature
+              - entity: number.dhw_economy_set_temperature
                 name: Economy Temperature
                 icon: mdi:thermometer-minus
-              - entity: sensor.dhw_over_boost_mode_set_point
+              - entity: number.dhw_over_boost_mode_set_point
                 name: Boost Temperature
                 icon: mdi:thermometer-chevron-up
-              - entity: sensor.dhw_setpoint_hysteresis
+              - entity: number.dhw_set_point_hysteresis
                 name: DHW Hysteresis
                 icon: mdi:thermometer-lines
           - type: vertical-stack
@@ -335,8 +335,18 @@ views:
     icon: mdi:cog
     background: >-
       left / contain no-repeat
-      url("/local/ashp-dashboard-card/Grant_aerona3-heat-pump.jpg") fixed    
+      url("/local/ashp-dashboard-card/Grant_aerona3-heat-pump.jpg") fixed
     cards:
+      # NOTE: the entity IDs referenced in these cards' templates/buttons
+      # below (e.g. sensor.fixed_flow_temperature, input_number.fixed_out_temp)
+      # do not match any entity this integration actually creates - this
+      # looks like a draft/placeholder that was never wired up to real
+      # entities. The real setpoints live on number.fixed_flow_temp_zone_1,
+      # number.max_flow_temp_zone1, number.min_flow_temp_zone1,
+      # number.max_outdoor_air_temperature_zone1,
+      # number.min_outdoor_air_temperature_zone1 (and the matching
+      # _zone_2/zone2 registers below) - call number.set_value on those
+      # directly instead of going through input_number helpers.
       - type: vertical-stack
         title: Temperature Controls
         cards:

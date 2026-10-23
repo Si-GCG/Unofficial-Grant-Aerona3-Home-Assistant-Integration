@@ -133,6 +133,18 @@ This guide helps you diagnose and resolve common issues with the Grant Aerona3 i
 3. ✅ **Disable problematic entities** if not needed
 4. ✅ **Check heat pump configuration** for relevant features
 
+### Dashboard Card Shows "Entity Not Available" After Updating
+
+**Symptoms**: A dashboard card, automation, or template that used to work now shows a greyed-out/unavailable entity after updating the integration (v1.2.0+), for a setpoint such as DHW comfort temperature, a flow temperature curve point, or similar.
+
+**Cause**: As of v1.2.0, every *writable* holding register (setpoints you can change) no longer has a separate read-only `sensor.*` entity — only the `number.*` entity remains, since it already showed the same value and the sensor was a pure duplicate. If something referenced `sensor.dhw_comfort_set_temperature` (for example), that entity no longer exists.
+
+**Solutions**:
+1. ✅ **Find the broken reference**: Settings → Automations & Scenes, or edit the dashboard card in YAML mode, and look for `sensor.*` entity IDs tied to a setpoint rather than a live reading.
+2. ✅ **Switch it to the matching `number.*` entity** — go to Settings → Devices & Services → Grant Aerona3 → Entities, search for the setting by name, and copy the `number.` entity ID shown there (the exact slug can vary slightly by Home Assistant version, so copy it rather than guessing).
+3. ✅ **Dashboard cards that need a read-only display** (e.g. a stat card) still work fine pointing at a `number.*` entity — it just also lets you edit the value from that card, which for most setpoint cards is the more useful behaviour anyway.
+4. This only affects registers that were *writable* (setpoints). Read-only diagnostic registers (e.g. temperature readings, error codes) kept their `sensor.*` entity unchanged.
+
 ## Data Issues
 
 ### Wrong Temperature Values
