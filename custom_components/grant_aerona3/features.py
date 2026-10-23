@@ -6,14 +6,35 @@ from typing import Any, Dict, Tuple
 from homeassistant.config_entries import ConfigEntry
 
 from .const import (
+    CONF_HAS_ADVANCED_CONFIG,
+    CONF_HAS_BACKUP_HEATER,
     CONF_HAS_BUFFER,
     CONF_HAS_COOLING,
+    CONF_HAS_DEHUMIDIFIER,
     CONF_HAS_DHW_TANK,
     CONF_HAS_EHS,
+    CONF_HAS_HUMIDITY_SENSOR,
+    CONF_HAS_MIXING_VALVE,
+    CONF_HAS_REMOTE_OUTDOOR_SENSOR,
+    CONF_HAS_TARIFF_CONTROL,
     CONF_ZONES,
     DEFAULT_FEATURES,
     FEATURE_ZONE2,
     ZONES_DUAL,
+)
+
+BOOLEAN_FEATURE_KEYS = (
+    CONF_HAS_DHW_TANK,
+    CONF_HAS_BUFFER,
+    CONF_HAS_EHS,
+    CONF_HAS_COOLING,
+    CONF_HAS_BACKUP_HEATER,
+    CONF_HAS_HUMIDITY_SENSOR,
+    CONF_HAS_MIXING_VALVE,
+    CONF_HAS_REMOTE_OUTDOOR_SENSOR,
+    CONF_HAS_TARIFF_CONTROL,
+    CONF_HAS_DEHUMIDIFIER,
+    CONF_HAS_ADVANCED_CONFIG,
 )
 
 
@@ -27,7 +48,7 @@ def get_feature(entry: ConfigEntry, key: str, default: Any = None) -> Any:
 def enabled_features(entry: ConfigEntry) -> frozenset[str]:
     """Return the set of enabled feature keys for this entry."""
     enabled = set()
-    for key in (CONF_HAS_DHW_TANK, CONF_HAS_BUFFER, CONF_HAS_EHS, CONF_HAS_COOLING):
+    for key in BOOLEAN_FEATURE_KEYS:
         if get_feature(entry, key, DEFAULT_FEATURES[key]):
             enabled.add(key)
     if get_feature(entry, CONF_ZONES, DEFAULT_FEATURES[CONF_ZONES]) == ZONES_DUAL:

@@ -89,6 +89,19 @@ CONF_HAS_EHS = "has_ehs"
 CONF_HAS_COOLING = "has_cooling"
 CONF_ZONES = "zones"
 
+# Additional optional-hardware features. Each gates a cluster of registers
+# that only matter if the matching hardware/wiring is actually present.
+CONF_HAS_BACKUP_HEATER = "has_backup_heater"
+CONF_HAS_HUMIDITY_SENSOR = "has_humidity_sensor"
+CONF_HAS_MIXING_VALVE = "has_mixing_valve"
+CONF_HAS_REMOTE_OUTDOOR_SENSOR = "has_remote_outdoor_sensor"
+CONF_HAS_TARIFF_CONTROL = "has_tariff_control"
+CONF_HAS_DEHUMIDIFIER = "has_dehumidifier"
+# Bundles installer/commissioning-only registers that exist on every unit but
+# are set once at commissioning and essentially never touched afterwards:
+# frost-protection fine-tuning, error history, and terminal wiring config.
+CONF_HAS_ADVANCED_CONFIG = "has_advanced_config"
+
 ZONES_SINGLE = "single"
 ZONES_DUAL = "dual"
 
@@ -103,6 +116,13 @@ DEFAULT_FEATURES = {
     CONF_HAS_EHS: True,
     CONF_HAS_COOLING: True,
     CONF_ZONES: ZONES_DUAL,
+    CONF_HAS_BACKUP_HEATER: True,
+    CONF_HAS_HUMIDITY_SENSOR: True,
+    CONF_HAS_MIXING_VALVE: True,
+    CONF_HAS_REMOTE_OUTDOOR_SENSOR: True,
+    CONF_HAS_TARIFF_CONTROL: True,
+    CONF_HAS_DEHUMIDIFIER: True,
+    CONF_HAS_ADVANCED_CONFIG: True,
 }
 
 # Register types
@@ -1736,7 +1756,22 @@ INPUT_REGISTER_FEATURES = {
     14: (CONF_HAS_DHW_TANK,),    # Legionella cycle day
     15: (CONF_HAS_DHW_TANK,),    # Legionella cycle
     16: (CONF_HAS_DHW_TANK,),    # DHW tank temperature
+    17: (CONF_HAS_REMOTE_OUTDOOR_SENSOR,),  # Outdoor air temperature (remote sensor)
     18: (CONF_HAS_BUFFER,),      # Buffer tank temperature
+    19: (CONF_HAS_MIXING_VALVE,),  # Mix water temperature
+    20: (CONF_HAS_HUMIDITY_SENSOR,),  # Humidity sensor
+    # Current + 10 previous error codes - diagnostic, rarely watched day-to-day
+    21: (CONF_HAS_ADVANCED_CONFIG,),
+    22: (CONF_HAS_ADVANCED_CONFIG,),
+    23: (CONF_HAS_ADVANCED_CONFIG,),
+    24: (CONF_HAS_ADVANCED_CONFIG,),
+    25: (CONF_HAS_ADVANCED_CONFIG,),
+    26: (CONF_HAS_ADVANCED_CONFIG,),
+    27: (CONF_HAS_ADVANCED_CONFIG,),
+    28: (CONF_HAS_ADVANCED_CONFIG,),
+    29: (CONF_HAS_ADVANCED_CONFIG,),
+    30: (CONF_HAS_ADVANCED_CONFIG,),
+    31: (CONF_HAS_ADVANCED_CONFIG,),
     34: (FEATURE_ZONE2,),        # Slave room temperature
 }
 
@@ -1760,6 +1795,7 @@ HOLDING_REGISTER_FEATURES = {
     20: (CONF_HAS_COOLING, FEATURE_ZONE2),
     21: (CONF_HAS_COOLING, FEATURE_ZONE2),
     23: (CONF_HAS_COOLING,),     # Cooling set point hysteresis
+    24: (CONF_HAS_TARIFF_CONTROL,),  # Low tariff differential set point, heating
     25: (CONF_HAS_COOLING,),     # Low tariff differential set point, cooling
     # DHW configuration
     26: (CONF_HAS_DHW_TANK,),
@@ -1773,8 +1809,57 @@ HOLDING_REGISTER_FEATURES = {
     34: (CONF_HAS_DHW_TANK,),
     35: (CONF_HAS_DHW_TANK,),
     36: (CONF_HAS_DHW_TANK,),    # Anti-legionella set point
+    # Pump/compressor timing and unlock-pump commissioning settings
+    38: (CONF_HAS_ADVANCED_CONFIG,),
+    39: (CONF_HAS_ADVANCED_CONFIG,),
+    40: (CONF_HAS_ADVANCED_CONFIG,),
+    41: (CONF_HAS_ADVANCED_CONFIG,),
+    42: (CONF_HAS_ADVANCED_CONFIG,),
+    43: (CONF_HAS_ADVANCED_CONFIG,),
+    44: (CONF_HAS_ADVANCED_CONFIG,),
+    45: (CONF_HAS_ADVANCED_CONFIG,),
+    46: (CONF_HAS_ADVANCED_CONFIG,),
+    47: (CONF_HAS_ADVANCED_CONFIG,),
+    48: (CONF_HAS_ADVANCED_CONFIG,),
+    49: (CONF_HAS_ADVANCED_CONFIG,),
+    # Frost protection fine-tuning (the function itself always runs; these are
+    # the rarely-touched threshold/hysteresis registers)
+    50: (CONF_HAS_ADVANCED_CONFIG,),
+    51: (CONF_HAS_ADVANCED_CONFIG,),
+    52: (CONF_HAS_ADVANCED_CONFIG,),
+    53: (CONF_HAS_ADVANCED_CONFIG,),
+    54: (CONF_HAS_ADVANCED_CONFIG,),
+    55: (CONF_HAS_ADVANCED_CONFIG,),
+    56: (CONF_HAS_ADVANCED_CONFIG,),
+    57: (CONF_HAS_ADVANCED_CONFIG,),
     58: (CONF_HAS_DHW_TANK,),    # DHW tank frost protection start temperature
     59: (CONF_HAS_DHW_TANK,),    # DHW tank frost protection hysteresis
+    # Humidity compensation (needs a humidity sensor wired to terminals 17-18)
+    60: (CONF_HAS_HUMIDITY_SENSOR,),
+    61: (CONF_HAS_HUMIDITY_SENSOR,),
+    62: (CONF_HAS_HUMIDITY_SENSOR,),
+    # Mixing valve / 3-way valve (secondary/blended circuit)
+    63: (CONF_HAS_MIXING_VALVE,),
+    64: (CONF_HAS_MIXING_VALVE,),
+    65: (CONF_HAS_MIXING_VALVE,),
+    66: (CONF_HAS_MIXING_VALVE,),
+    # Flow switch alarm timing (commissioning-only)
+    67: (CONF_HAS_ADVANCED_CONFIG,),
+    68: (CONF_HAS_ADVANCED_CONFIG,),
+    69: (CONF_HAS_ADVANCED_CONFIG,),
+    70: (CONF_HAS_ADVANCED_CONFIG,),
+    # Backup/immersion heater
+    71: (CONF_HAS_BACKUP_HEATER,),
+    72: (CONF_HAS_BACKUP_HEATER,),
+    73: (CONF_HAS_BACKUP_HEATER,),
+    74: (CONF_HAS_BACKUP_HEATER,),
+    75: (CONF_HAS_BACKUP_HEATER,),
+    76: (CONF_HAS_BACKUP_HEATER,),
+    77: (CONF_HAS_BACKUP_HEATER,),
+    78: (CONF_HAS_BACKUP_HEATER,),
+    79: (CONF_HAS_BACKUP_HEATER,),
+    80: (CONF_HAS_BACKUP_HEATER,),
+    81: (CONF_HAS_ADVANCED_CONFIG,),  # Freeze protection function switch
     # EHS (external heat source)
     84: (CONF_HAS_EHS,),
     85: (CONF_HAS_EHS,),
@@ -1783,6 +1868,12 @@ HOLDING_REGISTER_FEATURES = {
     88: (CONF_HAS_EHS,),
     89: (CONF_HAS_EHS,),
     90: (CONF_HAS_EHS,),
+    # Terminal wiring config (set once at commissioning)
+    91: (CONF_HAS_ADVANCED_CONFIG,),
+    92: (CONF_HAS_ADVANCED_CONFIG,),
+    93: (CONF_HAS_ADVANCED_CONFIG,),
+    94: (CONF_HAS_ADVANCED_CONFIG,),
+    95: (CONF_HAS_ADVANCED_CONFIG,),
     96: (CONF_HAS_DHW_TANK,),    # Terminal 50-51-52: DHW 3-way valve
     # Buffer tank set points
     99: (CONF_HAS_BUFFER,),
@@ -1794,10 +1885,27 @@ COIL_REGISTER_FEATURES = {
     4: (CONF_HAS_COOLING,),                  # Cooling weather compensation Zone 1
     5: (CONF_HAS_COOLING, FEATURE_ZONE2),    # Cooling weather compensation Zone 2
     6: (CONF_HAS_DHW_TANK,),                 # Anti-legionella function
+    8: (CONF_HAS_ADVANCED_CONFIG,),          # Frost protection based on room temperature
+    9: (CONF_HAS_ADVANCED_CONFIG,),          # Frost protection based on outdoor temperature
+    10: (CONF_HAS_ADVANCED_CONFIG,),         # Frost protection based on flow temperature
     11: (CONF_HAS_DHW_TANK,),                # DHW storage frost protection
+    12: (CONF_HAS_ADVANCED_CONFIG,),         # Secondary system circuit frost protection
+    13: (CONF_HAS_HUMIDITY_SENSOR,),         # Humidity compensation
+    14: (CONF_HAS_BACKUP_HEATER,),           # Conditions to be available backup heaters
     15: (CONF_HAS_EHS,),                     # Terminal 41-42: EHS
+    17: (CONF_HAS_MIXING_VALVE,),            # Terminal 4-5-6: 3-way mixing valve
     18: (CONF_HAS_DHW_TANK,),                # Terminal 7-8: DHW tank probe
+    19: (CONF_HAS_REMOTE_OUTDOOR_SENSOR,),   # Terminal 9-10: outdoor probe (additional)
     20: (CONF_HAS_BUFFER,),                  # Terminal 11-12: buffer tank probe
+    21: (CONF_HAS_MIXING_VALVE,),            # Terminal 13-14: mix water probe
+    23: (CONF_HAS_HUMIDITY_SENSOR,),         # Terminal 17-18: humidity sensor
     24: (CONF_HAS_DHW_TANK,),                # Terminal 19-18: DHW remote contact
+    25: (CONF_HAS_ADVANCED_CONFIG,),         # Terminal 22-23: dual set point control
+    26: (CONF_HAS_ADVANCED_CONFIG,),         # Terminal 26-27: flow switch
+    27: (CONF_HAS_TARIFF_CONTROL,),          # Terminal 28-29: night mode
+    28: (CONF_HAS_TARIFF_CONTROL,),          # Terminal 30-31: low tariff
     29: (CONF_HAS_EHS,),                     # Terminal 41-42: EHS
+    30: (CONF_HAS_ADVANCED_CONFIG,),         # Terminal 43-44: heating/cooling mode output
+    31: (CONF_HAS_DEHUMIDIFIER,),            # Terminal 45: dehumidifier
+    32: (CONF_HAS_ADVANCED_CONFIG,),         # Terminal 46: DHW electric heater / backup heater select
 }
