@@ -50,7 +50,7 @@ from .features import get_feature
 
 _LOGGER = logging.getLogger(__name__)
 
-INTEGRATION_VERSION = "1.2.0"
+INTEGRATION_VERSION = "1.2.1"
 
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
