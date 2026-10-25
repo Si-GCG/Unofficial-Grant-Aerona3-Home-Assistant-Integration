@@ -73,6 +73,8 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
             name=f"{DOMAIN}_{self.host}",
             update_interval=timedelta(seconds=scan_interval),
         )
+        # Serial bus lock: polls and writes must take turns (a serial port can only be opened once at a time)
+        self._bus_lock = asyncio.Lock()
         # Create a persistent client reference (not always used; per-fetch clients created)
         if self.connection_type == "tcp":
             self._client = ModbusTcpClient(host=self.host, port=self.port, timeout=10)
@@ -89,7 +91,8 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
 
     async def _async_update_data(self) -> Dict[str, Any]:
         try:
-            return await asyncio.wait_for(self._fetch_data(), timeout=180.0)
+            async with self._bus_lock:
+                return await asyncio.wait_for(self._fetch_data(), timeout=180.0)
         except asyncio.TimeoutError as err:
             raise UpdateFailed(f"Timeout connecting to ASHP at {self.host}") from err
         except Exception as err:
@@ -303,7 +306,7 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
             _LOGGER.warning("Error calculating derived values: %s", err)
         return calculated
 
-    async def async_write_register(self, register: int, value: int) -> bool:
+    async def _do_write_register(self, register: int, value: int) -> bool:
         """Write to a holding register."""
         if self.connection_type == "tcp":
             client = ModbusTcpClient(host=self.host, port=self.port, timeout=5)
@@ -339,9 +342,8 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
                 return False
             
             _LOGGER.info("Successfully wrote value %d to register %d", value, register)
-            await self.async_request_refresh()
             return True
-            
+
         except Exception as err:
             _LOGGER.error("Failed to write register %d: %s", register, err)
             return False
@@ -351,7 +353,7 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
             except Exception:
                 pass
 
-    async def async_write_coil(self, address: int, value: bool) -> bool:
+    async def _do_write_coil(self, address: int, value: bool) -> bool:
         """Write to a coil register."""
         # Create a fresh client like async_write_register does
         if self.connection_type == "tcp":
@@ -388,9 +390,8 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
                 return False
             
             _LOGGER.info("Successfully wrote value %s to coil %d", value, address)
-            await self.async_request_refresh()
             return True
-            
+
         except Exception as err:
             _LOGGER.error("Failed to write coil %d: %s", address, err)
             return False
@@ -399,3 +400,21 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
                 await self.hass.async_add_executor_job(client.close)
             except Exception:
                 pass
+
+    async def async_write_register(self, register: int, value: int) -> bool:
+        """Write to a holding register, taking turns with polling."""
+        async with self._bus_lock:
+            await asyncio.sleep(0.3)  # let the serial port settle after a poll
+            ok = await self._do_write_register(register, value)
+        if ok:
+            await self.async_request_refresh()
+        return ok
+
+    async def async_write_coil(self, address: int, value: bool) -> bool:
+        """Write to a coil, taking turns with polling."""
+        async with self._bus_lock:
+            await asyncio.sleep(0.3)  # let the serial port settle after a poll
+            ok = await self._do_write_coil(address, value)
+        if ok:
+            await self.async_request_refresh()
+        return ok
