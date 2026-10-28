@@ -308,6 +308,13 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
 
     async def _do_write_register(self, register: int, value: int) -> bool:
         """Write to a holding register."""
+        # Registers are unsigned 16-bit on the wire; negative values (e.g. minimum
+        # outdoor temperatures) must be sent as two's complement.
+        if not -32768 <= value <= 65535:
+            _LOGGER.error("Value %d out of 16-bit range for register %d", value, register)
+            return False
+        value &= 0xFFFF
+
         if self.connection_type == "tcp":
             client = ModbusTcpClient(host=self.host, port=self.port, timeout=5)
         else:

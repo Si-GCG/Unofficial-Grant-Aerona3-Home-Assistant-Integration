@@ -174,7 +174,7 @@ class GrantAerona3HoldingNumber(CoordinatorEntity, NumberEntity):
         _LOGGER.info("Setting value %s for register %d (%s)", value, self._register_id, self._attr_name)
         
         scale = self._register_config.get("scale", 1)
-        raw_value = int(value / scale)
+        raw_value = int(round(value / scale))
         
         _LOGGER.debug("Scaled value %s to raw value %d for register %d", value, raw_value, self._register_id)
         
