@@ -100,6 +100,7 @@ class GrantAerona3RoomTrim(ClimateEntity, RestoreEntity):
         self._attr_target_temperature = 20.0
         self._last_reason = "off"
         self._at_cap_ticks = 0
+        self._pending_reset = False  # offset must return to 0 (turned off, or a fail-safe)
         self._attr_device_info = {
             "identifiers": {(DOMAIN, entry.entry_id)},
             "name": "ASHP",
@@ -156,13 +157,17 @@ class GrantAerona3RoomTrim(ClimateEntity, RestoreEntity):
             room_age_s=age,
             target=float(self._attr_target_temperature),
             current_offset=self._manager.requested_offset,
+            pending_reset=self._pending_reset,
             dead_band=self._dead_band,
             cap=self._cap,
         )
         self._last_reason = decision.reason
         self._at_cap_ticks = self._at_cap_ticks + 1 if decision.reason == "at_cap" else 0
         if decision.new_offset is not None:
-            if not await self._manager.async_set_offset(decision.new_offset):
+            if await self._manager.async_set_offset(decision.new_offset):
+                if decision.new_offset == 0.0:
+                    self._pending_reset = False
+            else:
                 _LOGGER.warning("Room trim could not change the flow offset (%s)", decision.reason)
         self.async_write_ha_state()
 
@@ -171,7 +176,9 @@ class GrantAerona3RoomTrim(ClimateEntity, RestoreEntity):
         self._manager.trim_active = hvac_mode == HVACMode.HEAT
         if hvac_mode == HVACMode.OFF:
             self._last_reason = "off"
-            await self._manager.async_set_offset(0.0)  # if refused, the next tick retries
+            self._pending_reset = self._manager.requested_offset != 0
+            if self._pending_reset and await self._manager.async_set_offset(0.0):
+                self._pending_reset = False  # if refused, the next tick retries
         self.async_write_ha_state()
 
     async def async_set_temperature(self, **kwargs: Any) -> None:

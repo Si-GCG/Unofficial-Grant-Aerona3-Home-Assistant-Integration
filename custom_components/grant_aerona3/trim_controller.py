@@ -31,12 +31,14 @@ def decide(
     current_offset: float,
     dead_band: float,
     cap: float,
+    pending_reset: bool = False,
     stale_after_s: float = 7200.0,
     step: float = 0.5,
 ) -> TrimDecision:
     """Decide what the trim should do on this tick."""
     if not enabled:
-        return _to_zero(current_offset, "off")
+        # Off leaves a manual offset alone; only a just-requested reset (pending_reset) zeroes it
+        return _to_zero(current_offset, "off") if pending_reset else TrimDecision(None, "off")
     if cooling:
         return TrimDecision(None, "cooling")
     if room is None:

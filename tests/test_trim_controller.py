@@ -6,15 +6,20 @@ tc = load("trim_controller")
 def decide(**kw):
     args = dict(
         enabled=True, cooling=False, room=19.0, room_age_s=60.0, target=21.0,
-        current_offset=0.0, dead_band=0.3, cap=3.0,
+        current_offset=0.0, dead_band=0.3, cap=3.0, pending_reset=False,
     )
     args.update(kw)
     return tc.decide(**args)
 
 
-def test_off_returns_zero_offset():
-    d = decide(enabled=False, current_offset=1.5)
+def test_off_with_pending_reset_returns_zero_offset():
+    d = decide(enabled=False, current_offset=1.5, pending_reset=True)
     assert d.new_offset == 0.0 and d.reason == "off"
+
+
+def test_off_without_pending_reset_leaves_manual_offset():
+    d = decide(enabled=False, current_offset=1.5)
+    assert d.new_offset is None and d.reason == "off"
 
 
 def test_cooling_does_nothing():
@@ -48,5 +53,5 @@ def test_pinned_at_cap_reports_reason():
 
 
 def test_zero_offset_when_already_zero_is_no_change():
-    d = decide(enabled=False, current_offset=0.0)
+    d = decide(enabled=False, current_offset=0.0, pending_reset=True)
     assert d.new_offset is None and d.reason == "off"
