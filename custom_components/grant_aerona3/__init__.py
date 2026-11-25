@@ -42,6 +42,7 @@ PLATFORMS = [
     Platform.BINARY_SENSOR,
     Platform.SWITCH,
     Platform.NUMBER,
+    Platform.CLIMATE,
 ]
 
 # unique_id suffixes of the hand-written entities gated on each feature

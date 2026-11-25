@@ -70,6 +70,7 @@ class FlowOffsetManager:
         self.baseline: dict[str, dict[str, float]] = {}
         self._last_mode: Optional[str] = None
         self._writing = False
+        self.trim_active = False  # set by the climate trim entity
         self._suspect = False  # a write failed part-way: don't judge registers as hand edits
 
     # -- state ----------------------------------------------------------

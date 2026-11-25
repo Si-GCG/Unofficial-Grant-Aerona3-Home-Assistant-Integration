@@ -348,6 +348,7 @@ class GrantAerona3FlowOffsetNumber(CoordinatorEntity, NumberEntity):
         return {
             "requested_offset": self._manager.requested_offset,
             "mode": self._manager.mode,
+            "controlled_by_trim": self._manager.trim_active,
             "baseline": self._manager.baseline.get(self._manager.mode or "", {}),
         }
 
