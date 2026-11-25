@@ -124,6 +124,9 @@
           "room_trim_cap": "The trim never moves the offset beyond plus or minus this value."
         }
       }
+    },
+    "error": {
+      "trim_needs_offset": "The room trim needs 'Experimental: flow temperature offset' to be ticked as well."
     }
   },
   "entity": {

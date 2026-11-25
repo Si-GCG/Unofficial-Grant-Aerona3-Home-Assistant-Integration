@@ -260,85 +260,101 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         """Manage the options."""
         if user_input is not None:
             # The room trim only exists on top of the experimental flow offset
-            if user_input.get(CONF_TRIM_ENABLED) and user_input.get(CONF_EXPERIMENTAL_FLOW_OFFSET):
+            if user_input.get(CONF_TRIM_ENABLED) and not user_input.get(CONF_EXPERIMENTAL_FLOW_OFFSET):
+                return self._show_init_form(user_input, {"base": "trim_needs_offset"})
+            if user_input.get(CONF_TRIM_ENABLED):
                 self._init_input = user_input
                 return await self.async_step_trim()
             return self.async_create_entry(
                 title="", data={**user_input, CONF_TRIM_ENABLED: False}
             )
 
+        return self._show_init_form(None, None)
+
+    def _show_init_form(
+        self, previous: dict[str, Any] | None, errors: dict[str, str] | None
+    ) -> FlowResult:
+        """Show the main options form, keeping what the user just typed on an error."""
+
         entry = self.config_entry
+
+        def value(key: str, default: Any) -> Any:
+            if previous is not None and key in previous:
+                return previous[key]
+            return get_feature(entry, key, default)
+
         return self.async_show_form(
             step_id="init",
+            errors=errors,
             data_schema=vol.Schema(
                 {
                     vol.Optional(
                         CONF_SCAN_INTERVAL,
-                        default=get_feature(entry, CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
+                        default=value(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
                     ): vol.All(vol.Coerce(int), vol.Range(min=5, max=3600)),
                     vol.Optional(
                         "flow_rate_lpm",
-                        default=get_feature(entry, "flow_rate_lpm", 34.0),
+                        default=value("flow_rate_lpm", 34.0),
                     ): vol.All(vol.Coerce(float), vol.Range(min=1.0, max=100.0)),
                     vol.Required(
                         CONF_HAS_DHW_TANK,
-                        default=get_feature(entry, CONF_HAS_DHW_TANK, DEFAULT_FEATURES[CONF_HAS_DHW_TANK]),
+                        default=value(CONF_HAS_DHW_TANK, DEFAULT_FEATURES[CONF_HAS_DHW_TANK]),
                     ): cv.boolean,
                     vol.Required(
                         CONF_HAS_BUFFER,
-                        default=get_feature(entry, CONF_HAS_BUFFER, DEFAULT_FEATURES[CONF_HAS_BUFFER]),
+                        default=value(CONF_HAS_BUFFER, DEFAULT_FEATURES[CONF_HAS_BUFFER]),
                     ): cv.boolean,
                     vol.Required(
                         CONF_HAS_EHS,
-                        default=get_feature(entry, CONF_HAS_EHS, DEFAULT_FEATURES[CONF_HAS_EHS]),
+                        default=value(CONF_HAS_EHS, DEFAULT_FEATURES[CONF_HAS_EHS]),
                     ): cv.boolean,
                     vol.Required(
                         CONF_HAS_COOLING,
-                        default=get_feature(entry, CONF_HAS_COOLING, DEFAULT_FEATURES[CONF_HAS_COOLING]),
+                        default=value(CONF_HAS_COOLING, DEFAULT_FEATURES[CONF_HAS_COOLING]),
                     ): cv.boolean,
                     vol.Required(
                         CONF_ZONES,
-                        default=get_feature(entry, CONF_ZONES, DEFAULT_FEATURES[CONF_ZONES]),
+                        default=value(CONF_ZONES, DEFAULT_FEATURES[CONF_ZONES]),
                     ): vol.In([ZONES_SINGLE, ZONES_DUAL]),
                     vol.Required(
                         CONF_HAS_BACKUP_HEATER,
-                        default=get_feature(entry, CONF_HAS_BACKUP_HEATER, DEFAULT_FEATURES[CONF_HAS_BACKUP_HEATER]),
+                        default=value(CONF_HAS_BACKUP_HEATER, DEFAULT_FEATURES[CONF_HAS_BACKUP_HEATER]),
                     ): cv.boolean,
                     vol.Required(
                         CONF_HAS_HUMIDITY_SENSOR,
-                        default=get_feature(entry, CONF_HAS_HUMIDITY_SENSOR, DEFAULT_FEATURES[CONF_HAS_HUMIDITY_SENSOR]),
+                        default=value(CONF_HAS_HUMIDITY_SENSOR, DEFAULT_FEATURES[CONF_HAS_HUMIDITY_SENSOR]),
                     ): cv.boolean,
                     vol.Required(
                         CONF_HAS_MIXING_VALVE,
-                        default=get_feature(entry, CONF_HAS_MIXING_VALVE, DEFAULT_FEATURES[CONF_HAS_MIXING_VALVE]),
+                        default=value(CONF_HAS_MIXING_VALVE, DEFAULT_FEATURES[CONF_HAS_MIXING_VALVE]),
                     ): cv.boolean,
                     vol.Required(
                         CONF_HAS_REMOTE_OUTDOOR_SENSOR,
-                        default=get_feature(entry, CONF_HAS_REMOTE_OUTDOOR_SENSOR, DEFAULT_FEATURES[CONF_HAS_REMOTE_OUTDOOR_SENSOR]),
+                        default=value(CONF_HAS_REMOTE_OUTDOOR_SENSOR, DEFAULT_FEATURES[CONF_HAS_REMOTE_OUTDOOR_SENSOR]),
                     ): cv.boolean,
                     vol.Required(
                         CONF_HAS_TARIFF_CONTROL,
-                        default=get_feature(entry, CONF_HAS_TARIFF_CONTROL, DEFAULT_FEATURES[CONF_HAS_TARIFF_CONTROL]),
+                        default=value(CONF_HAS_TARIFF_CONTROL, DEFAULT_FEATURES[CONF_HAS_TARIFF_CONTROL]),
                     ): cv.boolean,
                     vol.Required(
                         CONF_HAS_DEHUMIDIFIER,
-                        default=get_feature(entry, CONF_HAS_DEHUMIDIFIER, DEFAULT_FEATURES[CONF_HAS_DEHUMIDIFIER]),
+                        default=value(CONF_HAS_DEHUMIDIFIER, DEFAULT_FEATURES[CONF_HAS_DEHUMIDIFIER]),
                     ): cv.boolean,
                     vol.Required(
                         CONF_HAS_ADVANCED_CONFIG,
-                        default=get_feature(entry, CONF_HAS_ADVANCED_CONFIG, DEFAULT_FEATURES[CONF_HAS_ADVANCED_CONFIG]),
+                        default=value(CONF_HAS_ADVANCED_CONFIG, DEFAULT_FEATURES[CONF_HAS_ADVANCED_CONFIG]),
                     ): cv.boolean,
                     vol.Required(
                         CONF_EXPERIMENTAL_FLOW_OFFSET,
-                        default=get_feature(entry, CONF_EXPERIMENTAL_FLOW_OFFSET, DEFAULT_FEATURES[CONF_EXPERIMENTAL_FLOW_OFFSET]),
+                        default=value(CONF_EXPERIMENTAL_FLOW_OFFSET, DEFAULT_FEATURES[CONF_EXPERIMENTAL_FLOW_OFFSET]),
                     ): cv.boolean,
                     vol.Optional(
                         CONF_MAX_FLOW_TEMP,
-                        default=get_feature(entry, CONF_MAX_FLOW_TEMP, DEFAULT_MAX_FLOW_TEMP),
+                        default=value(CONF_MAX_FLOW_TEMP, DEFAULT_MAX_FLOW_TEMP),
                     ): vol.All(vol.Coerce(float), vol.Range(min=30.0, max=60.0)),
                     vol.Required(
                         CONF_TRIM_ENABLED,
-                        default=get_feature(entry, CONF_TRIM_ENABLED, False),
+                        default=value(CONF_TRIM_ENABLED, False),
                     ): cv.boolean,
                 }
             ),
