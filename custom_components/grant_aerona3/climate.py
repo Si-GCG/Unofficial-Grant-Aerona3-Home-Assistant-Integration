@@ -44,6 +44,9 @@ from .trim_controller import decide
 _LOGGER = logging.getLogger(__name__)
 
 AT_CAP_TICKS_FOR_HINT = 4
+
+# Newer Home Assistant deprecates the plain temperature attributes in favour of native_*
+_NATIVE_TEMPS = hasattr(ClimateEntity, "native_target_temperature")
 COOLING_MODE = 2  # input register 10
 
 
@@ -77,7 +80,10 @@ class GrantAerona3RoomTrim(ClimateEntity, RestoreEntity):
     _attr_name = "Zone 1 room trim"
     _attr_should_poll = False
     _attr_icon = "mdi:thermostat-auto"
-    _attr_temperature_unit = UnitOfTemperature.CELSIUS
+    if _NATIVE_TEMPS:
+        _attr_native_temperature_unit = UnitOfTemperature.CELSIUS
+    else:
+        _attr_temperature_unit = UnitOfTemperature.CELSIUS
     _attr_hvac_modes = [HVACMode.HEAT, HVACMode.OFF]
     _attr_supported_features = (
         ClimateEntityFeature.TARGET_TEMPERATURE
@@ -97,7 +103,7 @@ class GrantAerona3RoomTrim(ClimateEntity, RestoreEntity):
         self._cap = float(get_feature(entry, CONF_TRIM_CAP, DEFAULT_TRIM_CAP))
         self._attr_unique_id = unique_id
         self._attr_hvac_mode = HVACMode.OFF  # safe default: the user turns it on deliberately
-        self._attr_target_temperature = 20.0
+        self._set_target(20.0)
         self._last_reason = "off"
         self._at_cap_ticks = 0
         self._pending_reset = False  # offset must return to 0 (turned off, or a fail-safe)
@@ -117,7 +123,7 @@ class GrantAerona3RoomTrim(ClimateEntity, RestoreEntity):
                 self._attr_hvac_mode = HVACMode.HEAT
             target = last.attributes.get(ATTR_TEMPERATURE)
             if target is not None:
-                self._attr_target_temperature = float(target)
+                self._set_target(float(target))
         self._manager.trim_active = self._attr_hvac_mode == HVACMode.HEAT
         self.async_on_remove(
             async_track_time_interval(
@@ -143,9 +149,24 @@ class GrantAerona3RoomTrim(ClimateEntity, RestoreEntity):
         seen = max(state.last_updated, getattr(state, "last_reported", state.last_updated))
         return room, (now - seen).total_seconds()
 
+    def _set_target(self, value: float) -> None:
+        self._target = value
+        if not _NATIVE_TEMPS:
+            self._attr_target_temperature = value
+
     @property
-    def current_temperature(self) -> float | None:
+    def native_target_temperature(self) -> float:
+        return self._target
+
+    @property
+    def native_current_temperature(self) -> float | None:
         return self._read_sensor(dt_util.utcnow())[0]
+
+    if not _NATIVE_TEMPS:
+
+        @property
+        def current_temperature(self) -> float | None:
+            return self._read_sensor(dt_util.utcnow())[0]
 
     async def _async_tick(self, now: datetime) -> None:
         room, age = self._read_sensor(now)
@@ -155,7 +176,7 @@ class GrantAerona3RoomTrim(ClimateEntity, RestoreEntity):
             cooling=input_regs.get(10) == COOLING_MODE,
             room=room,
             room_age_s=age,
-            target=float(self._attr_target_temperature),
+            target=self._target,
             current_offset=self._manager.requested_offset,
             pending_reset=self._pending_reset,
             dead_band=self._dead_band,
@@ -183,7 +204,7 @@ class GrantAerona3RoomTrim(ClimateEntity, RestoreEntity):
 
     async def async_set_temperature(self, **kwargs: Any) -> None:
         if (target := kwargs.get(ATTR_TEMPERATURE)) is not None:
-            self._attr_target_temperature = float(target)
+            self._set_target(float(target))
             self.async_write_ha_state()
 
     @property
