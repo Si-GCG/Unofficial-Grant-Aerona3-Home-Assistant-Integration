@@ -18,6 +18,9 @@ Attach this to any bug report. It shows what the integration is polling and what
 
 The file contains the integration, Home Assistant and pymodbus versions, your connection type and settings, the hardware options you ticked, how long the last poll took, whether the heat pump rejected any block reads, and the raw value of every register polled. Your IP address and serial device path are redacted.
 
+### Error Codes
+The heat pump's error codes (such as `LC` for an incomplete anti-legionella cycle) appear in the **Current Error Code** and **Previous Error Code** sensors, and the **Alarm Status** sensor turns on while one is active. See [Error Codes](error_codes.md) for what each code means and how to clear it.
+
 ### Common Symptoms
 | Symptom | Quick Check | Likely Cause |
 |---------|-------------|--------------|

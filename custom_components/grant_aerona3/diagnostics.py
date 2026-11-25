@@ -18,6 +18,7 @@ from .const import (
     INPUT_REGISTER_MAP,
 )
 from .coordinator import plan_reads
+from .error_codes import ERROR_REGISTER_IDS, decode_error
 
 # The IP address and serial device path identify the user's network/hardware.
 TO_REDACT = {CONF_HOST, "serial_port"}
@@ -101,5 +102,19 @@ async def async_get_config_entry_diagnostics(
             ],
         }
     diagnostics["planned_reads"] = plan
+    history = []
+    for address in ERROR_REGISTER_IDS:
+        raw = data.get("input_registers", {}).get(address)
+        if raw is None:
+            history.append(None)
+            continue
+        decoded = decode_error(raw)
+        history.append(
+            "empty"
+            if decoded is None
+            else f"{decoded.code or 'unrecognised'} (0x{decoded.raw:04X}, "
+            f"{'confirmed' if decoded.confirmed else 'inferred'}): {decoded.description}"
+        )
+    diagnostics["error_history_newest_first"] = history
     diagnostics["registers"] = registers
     return diagnostics

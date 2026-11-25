@@ -33,6 +33,7 @@ from .const import (
     HOLDING_REGISTER_FEATURES,
 )
 from .coordinator import GrantAerona3Coordinator
+from .error_codes import ERROR_REGISTER_IDS, NO_ERROR_STATE, decode_error
 from .features import register_enabled
 
 _LOGGER = logging.getLogger(__name__)
@@ -51,9 +52,12 @@ async def async_setup_entry(
     # Create sensors for input registers matching the configured hardware
     for register_id in INPUT_REGISTER_MAP.keys():
         if register_enabled(features, INPUT_REGISTER_FEATURES, register_id):
-            entities.append(
-                GrantAerona3InputSensor(coordinator, config_entry, register_id)
+            sensor_class = (
+                GrantAerona3ErrorCodeSensor
+                if register_id in ERROR_REGISTER_IDS
+                else GrantAerona3InputSensor
             )
+            entities.append(sensor_class(coordinator, config_entry, register_id))
 
     # Create sensors for read-only holding registers matching the configured
     # hardware. Writable registers already get a number entity (number.py)
@@ -187,6 +191,47 @@ class GrantAerona3InputSensor(GrantAerona3BaseSensor):
             "scale_factor": self._register_config.get("scale", 1),
             "offset": self._register_config.get("offset", 0),
         }
+
+class GrantAerona3ErrorCodeSensor(GrantAerona3InputSensor):
+    """Error history slot, shown as the code on the heat pump's display (e.g. "LC")."""
+
+    def _decoded(self):
+        raw = (self.coordinator.data or {}).get("input_registers", {}).get(self._register_id)
+        return None if raw is None else (raw, decode_error(raw))
+
+    @property
+    def native_value(self) -> Optional[str]:
+        """Return the error code, or "No error" for an empty slot."""
+        result = self._decoded()
+        if result is None:
+            return None
+        raw, decoded = result
+        if decoded is None:
+            return NO_ERROR_STATE
+        return decoded.code or f"0x{decoded.raw:04X}"
+
+    @property
+    def icon(self) -> str:
+        result = self._decoded()
+        if result is not None and result[1] is not None:
+            return "mdi:alert-circle"
+        return "mdi:check-circle-outline"
+
+    @property
+    def extra_state_attributes(self) -> Dict[str, Any]:
+        attributes = {
+            "register_id": self._register_id,
+            "register_type": "input",
+            "history_position": "active error" if self._register_id == 21 else self._register_id - 21,
+        }
+        result = self._decoded()
+        if result is not None:
+            raw, decoded = result
+            attributes["raw_value"] = raw & 0xFFFF
+            if decoded is not None:
+                attributes["description"] = decoded.description
+                attributes["decoding_confirmed"] = decoded.confirmed
+        return attributes
 
 class GrantAerona3HoldingSensor(GrantAerona3BaseSensor):
     """Grant Aerona3 holding register sensor entity with ashp_ prefix."""

@@ -46,25 +46,6 @@ CLIMATE_MODES = {
 "cool": 2,
 "auto": 4
 }
-# Error codes mapping
-ERROR_CODES = {
-0: "No Error",
-1: "High Pressure",
-2: "Low Pressure", 
-3: "Compressor Overload",
-4: "Fan Motor Error",
-5: "Water Flow Error",
-6: "Temperature Sensor Error",
-7: "Communication Error",
-8: "Outdoor Sensor Error",
-9: "Indoor Sensor Error",
-10: "Flow Sensor Error",
-11: "Return Sensor Error",
-12: "DHW Sensor Error",
-13: "Buffer Tank Sensor Error",
-14: "Mix Water Sensor Error",
-15: "Defrost Sensor Error"
-}
 # Configuration keys
 CONF_HOST = "host"
 CONF_PORT = "port"

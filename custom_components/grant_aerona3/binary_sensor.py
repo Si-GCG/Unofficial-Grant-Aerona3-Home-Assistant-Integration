@@ -23,6 +23,7 @@ from .const import (
     FEATURE_ZONE2,
 )
 from .coordinator import GrantAerona3Coordinator
+from .error_codes import decode_error
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -156,38 +157,26 @@ class GrantAerona3AlarmSensor(GrantAerona3BaseBinarySensor):
         self._attr_device_class = BinarySensorDeviceClass.PROBLEM
         self._attr_icon = "mdi:alert-circle"
 
+    def _active_error(self):
+        raw = (self.coordinator.data or {}).get("input_registers", {}).get(21)
+        return None if raw is None else decode_error(raw)
+
     @property
     def is_on(self) -> bool:
-        """Return true if alarm is active."""
-        if not self.coordinator.data:
-            return False
-        alarm_register = get_scaled_input(self.coordinator, 21)
-        return (alarm_register or 0) > 0
+        """Return true if the heat pump reports an active error."""
+        return self._active_error() is not None
 
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:
-        """Return extra state attributes."""
-        code = get_scaled_input(self.coordinator, 21)
+        """Return the decoded error, e.g. LC / Anti-legionella function not completed."""
+        error = self._active_error()
+        if error is None:
+            return {"alarm_code": None, "alarm_description": "No error"}
         return {
-            "alarm_code": code,
-            "alarm_description": self._get_alarm_description(code),
+            "alarm_code": error.code or f"0x{error.raw:04X}",
+            "alarm_description": error.description,
+            "decoding_confirmed": error.confirmed,
         }
-
-    def _get_alarm_description(self, code: Optional[int]) -> str:
-        """Get alarm description from code."""
-        if code is None:
-            return "No Data"
-        alarm_codes = {
-            0: "No Alarm",
-            1: "High Pressure",
-            2: "Low Pressure",
-            3: "Compressor Overload",
-            4: "Fan Motor Error",
-            5: "Water Flow Error",
-            6: "Temperature Sensor Error",
-            7: "Communication Error",
-        }
-        return alarm_codes.get(code, f"Unknown Alarm ({code})")
 
 class GrantAerona3HeatingActiveSensor(GrantAerona3BaseBinarySensor):
     """Binary sensor for heating active status."""
