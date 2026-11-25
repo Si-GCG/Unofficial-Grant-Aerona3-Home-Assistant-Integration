@@ -190,3 +190,5 @@ hacs.json
 
 # Integration specific
 integration_manifest.json
+# Local agent workspace
+.superpowers/
