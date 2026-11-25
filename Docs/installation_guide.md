@@ -42,12 +42,23 @@ You'll need a way to connect Home Assistant to your Grant Aerona3's Modbus inter
 - **Slave Address**: 1 (default)
 - **Enable Modbus**: Must be enabled in service menu parameter 51-15 set to 1, or coil register 15 
 
-## Method 1: HACS Installation (Recommended)
+## Method 1: Marketplace or HACS Installation (Recommended)
 
-### Step 1: Install HACS
+### Home Assistant 2026.11 or later: Marketplace
+HACS is built into Home Assistant as the **Marketplace** from 2026.11, so there is nothing extra to install.
+
+1. Open **Settings → Marketplace**
+2. Add this repository as a custom repository (**Add from link**): `https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration`
+3. Find **Grant Aerona3 Heat Pump** and install it
+4. **Restart Home Assistant**
+
+If you are upgrading from HACS, your custom repositories carry over to the Marketplace.
+
+### Earlier versions: HACS
+#### Step 1: Install HACS
 If you haven't already, install [HACS (Home Assistant Community Store)](https://hacs.xyz/docs/setup/download).
 
-### Step 2: Add Custom Repository
+#### Step 2: Add Custom Repository
 1. Open HACS in Home Assistant
 2. Click on **Integrations**
 3. Click the **⋮** menu (three dots) in the top right
@@ -67,7 +78,7 @@ energy-flow-card-plus.js
 button-card.js
 
 ```
-### Step 3: Install Integration
+#### Step 3: Install Integration
 1. Search for "Grant Aerona3" in HACS
 2. Click **Download**
 3. **Restart Home Assistant**

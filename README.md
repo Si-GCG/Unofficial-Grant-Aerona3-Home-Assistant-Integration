@@ -8,8 +8,8 @@
 # Unofficial Grant Aerona3 Heat Pump Integration for Home Assistant
 
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2025.9.0+-blue.svg)](https://www.home-assistant.io/)
-[![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://hacs.xyz/)
-[![Version](https://img.shields.io/badge/Version-1.2.0-brightgreen.svg)](#)
+[![HACS / Marketplace](https://img.shields.io/badge/HACS%20%2F%20Marketplace-Custom-orange.svg)](https://hacs.xyz/)
+[![Version](https://img.shields.io/github/v/release/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration?include_prereleases&color=brightgreen&label=Version)](https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration/releases)
 
 An unofficial Home Assistant integration for **Grant Aerona3 air-source heat pumps**, communicating over Modbus (TCP or serial/RS485). It is not affiliated with or endorsed by Grant Engineering.
 
@@ -171,7 +171,15 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 
 ## Installation Methods
 
-### Method 1: HACS (Recommended)
+### Method 1: Marketplace or HACS (Recommended)
+
+**Home Assistant 2026.11 or later (Marketplace)**
+1. Open Settings → Marketplace
+2. Add this repository as a custom repository (Add from link) using its GitHub URL
+3. Install "Grant Aerona3 Heat Pump"
+4. Restart Home Assistant
+
+**Earlier versions (HACS)**
 1. Open HACS in Home Assistant
 2. Go to "Integrations"
 3. Click the three-dot menu → "Custom repositories"

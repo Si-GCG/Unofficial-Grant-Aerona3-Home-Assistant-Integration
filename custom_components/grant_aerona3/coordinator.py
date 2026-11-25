@@ -112,19 +112,6 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
         self._degraded_spans: set[tuple[str, int, int]] = set()
         # Duration of the last successful poll, for the diagnostics download
         self.last_poll_seconds: float | None = None
-        # Create a persistent client reference (not always used; per-fetch clients created)
-        if self.connection_type == "tcp":
-            self._client = ModbusTcpClient(host=self.host, port=self.port, timeout=10)
-        else:
-            self._client = ModbusSerialClient(
-                framer=self.framer,
-                port=self.serial_port,
-                baudrate=self.baudrate,
-                bytesize=self.bytesize,
-                parity=self.parity,
-                stopbits=self.stopbits,
-                timeout=10,
-            )
 
     async def _async_update_data(self) -> Dict[str, Any]:
         try:
