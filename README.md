@@ -118,7 +118,7 @@ button-card
 
 ## Support & Contributing
 
-- **Report Issues**: [GitHub Issues](https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration/issues)
+- **Report Issues**: [GitHub Issues](https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration/issues) — please attach the file from Settings → Devices & Services → Grant Aerona3 → ⋮ → Download diagnostics ([details](Docs/troubleshooting_guide.md#download-diagnostics))
 - **Feature Requests**: [GitHub Discussions](https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration/discussions)
 - **Documentation**: [Docs/](Docs/) folder
 - Pull requests welcome — this is a solo-maintained project with no CI, so please run the checks in `.claude/skills/validate` (or the equivalent manual steps) before submitting

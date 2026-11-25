@@ -9,6 +9,15 @@ This guide helps you diagnose and resolve common issues with the Grant Aerona3 i
 2. **Check status**: Should show "Connected" or number of entities
 3. **Check entities**: Click device to see entity list
 
+### Download Diagnostics
+Attach this to any bug report. It shows what the integration is polling and what the heat pump returned, which is usually enough to diagnose connection and register problems without debug logs.
+
+1. **Go to**: Settings → Devices & Services → Grant Aerona3
+2. **Click** the three-dot menu next to the entry → **Download diagnostics**
+3. **Attach** the downloaded `.json` file to your [GitHub issue](https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration/issues)
+
+The file contains the integration, Home Assistant and pymodbus versions, your connection type and settings, the hardware options you ticked, how long the last poll took, whether the heat pump rejected any block reads, and the raw value of every register polled. Your IP address and serial device path are redacted.
+
 ### Common Symptoms
 | Symptom | Quick Check | Likely Cause |
 |---------|-------------|--------------|

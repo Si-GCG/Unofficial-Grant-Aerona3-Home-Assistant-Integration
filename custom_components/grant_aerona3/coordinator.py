@@ -2,6 +2,7 @@ from __future__ import annotations
 # custom_components/grant_aerona3/coordinator.py
 import asyncio
 import logging
+import time
 from datetime import timedelta
 from typing import Any, Dict
 
@@ -109,6 +110,8 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
         self._bus_lock = asyncio.Lock()
         # Block reads the device rejected (warned about once, then read singly)
         self._degraded_spans: set[tuple[str, int, int]] = set()
+        # Duration of the last successful poll, for the diagnostics download
+        self.last_poll_seconds: float | None = None
         # Create a persistent client reference (not always used; per-fetch clients created)
         if self.connection_type == "tcp":
             self._client = ModbusTcpClient(host=self.host, port=self.port, timeout=10)
@@ -126,7 +129,10 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
     async def _async_update_data(self) -> Dict[str, Any]:
         try:
             async with self._bus_lock:
-                return await asyncio.wait_for(self._fetch_data(), timeout=180.0)
+                started = time.monotonic()
+                data = await asyncio.wait_for(self._fetch_data(), timeout=180.0)
+                self.last_poll_seconds = round(time.monotonic() - started, 2)
+                return data
         except asyncio.TimeoutError as err:
             raise UpdateFailed(f"Timeout connecting to ASHP at {self.host}") from err
         except Exception as err:
