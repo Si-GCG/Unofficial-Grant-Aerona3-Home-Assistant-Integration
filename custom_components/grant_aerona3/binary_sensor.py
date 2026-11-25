@@ -326,9 +326,14 @@ class GrantAerona3CommunicationSensor(GrantAerona3BaseBinarySensor):
         self._attr_icon = "mdi:connection"
 
     @property
+    def available(self) -> bool:
+        """Always available: a dead connection should read 'off', not 'unavailable'."""
+        return True
+
+    @property
     def is_on(self) -> bool:
-        """Return true if communication is active."""
-        if not self.coordinator.data:
+        """Return true if the last poll reached the heat pump."""
+        if not self.coordinator.last_update_success or not self.coordinator.data:
             return False
         last_update = self.coordinator.data.get("last_update", 0)
         current_time = asyncio.get_running_loop().time()

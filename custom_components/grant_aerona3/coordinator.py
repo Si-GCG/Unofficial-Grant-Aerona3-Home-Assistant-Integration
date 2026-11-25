@@ -30,6 +30,38 @@ from .features import enabled_features, register_enabled
 
 _LOGGER = logging.getLogger(__name__)
 
+# Largest block read in one request. The Modbus limit is 125 registers; stay well under it.
+MAX_READ_BLOCK = 50
+# Skipped addresses (e.g. disabled hardware) up to this size are read through
+# and discarded rather than costing another request.
+MAX_READ_GAP = 4
+BLOCK_READ_TIMEOUT = 5.0
+# Always-enabled input registers: return temp, frequency, power, outdoor temp, flow temp.
+# If none of these can be read, the heat pump isn't answering and the poll has failed.
+CRITICAL_INPUT_REGISTERS = (0, 1, 3, 6, 9)
+
+_READ_METHODS = {
+    "input": "read_input_registers",
+    "holding": "read_holding_registers",
+    "coil": "read_coils",
+}
+
+
+def plan_reads(
+    addresses: list[int], max_block: int = MAX_READ_BLOCK, max_gap: int = MAX_READ_GAP
+) -> list[tuple[int, int]]:
+    """Group addresses into (start, count) spans, one block read each."""
+    spans: list[tuple[int, int]] = []
+    for address in sorted(set(addresses)):
+        if spans:
+            start, count = spans[-1]
+            gap = address - (start + count)
+            if gap <= max_gap and address + 1 - start <= max_block:
+                spans[-1] = (start, address + 1 - start)
+                continue
+        spans.append((address, 1))
+    return spans
+
 class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
     """Coordinator for Grant Aerona3 Heat Pump."""
 
@@ -75,6 +107,8 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
         )
         # Serial bus lock: polls and writes must take turns (a serial port can only be opened once at a time)
         self._bus_lock = asyncio.Lock()
+        # Block reads the device rejected (warned about once, then read singly)
+        self._degraded_spans: set[tuple[str, int, int]] = set()
         # Create a persistent client reference (not always used; per-fetch clients created)
         if self.connection_type == "tcp":
             self._client = ModbusTcpClient(host=self.host, port=self.port, timeout=10)
@@ -127,16 +161,29 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
                 timeout=30.0
             )
             if not connected:
-                raise UpdateFailed(f"Failed to connect to ASHP at {self.host}:{self.port}")
+                target = self.serial_port if self.connection_type != "tcp" else f"{self.host}:{self.port}"
+                raise UpdateFailed(f"Failed to connect to ASHP at {target}")
             
-            # Read data with individual timeouts
-            data["input_registers"] = await self._read_input_registers(client)
-            data["holding_registers"] = await self._read_holding_registers(client)
-            data["coil_registers"] = await self._read_coil_registers(client)
+            data["input_registers"] = await self._read_addresses(
+                client, "input", self._enabled_addresses("input")
+            )
+            if not any(reg in data["input_registers"] for reg in CRITICAL_INPUT_REGISTERS):
+                raise UpdateFailed(
+                    "Heat pump did not answer - no input registers could be read. "
+                    "Check the wiring/network, unit ID and serial settings"
+                )
+            data["holding_registers"] = await self._read_addresses(
+                client, "holding", self._enabled_addresses("holding")
+            )
+            data["coil_registers"] = await self._read_addresses(
+                client, "coil", self._enabled_addresses("coil")
+            )
             data["calculated"] = self._calculate_derived_values(
                 data["input_registers"], data["holding_registers"]
             )
             
+        except UpdateFailed:
+            raise
         except asyncio.TimeoutError as err:
             _LOGGER.error("Timeout during Modbus operation: %s", err)
             raise UpdateFailed(f"Timeout during Modbus operation: {err}") from err
@@ -153,134 +200,91 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
                 pass
         return data
 
-    def _enabled_input_registers(self) -> list[int]:
-        """Input registers to poll, skipping hardware the user hasn't ticked."""
+    def _enabled_addresses(self, kind: str) -> list[int]:
+        """Addresses to poll for one register type, skipping hardware the user hasn't ticked."""
+        if kind == "input":
+            return [
+                reg_id
+                for reg_id in INPUT_REGISTER_MAP
+                if register_enabled(self.features, INPUT_REGISTER_FEATURES, reg_id)
+            ]
+        if kind == "holding":
+            return [
+                reg_id
+                for reg_id, config in HOLDING_REGISTER_MAP.items()
+                if config.get("writable", False)
+                and register_enabled(self.features, HOLDING_REGISTER_FEATURES, reg_id)
+            ]
         return [
             reg_id
-            for reg_id in INPUT_REGISTER_MAP
-            if register_enabled(self.features, INPUT_REGISTER_FEATURES, reg_id)
-        ]
-
-    async def _read_input_registers(self, client: object) -> Dict[int, float]:
-        input_data = {}
-        enabled_registers = self._enabled_input_registers()
-
-        # Read only the most critical registers first to test connectivity
-        critical_registers = [0, 1, 3, 6, 9]  # Return temp, frequency, power, outdoor temp, flow temp
-
-        for reg_id in critical_registers:
-            if reg_id in enabled_registers:
-                try:
-                    result = await asyncio.wait_for(
-                        self.hass.async_add_executor_job(
-                            lambda reg=reg_id: client.read_input_registers(reg, count=1, device_id=self.unit_id)
-                        ),
-                        timeout=3.0
-                    )
-                    if not result.isError():
-                        raw_value = result.registers[0]
-                        # Handle signed 16-bit values
-                        if raw_value > 32767:
-                            raw_value = raw_value - 65536
-                        input_data[reg_id] = raw_value
-                    else:
-                        _LOGGER.debug("Error reading input register %d: %s", reg_id, result)
-                except Exception as err:
-                    _LOGGER.debug("Failed to read input register %d: %s", reg_id, err)
-        
-        # If critical registers work, try reading the rest
-        if input_data:
-            remaining_registers = [reg for reg in enabled_registers if reg not in critical_registers]
-            for reg_id in remaining_registers:
-                try:
-                    result = await asyncio.wait_for(
-                        self.hass.async_add_executor_job(
-                            lambda reg=reg_id: client.read_input_registers(reg, count=1, device_id=self.unit_id)
-                        ),
-                        timeout=2.0
-                    )
-                    if not result.isError():
-                        raw_value = result.registers[0]
-                        if raw_value > 32767:
-                            raw_value = raw_value - 65536
-                        input_data[reg_id] = raw_value
-                except Exception as err:
-                    _LOGGER.debug("Failed to read input register %d: %s", reg_id, err)
-                    continue  # Continue with other registers
-        
-        return input_data
-
-    async def _read_holding_registers(self, client: object) -> Dict[int, float]:
-        holding_data = {}
-        
-        # Get all writable registers from the map - these are the ones we need for number entities
-        writable_registers = [
-            reg_id
-            for reg_id, config in HOLDING_REGISTER_MAP.items()
-            if config.get("writable", False)
-            and register_enabled(self.features, HOLDING_REGISTER_FEATURES, reg_id)
-        ]
-        
-        _LOGGER.debug("Reading %d writable holding registers: %s", len(writable_registers), writable_registers)
-        
-        # Read registers in smaller batches to avoid overwhelming the device
-        batch_size = 5
-        for i in range(0, len(writable_registers), batch_size):
-            batch = writable_registers[i:i + batch_size]
-            
-            for reg_id in batch:
-                try:
-                    result = await asyncio.wait_for(
-                        self.hass.async_add_executor_job(
-                            lambda reg=reg_id: client.read_holding_registers(reg, count=1, device_id=self.unit_id)
-                        ),
-                        timeout=2.0
-                    )
-                    if not result.isError():
-                        raw_value = result.registers[0]
-                        if raw_value > 32767:
-                            raw_value = raw_value - 65536
-                        holding_data[reg_id] = raw_value
-                        _LOGGER.debug("Successfully read register %d: %d", reg_id, raw_value)
-                    else:
-                        _LOGGER.debug("Error reading holding register %d: %s", reg_id, result)
-                except Exception as err:
-                    _LOGGER.debug("Failed to read holding register %d: %s", reg_id, err)
-            
-            # Small delay between batches to avoid overwhelming the device
-            if i + batch_size < len(writable_registers):
-                await asyncio.sleep(0.1)
-        
-        _LOGGER.info("Successfully read %d/%d holding registers", len(holding_data), len(writable_registers))
-        return holding_data
-
-    async def _read_coil_registers(self, client: object) -> Dict[int, bool]:
-        coil_data = {}
-        
-        # Read only a few critical coils to avoid timeouts
-        critical_coils = [
-            reg_id
-            for reg_id in (2, 3, 6, 7, 18)  # Weather compensation (zones 1+2) and key settings
+            for reg_id in COIL_REGISTER_MAP
             if register_enabled(self.features, COIL_REGISTER_FEATURES, reg_id)
         ]
 
-        for reg_id in critical_coils:
-            if reg_id in COIL_REGISTER_MAP:
-                try:
-                    result = await asyncio.wait_for(
-                        self.hass.async_add_executor_job(
-                            lambda reg=reg_id: client.read_coils(reg, count=1, device_id=self.unit_id)
-                        ),
-                        timeout=2.0
-                    )
-                    if not result.isError():
-                        coil_data[reg_id] = result.bits[0]
-                    else:
-                        _LOGGER.debug("Error reading coil register %d: %s", reg_id, result)
-                except Exception as err:
-                    _LOGGER.debug("Failed to read coil register %d: %s", reg_id, err)
-        
-        return coil_data
+    async def _read_block(
+        self, client: object, kind: str, start: int, count: int
+    ) -> tuple[list | None, bool]:
+        """Read `count` consecutive registers/coils starting at `start`.
+
+        Returns (values, retry_singly). values is None on failure. retry_singly is
+        True only when the device answered with an error (e.g. part of the span is
+        not implemented), as opposed to not answering at all.
+        """
+        read = getattr(client, _READ_METHODS[kind])
+        try:
+            result = await asyncio.wait_for(
+                self.hass.async_add_executor_job(
+                    lambda: read(start, count=count, device_id=self.unit_id)
+                ),
+                timeout=BLOCK_READ_TIMEOUT,
+            )
+        except Exception as err:  # timeout, lost connection, serial error
+            _LOGGER.debug("No answer reading %s %d..%d: %s", kind, start, start + count - 1, err)
+            return None, False
+        if result.isError():
+            _LOGGER.debug("Error reading %s %d..%d: %s", kind, start, start + count - 1, result)
+            return None, True
+        if kind == "coil":
+            return list(result.bits[:count]), False
+        # Registers are signed 16-bit
+        return [v - 65536 if v > 32767 else v for v in result.registers[:count]], False
+
+    async def _read_addresses(self, client: object, kind: str, addresses: list[int]) -> Dict[int, Any]:
+        """Read the given addresses using as few requests as possible.
+
+        Addresses close together are fetched in one block read. If the device
+        rejects a block, that block is retried one address at a time so a single
+        unimplemented register can't hide its neighbours.
+        """
+        wanted = set(addresses)
+        values: Dict[int, Any] = {}
+        for start, count in plan_reads(addresses):
+            block, retry_singly = await self._read_block(client, kind, start, count)
+            if block is not None:
+                for offset, value in enumerate(block):
+                    if start + offset in wanted:
+                        values[start + offset] = value
+                continue
+            if not retry_singly:
+                # The device didn't answer at all; more requests won't help.
+                continue
+            if (kind, start, count) not in self._degraded_spans:
+                self._degraded_spans.add((kind, start, count))
+                _LOGGER.warning(
+                    "Heat pump rejected block read of %s %d..%d; reading those one at a time",
+                    kind, start, start + count - 1,
+                )
+            silent = 0
+            for address in sorted(a for a in wanted if start <= a < start + count):
+                single, _ = await self._read_block(client, kind, address, 1)
+                if single is None:
+                    silent += 1
+                    if silent >= 3:
+                        break
+                    continue
+                silent = 0
+                values[address] = single[0]
+        return values
 
     def _calculate_derived_values(self, input_data: Dict[int, float], holding_data: Dict[int, float]) -> Dict[str, Any]:
         calculated = {}
