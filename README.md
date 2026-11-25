@@ -45,6 +45,16 @@ During setup (and later via **Settings → Devices & Services → Grant Aerona3 
 
 Existing installs keep every entity after upgrading; the options above only change what a *new* install creates by default, and can be adjusted later from Configure either way.
 
+## Experimental: flow offset and room trim
+
+Off by default. Turn on **Experimental: flow temperature offset** under Configure to try it; turn it off again and the entities disappear.
+
+**Flow offset.** A *Zone N flow offset* number (−5 to +5 °C in 0.5 steps) shifts your heating flow temperature up or down: in weather-compensation mode it moves the curve's max and min flow temperatures (Tm1 and Tm2) together, and in fixed-flow mode it moves the fixed setpoint. The outdoor-temperature points (Te1/Te2) and cooling are never touched, so the curve moves up and down, not sideways. Changes are limited to 24 a day, at least 30 minutes apart, to protect the unit's memory. Flow is never taken below 23 °C or above the *Maximum flow temperature* option (default 55 °C, up to the unit's 60 °C limit).
+
+**Fix the base curve first.** Installers set the starting curve from the design calculation, and it is often well off (45 °C at −3 °C outdoors is common and usually too hot). Use the offset for fine trimming around a curve you have already corrected. If you edit the curve registers yourself, the integration adopts your new curve as the baseline and resets the offset to 0.
+
+**Room trim (optional).** Under Configure you can also enable a *Zone 1 room trim* climate entity. It holds a room target in Home Assistant and, every 30 minutes by default, moves the offset by at most 0.5 °C towards it using a room temperature sensor you choose. It is not a normal thermostat: the heat pump's own mode and room set point are read-only over Modbus. Choose a sensor in a representative room, not the heat pump controller's own reading (that controller is often in a warm cupboard). If the sensor goes unavailable or stale (2 hours), or you turn the trim off, the offset returns to 0. If it sits at its limit for several checks, the entity says the base curve probably needs adjusting. It pauses in cooling mode.
+
 ## Quick Start
 
 1. **Install** the integration (see the [Installation Guide](Docs/installation_guide.md))
