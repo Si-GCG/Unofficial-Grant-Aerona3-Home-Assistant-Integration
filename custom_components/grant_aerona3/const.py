@@ -83,6 +83,14 @@ CONF_HAS_DEHUMIDIFIER = "has_dehumidifier"
 CONF_EXPERIMENTAL_FLOW_OFFSET = "experimental_flow_offset"
 CONF_MAX_FLOW_TEMP = "max_flow_temp"
 DEFAULT_MAX_FLOW_TEMP = 55.0
+CONF_TRIM_ENABLED = "room_trim_enabled"
+CONF_TRIM_SENSOR = "room_trim_sensor"
+CONF_TRIM_INTERVAL = "room_trim_interval_min"
+CONF_TRIM_DEAD_BAND = "room_trim_dead_band"
+CONF_TRIM_CAP = "room_trim_cap"
+DEFAULT_TRIM_INTERVAL = 30
+DEFAULT_TRIM_DEAD_BAND = 0.3
+DEFAULT_TRIM_CAP = 3.0
 # Bundles installer/commissioning-only registers that exist on every unit but
 # are set once at commissioning and essentially never touched afterwards:
 # frost-protection fine-tuning, error history, and terminal wiring config.

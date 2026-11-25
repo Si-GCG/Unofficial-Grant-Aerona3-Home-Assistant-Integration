@@ -85,7 +85,9 @@
           "has_tariff_control": "Low tariff / night mode signal",
           "has_dehumidifier": "Dehumidifier",
           "has_advanced_config": "Advanced / installer settings",
-          "experimental_flow_offset": "Experimental: flow temperature offset"
+          "experimental_flow_offset": "Experimental: flow temperature offset",
+          "max_flow_temp": "Maximum flow temperature (°C)",
+          "room_trim_enabled": "Experimental: room temperature trim"
         },
         "data_description": {
           "scan_interval": "How often to poll the heat pump for data updates (5-3600 seconds)",
@@ -102,7 +104,24 @@
           "has_tariff_control": "Wired to an economy-tariff or night-time noise-limiting signal (terminals 28-31)",
           "has_dehumidifier": "Dehumidifier wired to terminal 45",
           "has_advanced_config": "Installer-only commissioning settings: frost-protection tuning, pump timing, error history, and terminal wiring switches. Set once, rarely touched again.",
-          "experimental_flow_offset": "Adds a flow offset number per zone that shifts the heating curve (or fixed flow setpoint) in 0.5 degree steps. New and lightly tested; off by default. Turning it off removes the entities."
+          "experimental_flow_offset": "Adds a flow offset number per zone that shifts the heating curve (or fixed flow setpoint) in 0.5 degree steps. New and lightly tested; off by default. Turning it off removes the entities.",
+          "max_flow_temp": "Ceiling for the experimental flow offset. Defaults to 55; the unit allows up to 60.",
+          "room_trim_enabled": "Slowly nudges the flow offset from a room temperature sensor of your choice. Needs the flow temperature offset above. Adds a climate entity. Turning it off removes the entity."
+        }
+      },
+      "trim": {
+        "title": "Room temperature trim",
+        "description": "Pick the room temperature sensor to follow (not the heat pump's own controller reading unless it sits in a representative room). Every interval the offset moves by at most 0.5 degrees, never beyond the limit below.\n\n{coil7_warning}",
+        "data": {
+          "room_trim_sensor": "Room temperature sensor",
+          "room_trim_interval_min": "Check interval (minutes)",
+          "room_trim_dead_band": "Dead band (°C)",
+          "room_trim_cap": "Maximum offset (°C)"
+        },
+        "data_description": {
+          "room_trim_interval_min": "How often the trim looks at the room (10-240 minutes). Heating systems respond slowly, so 30 or more is sensible.",
+          "room_trim_dead_band": "No change while the room is within this distance of the target.",
+          "room_trim_cap": "The trim never moves the offset beyond plus or minus this value."
         }
       }
     }

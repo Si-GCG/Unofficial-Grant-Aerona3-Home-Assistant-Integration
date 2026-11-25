@@ -15,6 +15,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.selector import EntitySelector, EntitySelectorConfig
 
 from .const import (
     DOMAIN,
@@ -43,7 +44,17 @@ from .const import (
     CONF_HAS_ADVANCED_CONFIG,
     CONF_ZONES,
     CONF_EXPERIMENTAL_FLOW_OFFSET,
+    CONF_MAX_FLOW_TEMP,
+    CONF_TRIM_CAP,
+    CONF_TRIM_DEAD_BAND,
+    CONF_TRIM_ENABLED,
+    CONF_TRIM_INTERVAL,
+    CONF_TRIM_SENSOR,
     DEFAULT_FEATURES,
+    DEFAULT_MAX_FLOW_TEMP,
+    DEFAULT_TRIM_CAP,
+    DEFAULT_TRIM_DEAD_BAND,
+    DEFAULT_TRIM_INTERVAL,
     ZONES_SINGLE,
     ZONES_DUAL,
 )
@@ -241,12 +252,20 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 class OptionsFlowHandler(config_entries.OptionsFlow):
     """Handle Grant Aerona3 options flow."""
 
+    _init_input: dict[str, Any] = {}
+
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Manage the options."""
         if user_input is not None:
-            return self.async_create_entry(title="", data=user_input)
+            # The room trim only exists on top of the experimental flow offset
+            if user_input.get(CONF_TRIM_ENABLED) and user_input.get(CONF_EXPERIMENTAL_FLOW_OFFSET):
+                self._init_input = user_input
+                return await self.async_step_trim()
+            return self.async_create_entry(
+                title="", data={**user_input, CONF_TRIM_ENABLED: False}
+            )
 
         entry = self.config_entry
         return self.async_show_form(
@@ -313,10 +332,68 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                         CONF_EXPERIMENTAL_FLOW_OFFSET,
                         default=get_feature(entry, CONF_EXPERIMENTAL_FLOW_OFFSET, DEFAULT_FEATURES[CONF_EXPERIMENTAL_FLOW_OFFSET]),
                     ): cv.boolean,
+                    vol.Optional(
+                        CONF_MAX_FLOW_TEMP,
+                        default=get_feature(entry, CONF_MAX_FLOW_TEMP, DEFAULT_MAX_FLOW_TEMP),
+                    ): vol.All(vol.Coerce(float), vol.Range(min=30.0, max=60.0)),
+                    vol.Required(
+                        CONF_TRIM_ENABLED,
+                        default=get_feature(entry, CONF_TRIM_ENABLED, False),
+                    ): cv.boolean,
                 }
             ),
         )
 
+
+    async def async_step_trim(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Configure the experimental room-temperature trim."""
+        if user_input is not None:
+            return self.async_create_entry(
+                title="", data={**self._init_input, **user_input}
+            )
+
+        entry = self.config_entry
+        coordinator = self.hass.data.get(DOMAIN, {}).get(entry.entry_id)
+        coils = (getattr(coordinator, "data", None) or {}).get("coil_registers", {})
+        warning = ""
+        if coils.get(7) is False:
+            warning = (
+                "Heads up: the heat pump is set to switch on and off from its own room "
+                "reading (coil 7 = room set point). That reading is often skewed by where "
+                "the controller sits, so water set point is usually the better setting. "
+                "You can still continue."
+            )
+        existing = get_feature(entry, CONF_TRIM_SENSOR, None)
+        sensor_key = (
+            vol.Required(CONF_TRIM_SENSOR, default=existing)
+            if existing
+            else vol.Required(CONF_TRIM_SENSOR)
+        )
+        return self.async_show_form(
+            step_id="trim",
+            data_schema=vol.Schema(
+                {
+                    sensor_key: EntitySelector(
+                        EntitySelectorConfig(domain="sensor", device_class="temperature")
+                    ),
+                    vol.Required(
+                        CONF_TRIM_INTERVAL,
+                        default=get_feature(entry, CONF_TRIM_INTERVAL, DEFAULT_TRIM_INTERVAL),
+                    ): vol.All(vol.Coerce(int), vol.Range(min=10, max=240)),
+                    vol.Required(
+                        CONF_TRIM_DEAD_BAND,
+                        default=get_feature(entry, CONF_TRIM_DEAD_BAND, DEFAULT_TRIM_DEAD_BAND),
+                    ): vol.All(vol.Coerce(float), vol.Range(min=0.1, max=1.0)),
+                    vol.Required(
+                        CONF_TRIM_CAP,
+                        default=get_feature(entry, CONF_TRIM_CAP, DEFAULT_TRIM_CAP),
+                    ): vol.All(vol.Coerce(float), vol.Range(min=0.5, max=5.0)),
+                }
+            ),
+            description_placeholders={"coil7_warning": warning},
+        )
 
 
 class CannotConnect(HomeAssistantError):
