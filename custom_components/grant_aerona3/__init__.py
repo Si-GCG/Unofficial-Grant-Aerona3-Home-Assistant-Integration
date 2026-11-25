@@ -1,6 +1,7 @@
 """Grant Aerona3 Heat Pump integration for Home Assistant."""
 from __future__ import annotations
 import logging
+import time
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
@@ -108,6 +109,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.error("Host configuration is missing")
         return False
     
+    setup_started = time.monotonic()
     try:
         # Initialize coordinator
         coordinator = GrantAerona3Coordinator(hass, entry)
@@ -115,6 +117,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
         # Perform initial data refresh
         await coordinator.async_config_entry_first_refresh()
+        first_poll_seconds = time.monotonic() - setup_started
 
         # Store coordinator in hass data - simple overwrite approach
         # This avoids the recursive loop risk mentioned in the review
@@ -132,21 +135,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         # Set up options update listener
         entry.async_on_unload(entry.add_update_listener(async_reload_entry))
         
-        _LOGGER.info(
-            "Grant Aerona3 ASHP integration setup completed for %s (v1.2.1 with ashp_ prefixes)",
-            host
+        entity_count = len(
+            er.async_entries_for_config_entry(er.async_get(hass), entry.entry_id)
         )
-        
-        # Log entity count for debugging
-        try:
-            input_regs = coordinator.data.get("input_registers", {}) or {}
-            holding_regs = coordinator.data.get("holding_registers", {}) or {}
-            entity_count = len(input_regs) + len(holding_regs) + 7
-            _LOGGER.info("Created %d ASHP entities with ashp_ prefixes (unit_id: %s)", entity_count, unit_id)
-        except Exception as e:
-            _LOGGER.warning("Could not calculate entity count: %s", e)
-            _LOGGER.info("Grant Aerona3 integration setup completed for %s", host)
-        
+        _LOGGER.info(
+            "Grant Aerona3 set up in %.1fs (first poll %.1fs, %d entities, unit_id %s)",
+            time.monotonic() - setup_started,
+            first_poll_seconds,
+            entity_count,
+            unit_id,
+        )
+
         return True
         
     except Exception as err:

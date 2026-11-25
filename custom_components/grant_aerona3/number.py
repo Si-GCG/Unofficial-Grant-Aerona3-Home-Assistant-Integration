@@ -26,7 +26,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Grant Aerona3 number entities."""
-    _LOGGER.info("Setting up Grant Aerona3 number entities")
+    _LOGGER.debug("Setting up Grant Aerona3 number entities")
 
     # Check if coordinator exists
     if DOMAIN not in hass.data:
@@ -38,22 +38,22 @@ async def async_setup_entry(
         return
 
     coordinator: GrantAerona3Coordinator = hass.data[DOMAIN][config_entry.entry_id]
-    _LOGGER.info("Coordinator found: %s", type(coordinator).__name__)
+    _LOGGER.debug("Coordinator found: %s", type(coordinator).__name__)
 
     entities = []
     features = coordinator.features
     # Debug: Check what's in HOLDING_REGISTER_MAP
-    _LOGGER.info("Total holding registers defined: %d", len(HOLDING_REGISTER_MAP))
+    _LOGGER.debug("Total holding registers defined: %d", len(HOLDING_REGISTER_MAP))
     writable_registers = [
         reg for reg, config in HOLDING_REGISTER_MAP.items()
         if config.get("writable", False) and register_enabled(features, HOLDING_REGISTER_FEATURES, reg)
     ]
-    _LOGGER.info("Writable registers for configured hardware: %s", writable_registers)
+    _LOGGER.debug("Writable registers for configured hardware: %s", writable_registers)
 
     # Create number entities for writable holding registers matching the configured hardware
     for register_id, config in HOLDING_REGISTER_MAP.items():
         if config.get("writable", False) and register_enabled(features, HOLDING_REGISTER_FEATURES, register_id):
-            _LOGGER.info("Creating number entity for register %d: %s", register_id, config["name"])
+            _LOGGER.debug("Creating number entity for register %d: %s", register_id, config["name"])
             try:
                 entity = GrantAerona3HoldingNumber(coordinator, config_entry, register_id)
                 entities.append(entity)
@@ -63,17 +63,17 @@ async def async_setup_entry(
 
     # Add flow rate configuration entity
     try:
-        _LOGGER.info("Creating flow rate number entity")
+        _LOGGER.debug("Creating flow rate number entity")
         entities.append(GrantAerona3FlowRateNumber(coordinator, config_entry))
         _LOGGER.debug("Successfully created flow rate entity")
     except Exception as e:
         _LOGGER.error("Failed to create flow rate entity: %s", e)
 
-    _LOGGER.info("Created %d number entities total", len(entities))
+    _LOGGER.debug("Created %d number entities total", len(entities))
 
     if entities:
-        async_add_entities(entities, True)  # Force update_before_add
-        _LOGGER.info("Successfully added %d number entities", len(entities))
+        async_add_entities(entities)
+        _LOGGER.debug("Successfully added %d number entities", len(entities))
     else:
         _LOGGER.warning("No number entities were created!")
 
