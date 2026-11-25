@@ -38,12 +38,12 @@ class FakeStore:
         self.saved = data_func()
 
 
-def make(coord=None, store=None, now=0.0, ceiling=55.0):
+def make(coord=None, store=None, now=0.0, ceiling=55.0, limiter=None):
     coord = coord or FakeCoordinator()
     store = store or FakeStore()
     tasks = []
     clock = {"t": now}
-    limiter = fo.WriteLimiter()
+    limiter = limiter or fo.WriteLimiter()
     ceiling_fn = ceiling if callable(ceiling) else (lambda: ceiling)
     mgr = fm.FlowOffsetManager(
         1, coord, store, ceiling_fn, limiter, lambda: clock["t"], tasks.append
@@ -78,7 +78,7 @@ def test_effective_offset_after_clamp():
 def test_rate_limited_set_returns_false():
     mgr, coord, _, _, clock, _ = make()
     assert asyncio.run(mgr.async_set_offset(0.5)) is True
-    clock["t"] = 100
+    clock["t"] = 300  # past the 2-minute grace window, inside the 30-minute gap
     n = len(coord.writes)
     assert asyncio.run(mgr.async_set_offset(1.0)) is False
     assert len(coord.writes) == n
@@ -199,10 +199,19 @@ def test_write_counted_even_if_data_not_refreshed():
 
 
 def test_concurrent_sets_are_serialised():
-    mgr, coord, *_ = make()
+    mgr, coord, *_ = make(limiter=fo.WriteLimiter(grace_s=0))  # grace off: second set must be refused
 
     async def both():
         return await asyncio.gather(mgr.async_set_offset(1.0), mgr.async_set_offset(2.0))
 
     assert asyncio.run(both()) == [True, False]
     assert sorted(coord.writes) == [(3, 460), (4, 310)]
+
+
+def test_correction_within_grace_is_allowed_and_not_counted():
+    mgr, coord, _, limiter, clock, _ = make()
+    assert asyncio.run(mgr.async_set_offset(-0.5)) is True
+    clock["t"] = 45
+    assert asyncio.run(mgr.async_set_offset(0.0)) is True
+    assert mgr.offset == 0.0
+    assert len(limiter._times) == 1

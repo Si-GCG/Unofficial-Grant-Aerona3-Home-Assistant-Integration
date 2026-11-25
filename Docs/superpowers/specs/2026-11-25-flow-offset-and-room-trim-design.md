@@ -55,7 +55,7 @@ Mode, room set temperatures and DHW mode (input registers 10-13) are read-only: 
 - One `number` entity per zone: "Zone N flow offset", range −5.0 to +5.0°C, step 0.5, default 0. Entity category config.
 - A shared helper computes the target register values from the baseline and offset, clamps each flow value to 23-60°C, and keeps Tm1 ≥ Tm2.
 - Writes only when the computed register value differs from what the unit reports.
-- **Write cap (decided by the maintainer, to begin with):** at most 24 offset changes per day, at least 30 minutes between changes, applied to manual changes and the trim loop alike. No hardware spike is planned: existing number entities already write holding registers, and a power-cycle test would not reveal wear. Revisit the cap if real use shows it is too tight or too loose.
+- **Write cap (decided by the maintainer, to begin with):** at most 24 offset changes per day, at least 30 minutes between changes, applied to manual changes and the trim loop alike. No hardware spike is planned: existing number entities already write holding registers, and a power-cycle test would not reveal wear. Revisit the cap if real use shows it is too tight or too loose. **Grace window (added after first hardware test):** a correction made within 120 s of a change (at most 3 per change) replaces that change and uses no extra slot, so a mis-click can be undone; the 30-minute clock still runs from the first change.
 
 ### Flow temperature limits (maintainer input, 2026-11-25)
 

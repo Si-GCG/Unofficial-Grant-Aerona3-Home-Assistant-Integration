@@ -27,23 +27,49 @@ def effective_offset(base: float, applied: float) -> float:
 
 
 class WriteLimiter:
-    """Rolling-window cap on offset changes (flash-wear protection)."""
+    """Rolling-window cap on offset changes (flash-wear protection).
+
+    A correction made shortly after a change (the grace window) replaces that
+    change instead of counting as a new one, so a mis-click can be undone.
+    """
 
     WINDOW_S = 86400.0
 
-    def __init__(self, max_per_day: int = 24, min_interval_s: float = 1800.0) -> None:
+    def __init__(
+        self,
+        max_per_day: int = 24,
+        min_interval_s: float = 1800.0,
+        grace_s: float = 120.0,
+        max_grace: int = 3,
+    ) -> None:
         self.max_per_day = max_per_day
         self.min_interval_s = min_interval_s
+        self.grace_s = grace_s
+        self.max_grace = max_grace
         self._times: list[float] = []
+        self._grace_used = 0
+
+    def _in_grace(self, now: float) -> bool:
+        return (
+            bool(self._times)
+            and now - self._times[-1] < self.grace_s
+            and self._grace_used < self.max_grace
+        )
 
     def can_write(self, now: float) -> bool:
+        if self._in_grace(now):
+            return True
         self._times = [t for t in self._times if now - t < self.WINDOW_S]
         if self._times and now - self._times[-1] < self.min_interval_s:
             return False
         return len(self._times) < self.max_per_day
 
     def record(self, now: float) -> None:
+        if self._in_grace(now):
+            self._grace_used += 1  # replaces the previous change; no new slot used
+            return
         self._times.append(now)
+        self._grace_used = 0
 
 
 class MismatchTracker:

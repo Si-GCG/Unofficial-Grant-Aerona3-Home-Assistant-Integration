@@ -70,3 +70,37 @@ def test_trim_holds_inside_dead_band():
 def test_trim_respects_cap():
     assert fo.next_trim_offset(3.0, 18.0, 21.0, 0.3, 0.5, 3.0) == 3.0
     assert fo.next_trim_offset(-3.0, 25.0, 21.0, 0.3, 0.5, 3.0) == -3.0
+
+
+def test_grace_correction_replaces_change_and_does_not_count():
+    lim = fo.WriteLimiter()
+    lim.record(0)
+    assert lim.can_write(60) is True
+    lim.record(60)
+    assert len(lim._times) == 1
+    assert lim.can_write(1000) is False  # the 30-minute clock still runs from the first change
+
+
+def test_grace_expires_after_two_minutes():
+    lim = fo.WriteLimiter()
+    lim.record(0)
+    assert lim.can_write(119) is True
+    assert lim.can_write(121) is False
+
+
+def test_grace_corrections_are_limited_to_three():
+    lim = fo.WriteLimiter()
+    lim.record(0)
+    for t in (10, 20, 30):
+        assert lim.can_write(t) is True
+        lim.record(t)
+    assert lim.can_write(40) is False
+
+
+def test_new_change_after_window_resets_grace():
+    lim = fo.WriteLimiter()
+    lim.record(0)
+    lim.record(10)
+    lim.record(2000)  # a genuine new change
+    assert len(lim._times) == 2
+    assert lim.can_write(2030) is True
