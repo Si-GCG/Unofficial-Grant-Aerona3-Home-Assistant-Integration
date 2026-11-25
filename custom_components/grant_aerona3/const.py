@@ -1548,7 +1548,7 @@ HOLDING_REGISTER_MAP = {
 "scale": 1,
 "offset": 0,
 "writable": True,
-"min": 1.0,
+"min": 0.0,
 "max": 1.0,
 "description": "Terminal 50-51-52 : DHW 3way valve (1=enable)"
     },
