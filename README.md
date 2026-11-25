@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="custom_components/grant_aerona3/brand/dark_logo.png">
+    <img src="custom_components/grant_aerona3/brand/logo.png" alt="Aerona3 Heat Pump" width="380">
+  </picture>
+</p>
+
 # Unofficial Grant Aerona3 Heat Pump Integration for Home Assistant
 
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2025.9.0+-blue.svg)](https://www.home-assistant.io/)
