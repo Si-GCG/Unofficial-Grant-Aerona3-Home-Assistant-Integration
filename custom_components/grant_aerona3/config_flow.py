@@ -42,6 +42,7 @@ from .const import (
     CONF_HAS_DEHUMIDIFIER,
     CONF_HAS_ADVANCED_CONFIG,
     CONF_ZONES,
+    CONF_EXPERIMENTAL_FLOW_OFFSET,
     DEFAULT_FEATURES,
     ZONES_SINGLE,
     ZONES_DUAL,
@@ -307,6 +308,10 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     vol.Required(
                         CONF_HAS_ADVANCED_CONFIG,
                         default=get_feature(entry, CONF_HAS_ADVANCED_CONFIG, DEFAULT_FEATURES[CONF_HAS_ADVANCED_CONFIG]),
+                    ): cv.boolean,
+                    vol.Required(
+                        CONF_EXPERIMENTAL_FLOW_OFFSET,
+                        default=get_feature(entry, CONF_EXPERIMENTAL_FLOW_OFFSET, DEFAULT_FEATURES[CONF_EXPERIMENTAL_FLOW_OFFSET]),
                     ): cv.boolean,
                 }
             ),

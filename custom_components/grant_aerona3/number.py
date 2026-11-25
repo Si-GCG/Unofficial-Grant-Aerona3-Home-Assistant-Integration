@@ -10,6 +10,7 @@ from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfTemperature
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.entity import EntityCategory
@@ -68,6 +69,9 @@ async def async_setup_entry(
         _LOGGER.debug("Successfully created flow rate entity")
     except Exception as e:
         _LOGGER.error("Failed to create flow rate entity: %s", e)
+
+    for zone, manager in coordinator.flow_offsets.items():
+        entities.append(GrantAerona3FlowOffsetNumber(coordinator, config_entry, manager, zone))
 
     _LOGGER.debug("Created %d number entities total", len(entities))
 
@@ -303,3 +307,55 @@ class GrantAerona3FlowRateNumber(CoordinatorEntity, NumberEntity):
             "typical_range": "15-25 L/min for residential systems",
             "tooltip": "Set this to your actual measured flow rate for accurate COP calculations"
         }
+
+
+class GrantAerona3FlowOffsetNumber(CoordinatorEntity, NumberEntity):
+    """Shifts a zone's heating flow temperature up or down in 0.5 degree steps."""
+
+    _attr_has_entity_name = True
+    _attr_native_min_value = -5.0
+    _attr_native_max_value = 5.0
+    _attr_native_step = 0.5
+    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
+    _attr_mode = NumberMode.BOX
+    _attr_icon = "mdi:thermometer-plus"
+    _attr_entity_category = EntityCategory.CONFIG
+
+    def __init__(self, coordinator, config_entry, manager, zone: int) -> None:
+        super().__init__(coordinator)
+        self._manager = manager
+        suffix = "flow_offset" if zone == 1 else "flow_offset_zone2"
+        self._attr_unique_id = f"ashp_{config_entry.entry_id}_{suffix}"
+        self._attr_name = f"Zone {zone} flow offset"
+        self._attr_device_info = {
+            "identifiers": {(DOMAIN, config_entry.entry_id)},
+            "name": "ASHP",
+            "manufacturer": MANUFACTURER,
+            "model": MODEL,
+            "sw_version": "1.0.0",
+        }
+
+    @property
+    def available(self) -> bool:
+        return super().available and self._manager.mode is not None
+
+    @property
+    def native_value(self) -> float:
+        return self._manager.offset
+
+    @property
+    def extra_state_attributes(self) -> Dict[str, Any]:
+        return {
+            "requested_offset": self._manager.requested_offset,
+            "mode": self._manager.mode,
+            "baseline": self._manager.baseline.get(self._manager.mode or "", {}),
+        }
+
+    async def async_set_native_value(self, value: float) -> None:
+        if not await self._manager.async_set_offset(value):
+            raise HomeAssistantError(
+                "Flow offset not changed: the change limit (24 per day, at least 30 minutes "
+                "apart) was reached, the heat pump did not accept the write, or its curve "
+                "settings could not be read."
+            )
+        self.async_write_ha_state()

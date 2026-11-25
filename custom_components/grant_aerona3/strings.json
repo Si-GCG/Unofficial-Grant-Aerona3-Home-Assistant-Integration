@@ -84,7 +84,8 @@
           "has_remote_outdoor_sensor": "Additional outdoor sensor",
           "has_tariff_control": "Low tariff / night mode signal",
           "has_dehumidifier": "Dehumidifier",
-          "has_advanced_config": "Advanced / installer settings"
+          "has_advanced_config": "Advanced / installer settings",
+          "experimental_flow_offset": "Experimental: flow temperature offset"
         },
         "data_description": {
           "scan_interval": "How often to poll the heat pump for data updates (5-3600 seconds)",
@@ -100,7 +101,8 @@
           "has_remote_outdoor_sensor": "Additional outdoor temperature probe wired to terminals 9-10",
           "has_tariff_control": "Wired to an economy-tariff or night-time noise-limiting signal (terminals 28-31)",
           "has_dehumidifier": "Dehumidifier wired to terminal 45",
-          "has_advanced_config": "Installer-only commissioning settings: frost-protection tuning, pump timing, error history, and terminal wiring switches. Set once, rarely touched again."
+          "has_advanced_config": "Installer-only commissioning settings: frost-protection tuning, pump timing, error history, and terminal wiring switches. Set once, rarely touched again.",
+          "experimental_flow_offset": "Adds a flow offset number per zone that shifts the heating curve (or fixed flow setpoint) in 0.5 degree steps. New and lightly tested; off by default. Turning it off removes the entities."
         }
       }
     }
