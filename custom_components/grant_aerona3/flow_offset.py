@@ -24,3 +24,52 @@ def shift_fixed(fixed: float, offset: float, ceiling: float) -> float:
 def effective_offset(base: float, applied: float) -> float:
     """Offset actually in effect for one register."""
     return applied - base
+
+
+class WriteLimiter:
+    """Rolling-window cap on offset changes (flash-wear protection)."""
+
+    WINDOW_S = 86400.0
+
+    def __init__(self, max_per_day: int = 24, min_interval_s: float = 1800.0) -> None:
+        self.max_per_day = max_per_day
+        self.min_interval_s = min_interval_s
+        self._times: list[float] = []
+
+    def can_write(self, now: float) -> bool:
+        self._times = [t for t in self._times if now - t < self.WINDOW_S]
+        if self._times and now - self._times[-1] < self.min_interval_s:
+            return False
+        return len(self._times) < self.max_per_day
+
+    def record(self, now: float) -> None:
+        self._times.append(now)
+
+
+class MismatchTracker:
+    """Confirms a hand edit only after several consecutive mismatching polls."""
+
+    def __init__(self, polls_required: int = 2) -> None:
+        self.polls_required = polls_required
+        self._count = 0
+
+    def update(self, matches: bool) -> bool:
+        self._count = 0 if matches else self._count + 1
+        return self._count >= self.polls_required
+
+    def reset(self) -> None:
+        self._count = 0
+
+
+def next_trim_offset(
+    current: float, room: float, target: float, dead_band: float, step: float, cap: float
+) -> float:
+    """One trim step towards the target; holds inside the (exclusive) dead band."""
+    error = round(target - room, 6)
+    if error > dead_band:
+        proposed = current + step
+    elif error < -dead_band:
+        proposed = current - step
+    else:
+        return current
+    return max(-cap, min(cap, proposed))
