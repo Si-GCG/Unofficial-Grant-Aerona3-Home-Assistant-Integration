@@ -113,6 +113,8 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
         self._degraded_spans: set[tuple[str, int, int]] = set()
         # Duration of the last successful poll, for the diagnostics download
         self.last_poll_seconds: float | None = None
+        # Flow offset managers by zone, filled in by async_setup_entry
+        self.flow_offsets: dict[int, Any] = {}
 
     async def _async_update_data(self) -> Dict[str, Any]:
         try:

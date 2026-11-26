@@ -7,9 +7,11 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.storage import Store
 
 from .const import (
     DOMAIN,
+    CONF_EXPERIMENTAL_FLOW_OFFSET,
     CONF_HAS_ADVANCED_CONFIG,
     CONF_HAS_BACKUP_HEATER,
     CONF_HAS_BUFFER,
@@ -19,6 +21,8 @@ from .const import (
     CONF_HAS_MIXING_VALVE,
     CONF_HAS_REMOTE_OUTDOOR_SENSOR,
     CONF_HAS_TARIFF_CONTROL,
+    CONF_MAX_FLOW_TEMP,
+    DEFAULT_MAX_FLOW_TEMP,
     FEATURE_ZONE2,
     INPUT_REGISTER_MAP,
     HOLDING_REGISTER_MAP,
@@ -26,7 +30,9 @@ from .const import (
     HOLDING_REGISTER_FEATURES,
 )
 from .coordinator import GrantAerona3Coordinator
-from .features import register_enabled
+from .features import get_feature, register_enabled
+from .flow_offset import WriteLimiter
+from .flow_offset_manager import STORE_VERSION, FlowOffsetManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -36,6 +42,7 @@ PLATFORMS = [
     Platform.BINARY_SENSOR,
     Platform.SWITCH,
     Platform.NUMBER,
+    Platform.CLIMATE,
 ]
 
 # unique_id suffixes of the hand-written entities gated on each feature
@@ -47,7 +54,8 @@ FEATURE_UNIQUE_ID_SUFFIXES = {
     ),
     CONF_HAS_BUFFER: ("buffer_tank_probe",),
     CONF_HAS_EHS: ("ehs_function", "ehs_terminal"),
-    FEATURE_ZONE2: ("weather_compensation_active_zone2",),
+    CONF_EXPERIMENTAL_FLOW_OFFSET: ("flow_offset", "flow_offset_zone2"),
+    FEATURE_ZONE2: ("weather_compensation_active_zone2", "flow_offset_zone2"),
     CONF_HAS_BACKUP_HEATER: ("backup_heater_enable", "backup_heater_active"),
     CONF_HAS_HUMIDITY_SENSOR: ("humidity_comp", "humidity_sensor"),
     CONF_HAS_MIXING_VALVE: ("mixing_valve", "mix_water_probe"),
@@ -94,6 +102,33 @@ def _remove_disabled_entities(hass: HomeAssistant, entry: ConfigEntry, features:
         _LOGGER.info("Removed %d entities for hardware not present in this installation", removed)
 
 
+async def _async_setup_flow_offsets(
+    hass: HomeAssistant, entry: ConfigEntry, coordinator: GrantAerona3Coordinator
+) -> dict[int, FlowOffsetManager]:
+    """Create the per-zone flow offset managers (experimental, opt-in) and hook them up."""
+    if CONF_EXPERIMENTAL_FLOW_OFFSET not in coordinator.features:
+        return {}
+    limiter = WriteLimiter()
+    zones = [1] + ([2] if FEATURE_ZONE2 in coordinator.features else [])
+    managers: dict[int, FlowOffsetManager] = {}
+    for zone in zones:
+        store = Store(hass, STORE_VERSION, f"{DOMAIN}_flow_offset_{entry.entry_id}_zone{zone}")
+        manager = FlowOffsetManager(
+            zone,
+            coordinator,
+            store,
+            lambda: float(get_feature(entry, CONF_MAX_FLOW_TEMP, DEFAULT_MAX_FLOW_TEMP)),
+            limiter,
+            time.monotonic,
+            hass.async_create_task,
+        )
+        await manager.async_load()
+        manager.on_coordinator_update()  # capture the baseline from the first poll
+        entry.async_on_unload(coordinator.async_add_listener(manager.on_coordinator_update))
+        managers[zone] = manager
+    return managers
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Grant Aerona3 from a config entry."""
     # Ensure domain data structure exists
@@ -125,6 +160,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             _LOGGER.warning("Replacing existing coordinator for entry %s", entry.entry_id)
 
         hass.data[DOMAIN][entry.entry_id] = coordinator
+
+        # Flow offset managers (one per zone), listening to every poll
+        coordinator.flow_offsets = await _async_setup_flow_offsets(hass, entry, coordinator)
 
         # Clean up entities left over from previously enabled features
         _remove_disabled_entities(hass, entry, coordinator.features)

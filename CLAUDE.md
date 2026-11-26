@@ -23,6 +23,12 @@ Users only get entities for hardware they actually own (an unfiltered install cr
 - A poll fails (`UpdateFailed`, entities go unavailable) when none of `CRITICAL_INPUT_REGISTERS` can be read; don't swallow that. The Communication Status binary sensor is the exception: it stays available and reads off when the last poll failed.
 - `options_flow.py` was removed as dead code already — the options flow lives inside `config_flow.py`'s `OptionsFlowHandler`. Don't recreate a separate file for it.
 
+## Flow offset and room trim (experimental, opt-in)
+
+- Gated by the `experimental_flow_offset` feature (default OFF, deliberately unlike the hardware features), which also exists in `FEATURE_UNIQUE_ID_SUFFIXES`. The `climate` trim entity additionally needs the `room_trim_enabled` option and a sensor.
+- `FlowOffsetManager` (`flow_offset_manager.py`) shifts Tm1/Tm2 (WC) or the fixed setpoint from a stored baseline. If the curve registers change outside the integration (two polls in a row), it adopts them as the new baseline and resets the offset. Keep `ZONE_FLOW_REGISTERS` in step with `HOLDING_REGISTER_MAP`. Te1/Te2 and cooling registers are deliberately never written.
+- The pure logic (`flow_offset.py`, `flow_offset_manager.py`, `trim_controller.py`) imports nothing from Home Assistant so it can be tested with pytest: `.venv/bin/pytest tests` (create the venv with `python3 -m venv .venv && .venv/bin/pip install pytest`). Keep it that way.
+
 ## Validation
 
-There's no test suite or CI. Before committing, run the `validate` skill (or manually: `python3 -m py_compile` on every file in `custom_components/grant_aerona3/`, plus a JSON load check on `strings.json` and `translations/en.json`).
+The pure flow-offset modules have pytest tests (above); the rest has no test suite or CI. Before committing, run the `validate` skill (or manually: `python3 -m py_compile` on every file in `custom_components/grant_aerona3/`, plus a JSON load check on `strings.json` and `translations/en.json`).

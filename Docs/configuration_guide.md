@@ -132,7 +132,9 @@ The integration automatically creates **150+ entities** across multiple platform
 
 ## Climate Entities
 
-This integration does not expose dedicated climate entities. Use the available `switch`, `sensor`, and `number` entities for monitoring and control.
+There is no general-purpose thermostat entity: the heat pump's operating mode and room set point are read-only over Modbus, so use the `switch`, `sensor` and `number` entities for control.
+
+The one exception is the experimental **Zone 1 room trim** climate entity, which exists only when you enable *Experimental: flow temperature offset* and *Experimental: room temperature trim* under Configure. It holds a room target in Home Assistant and nudges the Zone 1 flow offset towards it. See *Experimental: flow offset and room trim* in the README for how it behaves and its limits.
 
 ## Entity Configuration
 
