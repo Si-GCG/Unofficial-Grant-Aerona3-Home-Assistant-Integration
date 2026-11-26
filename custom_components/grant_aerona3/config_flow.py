@@ -44,6 +44,14 @@ from .const import (
     CONF_HAS_ADVANCED_CONFIG,
     CONF_ZONES,
     CONF_EXPERIMENTAL_FLOW_OFFSET,
+    CONF_EXPERIMENTAL_FLOW_CONTROLLER,
+    CONF_FC_COLD_FLOW,
+    CONF_FC_COLD_OUTDOOR,
+    CONF_FC_MILD_FLOW,
+    CONF_FC_MILD_OUTDOOR,
+    CONF_FC_MIN_FLOW,
+    CONF_FC_SCHEDULE,
+    CONF_FC_SENSOR,
     CONF_MAX_FLOW_TEMP,
     CONF_TRIM_CAP,
     CONF_TRIM_DEAD_BAND,
@@ -59,6 +67,7 @@ from .const import (
     ZONES_DUAL,
 )
 from .features import get_feature
+from .flow_controller import Settings, settings_error
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -262,12 +271,11 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             # The room trim only exists on top of the experimental flow offset
             if user_input.get(CONF_TRIM_ENABLED) and not user_input.get(CONF_EXPERIMENTAL_FLOW_OFFSET):
                 return self._show_init_form(user_input, {"base": "trim_needs_offset"})
+            self._init_input = dict(user_input)
             if user_input.get(CONF_TRIM_ENABLED):
-                self._init_input = user_input
                 return await self.async_step_trim()
-            return self.async_create_entry(
-                title="", data={**user_input, CONF_TRIM_ENABLED: False}
-            )
+            self._init_input[CONF_TRIM_ENABLED] = False
+            return await self._after_trim()
 
         return self._show_init_form(None, None)
 
@@ -356,6 +364,10 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                         CONF_TRIM_ENABLED,
                         default=value(CONF_TRIM_ENABLED, False),
                     ): cv.boolean,
+                    vol.Required(
+                        CONF_EXPERIMENTAL_FLOW_CONTROLLER,
+                        default=value(CONF_EXPERIMENTAL_FLOW_CONTROLLER, False),
+                    ): cv.boolean,
                 }
             ),
         )
@@ -366,21 +378,11 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
     ) -> FlowResult:
         """Configure the experimental room-temperature trim."""
         if user_input is not None:
-            return self.async_create_entry(
-                title="", data={**self._init_input, **user_input}
-            )
+            self._init_input.update(user_input)
+            return await self._after_trim()
 
         entry = self.config_entry
-        coordinator = self.hass.data.get(DOMAIN, {}).get(entry.entry_id)
-        coils = (getattr(coordinator, "data", None) or {}).get("coil_registers", {})
-        warning = ""
-        if coils.get(7) is False:
-            warning = (
-                "Heads up: the heat pump is set to switch on and off from its own room "
-                "reading (coil 7 = room set point). That reading is often skewed by where "
-                "the controller sits, so water set point is usually the better setting. "
-                "You can still continue."
-            )
+        warning = self._coil7_warning()
         existing = get_feature(entry, CONF_TRIM_SENSOR, None)
         sensor_key = (
             vol.Required(CONF_TRIM_SENSOR, default=existing)
@@ -409,6 +411,95 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 }
             ),
             description_placeholders={"coil7_warning": warning},
+        )
+
+    def _coil7_warning(self) -> str:
+        coordinator = self.hass.data.get(DOMAIN, {}).get(self.config_entry.entry_id)
+        coils = (getattr(coordinator, "data", None) or {}).get("coil_registers", {})
+        if coils.get(7) is not False:
+            return ""
+        return (
+            "Heads up: the heat pump is set to switch on and off from its own room "
+            "reading (coil 7 = room set point). That reading is often skewed by where "
+            "the controller sits, so water set point is usually the better setting. "
+            "You can still continue."
+        )
+
+    async def _after_trim(self) -> FlowResult:
+        """Go on to the controller settings if it is ticked, otherwise save."""
+        if self._init_input.get(CONF_EXPERIMENTAL_FLOW_CONTROLLER):
+            return await self.async_step_controller()
+        return self.async_create_entry(title="", data=self._init_input)
+
+    async def async_step_controller(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
+        """Configure the experimental flow temperature controller."""
+        entry = self.config_entry
+        defaults = Settings()
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            chosen = Settings(
+                cold_outdoor=user_input[CONF_FC_COLD_OUTDOOR],
+                cold_flow=user_input[CONF_FC_COLD_FLOW],
+                mild_outdoor=user_input[CONF_FC_MILD_OUTDOOR],
+                mild_flow=user_input[CONF_FC_MILD_FLOW],
+                min_flow=user_input[CONF_FC_MIN_FLOW],
+                max_flow=float(
+                    self._init_input.get(CONF_MAX_FLOW_TEMP, DEFAULT_MAX_FLOW_TEMP)
+                ),
+            )
+            error = settings_error(chosen)
+            if error is None:
+                return self.async_create_entry(
+                    title="", data={**self._init_input, **user_input}
+                )
+            errors["base"] = error
+
+        def current(key: str, default: Any = None) -> Any:
+            if user_input is not None:
+                return user_input.get(key, default)
+            return get_feature(entry, key, default)
+
+        sensor = current(CONF_FC_SENSOR)
+        sensor_key = (
+            vol.Required(CONF_FC_SENSOR, default=sensor)
+            if sensor
+            else vol.Required(CONF_FC_SENSOR)
+        )
+
+        def number(key: str, default: float, low: float, high: float) -> tuple:
+            return (
+                vol.Required(key, default=current(key, default)),
+                vol.All(vol.Coerce(float), vol.Range(min=low, max=high)),
+            )
+
+        fields = dict(
+            (
+                number(CONF_FC_COLD_OUTDOOR, defaults.cold_outdoor, -20, 25),
+                number(CONF_FC_COLD_FLOW, defaults.cold_flow, 23, 60),
+                number(CONF_FC_MILD_OUTDOOR, defaults.mild_outdoor, -20, 25),
+                number(CONF_FC_MILD_FLOW, defaults.mild_flow, 23, 60),
+                number(CONF_FC_MIN_FLOW, defaults.min_flow, 23, 60),
+            )
+        )
+        return self.async_show_form(
+            step_id="controller",
+            errors=errors,
+            data_schema=vol.Schema(
+                {
+                    sensor_key: EntitySelector(
+                        EntitySelectorConfig(domain="sensor", device_class="temperature")
+                    ),
+                    # suggested_value rather than default, so the schedule can be cleared
+                    vol.Optional(
+                        CONF_FC_SCHEDULE,
+                        description={"suggested_value": current(CONF_FC_SCHEDULE)},
+                    ): EntitySelector(EntitySelectorConfig(domain="schedule")),
+                    **fields,
+                }
+            ),
+            description_placeholders={"coil7_warning": self._coil7_warning()},
         )
 
 

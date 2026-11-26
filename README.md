@@ -8,7 +8,7 @@
 # Unofficial Grant Aerona3 Heat Pump Integration for Home Assistant
 
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2025.9.0+-blue.svg)](https://www.home-assistant.io/)
-[![HACS / Marketplace](https://img.shields.io/badge/HACS%20%2F%20Marketplace-Custom-orange.svg)](https://hacs.xyz/)
+[![Marketplace](https://img.shields.io/badge/Marketplace-Custom-orange.svg)](https://www.home-assistant.io/integrations/marketplace/)
 [![Version](https://img.shields.io/github/v/release/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration?include_prereleases&color=brightgreen&label=Version)](https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration/releases)
 
 An unofficial Home Assistant integration for **Grant Aerona3 air-source heat pumps**, communicating over Modbus (TCP or serial/RS485). It is not affiliated with or endorsed by Grant Engineering.
@@ -54,6 +54,18 @@ Off by default. Turn on **Experimental: flow temperature offset** under Configur
 **Fix the base curve first.** Installers set the starting curve from the design calculation, and it is often well off (45 °C at −3 °C outdoors is common and usually too hot). Use the offset for fine trimming around a curve you have already corrected. If you edit the curve registers yourself, the integration adopts your new curve as the baseline and resets the offset to 0.
 
 **Room trim (optional).** Under Configure you can also enable a *Zone 1 room trim* climate entity. It holds a room target in Home Assistant and, every 30 minutes by default, moves the offset by at most 0.5 °C towards it using a room temperature sensor you choose. It is not a normal thermostat: the heat pump's own mode and room set point are read-only over Modbus. Choose a sensor in a representative room, not the heat pump controller's own reading (that controller is often in a warm cupboard). If the sensor goes unavailable or sends nothing new for 6 hours, or you turn the trim off, the offset returns to 0. If it sits at its limit for several checks, the entity says the base curve probably needs adjusting. It pauses in cooling mode.
+
+## Experimental: flow temperature controller (preview)
+
+Off by default, and in this version it **writes nothing to the heat pump**. Turn on **Experimental: flow temperature controller (preview)** under Configure, pick a room temperature sensor and, if you like, a Home Assistant schedule. A *Zone 1 suggested flow temperature* sensor then shows the fixed flow temperature a controller would choose, so you can judge it before anything controls your heating.
+
+**How it chooses.** It starts from a line through two points you set (by default 40 °C flow at −3 °C outdoors and 28 °C at 15 °C), using the outdoor temperature averaged over the last hour. It then adds 1 °C of flow for each degree the room target is above 20 °C (and takes it away below), and 2 °C for each degree the room is below target. The result stays between your minimum (default 25 °C) and the *Maximum flow temperature* option. It is recalculated every 10 minutes.
+
+**Targets.** 20 °C while the schedule is on, 17 °C while it is off, and 20 °C without a schedule. If the room sensor is unavailable or older than 6 hours, only the outdoor temperature is used.
+
+**What to compare.** The sensor's attributes show each part of the sum and the current outgoing water temperature. The heat pump does not report the flow target its own curve is using, so that measured temperature is only meaningful while the unit is running.
+
+**Before any control version:** the heat pump still decides when to run. An external room thermostat has to keep calling for heat, or a flow temperature controller has no effect.
 
 ## Quick Start
 
@@ -121,9 +133,9 @@ If connecting over Modbus TCP via an RS485-to-Ethernet converter:
 ### Enclosure
 - [Waterproof Enclosure](https://www.amazon.co.uk/Enclosure-Consumer-Waterproof-Terminals-Connectors/dp/B0BGSC2FF2) for outdoor-mounted converters
 
-## Recommended HACS Dashboard Components
+## Recommended dashboard components
 
-Not required, but useful for building dashboards with this integration:
+Not required, but useful for building dashboards with this integration. Install them from **Settings → Marketplace** (from HACS before Home Assistant 2026.11):
 ```
 lovelace-card-mod
 apexcharts-card
@@ -185,9 +197,10 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 
 **Home Assistant 2026.11 or later (Marketplace)**
 1. Open Settings → Marketplace
-2. Add this repository as a custom repository (Add from link) using its GitHub URL
-3. Install "Grant Aerona3 Heat Pump"
-4. Restart Home Assistant
+2. Select **Add from link** and enter this repository's GitHub URL (the Marketplace asks you to connect a GitHub account for this)
+3. Install "Grant Aerona3 Heat Pump Integration"
+4. Restart Home Assistant if asked
+5. To try a beta, use ⋮ → **Install another version** on the repository page (see the [Installation Guide](Docs/installation_guide.md#trying-a-beta-version))
 
 **Earlier versions (HACS)**
 1. Open HACS in Home Assistant

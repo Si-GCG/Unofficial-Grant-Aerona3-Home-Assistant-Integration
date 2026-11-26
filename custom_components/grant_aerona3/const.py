@@ -91,6 +91,16 @@ CONF_TRIM_CAP = "room_trim_cap"
 DEFAULT_TRIM_INTERVAL = 30
 DEFAULT_TRIM_DEAD_BAND = 0.3
 DEFAULT_TRIM_CAP = 3.0
+
+# Flow temperature controller (experimental)
+CONF_EXPERIMENTAL_FLOW_CONTROLLER = "experimental_flow_controller"
+CONF_FC_SENSOR = "flow_ctrl_sensor"
+CONF_FC_SCHEDULE = "flow_ctrl_schedule"
+CONF_FC_COLD_OUTDOOR = "flow_ctrl_cold_outdoor"
+CONF_FC_COLD_FLOW = "flow_ctrl_cold_flow"
+CONF_FC_MILD_OUTDOOR = "flow_ctrl_mild_outdoor"
+CONF_FC_MILD_FLOW = "flow_ctrl_mild_flow"
+CONF_FC_MIN_FLOW = "flow_ctrl_min_flow"
 # Bundles installer/commissioning-only registers that exist on every unit but
 # are set once at commissioning and essentially never touched afterwards:
 # frost-protection fine-tuning, error history, and terminal wiring config.
@@ -119,6 +129,7 @@ DEFAULT_FEATURES = {
     CONF_HAS_ADVANCED_CONFIG: True,
     # Experimental, opt-in only: deliberately OFF (unlike the hardware features above)
     CONF_EXPERIMENTAL_FLOW_OFFSET: False,
+    CONF_EXPERIMENTAL_FLOW_CONTROLLER: False,
 }
 
 # Register types

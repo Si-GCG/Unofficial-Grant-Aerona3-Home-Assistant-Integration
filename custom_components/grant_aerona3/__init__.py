@@ -11,6 +11,7 @@ from homeassistant.helpers.storage import Store
 
 from .const import (
     DOMAIN,
+    CONF_EXPERIMENTAL_FLOW_CONTROLLER,
     CONF_EXPERIMENTAL_FLOW_OFFSET,
     CONF_HAS_ADVANCED_CONFIG,
     CONF_HAS_BACKUP_HEATER,
@@ -55,6 +56,7 @@ FEATURE_UNIQUE_ID_SUFFIXES = {
     CONF_HAS_BUFFER: ("buffer_tank_probe",),
     CONF_HAS_EHS: ("ehs_function", "ehs_terminal"),
     CONF_EXPERIMENTAL_FLOW_OFFSET: ("flow_offset", "flow_offset_zone2"),
+    CONF_EXPERIMENTAL_FLOW_CONTROLLER: ("flow_preview",),
     FEATURE_ZONE2: ("weather_compensation_active_zone2", "flow_offset_zone2"),
     CONF_HAS_BACKUP_HEATER: ("backup_heater_enable", "backup_heater_active"),
     CONF_HAS_HUMIDITY_SENSOR: ("humidity_comp", "humidity_sensor"),

@@ -31,10 +31,13 @@ from .const import (
     HOLDING_REGISTER_MAP,
     INPUT_REGISTER_FEATURES,
     HOLDING_REGISTER_FEATURES,
+    CONF_EXPERIMENTAL_FLOW_CONTROLLER,
+    CONF_FC_SENSOR,
 )
 from .coordinator import GrantAerona3Coordinator
 from .error_codes import ERROR_REGISTER_IDS, NO_ERROR_STATE, decode_error
-from .features import register_enabled
+from .features import get_feature, register_enabled
+from .flow_preview import GrantAerona3FlowPreviewSensor
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -78,6 +81,9 @@ async def async_setup_entry(
     GrantAerona3EfficiencySensor(coordinator, config_entry),
     GrantAerona3WeatherCompSensor(coordinator, config_entry),
     ])
+
+    if CONF_EXPERIMENTAL_FLOW_CONTROLLER in features and get_feature(config_entry, CONF_FC_SENSOR):
+        entities.append(GrantAerona3FlowPreviewSensor(coordinator, config_entry))
 
     _LOGGER.info("Creating %d ASHP sensor entities with ashp_ prefix", len(entities))
     async_add_entities(entities)

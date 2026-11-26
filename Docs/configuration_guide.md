@@ -136,6 +136,8 @@ There is no general-purpose thermostat entity: the heat pump's operating mode an
 
 The one exception is the experimental **Zone 1 room trim** climate entity, which exists only when you enable *Experimental: flow temperature offset* and *Experimental: room temperature trim* under Configure. It holds a room target in Home Assistant and nudges the Zone 1 flow offset towards it. See *Experimental: flow offset and room trim* in the README for how it behaves and its limits.
 
+The experimental **flow temperature controller (preview)** adds one sensor, *Zone 1 suggested flow temperature*, and writes nothing. See the README for how it chooses the value.
+
 ## Entity Configuration
 
 ### Enabling/Disabling Entities

@@ -48,11 +48,20 @@ You'll need a way to connect Home Assistant to your Grant Aerona3's Modbus inter
 HACS is built into Home Assistant as the **Marketplace** from 2026.11, so there is nothing extra to install.
 
 1. Open **Settings → Marketplace**
-2. Add this repository as a custom repository (**Add from link**): `https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration`
-3. Find **Grant Aerona3 Heat Pump** and install it
-4. **Restart Home Assistant**
+2. Select **Add from link** and enter `https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration`. The Marketplace asks you to connect a GitHub account for this
+3. Open **Grant Aerona3 Heat Pump Integration** and select **Install**
+4. **Restart Home Assistant** if asked
 
 If you are upgrading from HACS, your custom repositories carry over to the Marketplace.
+
+#### Updating
+Updates appear under **Settings → Updates**. Restart Home Assistant after updating. The Marketplace checks custom repositories every 48 hours, so a new release may not show straight away.
+
+#### Trying a beta version
+Take a Home Assistant backup first: to go back, restore the backup rather than installing an older version.
+
+- **One version:** open the integration in **Settings → Marketplace**, select ⋮ → **Install another version**, and choose it. Restart Home Assistant.
+- **All future betas:** under **Settings → Devices & services → Marketplace**, open this repository's device, enable the **Pre-release** entity (disabled by default) and turn it on.
 
 ### Earlier versions: HACS
 #### Step 1: Install HACS
@@ -68,20 +77,21 @@ If you haven't already, install [HACS (Home Assistant Community Store)](https://
    - **Category**: `Integration`
 6. Click **Add**
 
-### Recommended additional components
-```
-lovelace-card-mod
-apexcharts-card.js?v=2.1.2
-mushroom.js
-card-mod.js
-energy-flow-card-plus.js
-button-card.js
-
-```
 #### Step 3: Install Integration
 1. Search for "Grant Aerona3" in HACS
 2. Click **Download**
 3. **Restart Home Assistant**
+
+### Recommended additional components
+Optional, for dashboards. Install them from **Settings → Marketplace** (or HACS on earlier versions).
+```
+lovelace-card-mod
+apexcharts-card
+mushroom
+card-mod
+energy-flow-card-plus
+button-card
+```
 
 ## Method 2: Manual Installation
 

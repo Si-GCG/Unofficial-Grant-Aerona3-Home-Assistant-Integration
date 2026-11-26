@@ -1,6 +1,6 @@
 # Grant Aerona3 Home Assistant Integration
 
-Unofficial HACS integration for Grant Aerona3 air-source heat pumps, talking Modbus over serial/TCP. Solo-maintained, no CI — validation is manual (see `.claude/skills/validate`).
+Unofficial custom integration for Grant Aerona3 air-source heat pumps, talking Modbus over serial/TCP. Installed through the Home Assistant Marketplace (HACS before 2026.11); the root `hacs.json` is still required. Solo-maintained, no CI — validation is manual (see `.claude/skills/validate`).
 
 ## Feature-gating architecture
 

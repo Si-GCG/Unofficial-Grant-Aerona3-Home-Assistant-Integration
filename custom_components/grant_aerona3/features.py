@@ -12,6 +12,14 @@ from .const import (
     CONF_HAS_COOLING,
     CONF_HAS_DEHUMIDIFIER,
     CONF_EXPERIMENTAL_FLOW_OFFSET,
+    CONF_EXPERIMENTAL_FLOW_CONTROLLER,
+    CONF_FC_COLD_FLOW,
+    CONF_FC_COLD_OUTDOOR,
+    CONF_FC_MILD_FLOW,
+    CONF_FC_MILD_OUTDOOR,
+    CONF_FC_MIN_FLOW,
+    CONF_MAX_FLOW_TEMP,
+    DEFAULT_MAX_FLOW_TEMP,
     CONF_HAS_DHW_TANK,
     CONF_HAS_EHS,
     CONF_HAS_HUMIDITY_SENSOR,
@@ -23,6 +31,7 @@ from .const import (
     FEATURE_ZONE2,
     ZONES_DUAL,
 )
+from .flow_controller import Settings
 
 BOOLEAN_FEATURE_KEYS = (
     CONF_HAS_DHW_TANK,
@@ -37,6 +46,7 @@ BOOLEAN_FEATURE_KEYS = (
     CONF_HAS_DEHUMIDIFIER,
     CONF_HAS_ADVANCED_CONFIG,
     CONF_EXPERIMENTAL_FLOW_OFFSET,
+    CONF_EXPERIMENTAL_FLOW_CONTROLLER,
 )
 
 
@@ -68,3 +78,20 @@ def register_enabled(
     Registers absent from the feature map are core and always enabled.
     """
     return all(req in features for req in feature_map.get(register_id, ()))
+
+
+def flow_controller_settings(entry: ConfigEntry) -> Settings:
+    """The controller's curve points and limits, defaults where unset."""
+    defaults = Settings()
+
+    def value(key: str, default: float) -> float:
+        return float(get_feature(entry, key, default))
+
+    return Settings(
+        cold_outdoor=value(CONF_FC_COLD_OUTDOOR, defaults.cold_outdoor),
+        cold_flow=value(CONF_FC_COLD_FLOW, defaults.cold_flow),
+        mild_outdoor=value(CONF_FC_MILD_OUTDOOR, defaults.mild_outdoor),
+        mild_flow=value(CONF_FC_MILD_FLOW, defaults.mild_flow),
+        min_flow=value(CONF_FC_MIN_FLOW, defaults.min_flow),
+        max_flow=value(CONF_MAX_FLOW_TEMP, DEFAULT_MAX_FLOW_TEMP),
+    )
