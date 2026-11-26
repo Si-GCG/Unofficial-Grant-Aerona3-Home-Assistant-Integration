@@ -8,7 +8,7 @@
 # Unofficial Grant Aerona3 Heat Pump Integration for Home Assistant
 
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2025.9.0+-blue.svg)](https://www.home-assistant.io/)
-[![HACS / Marketplace](https://img.shields.io/badge/HACS%20%2F%20Marketplace-Custom-orange.svg)](https://hacs.xyz/)
+[![Marketplace](https://img.shields.io/badge/Marketplace-Custom-orange.svg)](https://www.home-assistant.io/integrations/marketplace/)
 [![Version](https://img.shields.io/github/v/release/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration?include_prereleases&color=brightgreen&label=Version)](https://github.com/Si-GCG/Unofficial-Grant-Aerona3-Home-Assistant-Integration/releases)
 
 An unofficial Home Assistant integration for **Grant Aerona3 air-source heat pumps**, communicating over Modbus (TCP or serial/RS485). It is not affiliated with or endorsed by Grant Engineering.
@@ -133,9 +133,9 @@ If connecting over Modbus TCP via an RS485-to-Ethernet converter:
 ### Enclosure
 - [Waterproof Enclosure](https://www.amazon.co.uk/Enclosure-Consumer-Waterproof-Terminals-Connectors/dp/B0BGSC2FF2) for outdoor-mounted converters
 
-## Recommended HACS Dashboard Components
+## Recommended dashboard components
 
-Not required, but useful for building dashboards with this integration:
+Not required, but useful for building dashboards with this integration. Install them from **Settings → Marketplace** (from HACS before Home Assistant 2026.11):
 ```
 lovelace-card-mod
 apexcharts-card
@@ -197,9 +197,10 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 
 **Home Assistant 2026.11 or later (Marketplace)**
 1. Open Settings → Marketplace
-2. Add this repository as a custom repository (Add from link) using its GitHub URL
-3. Install "Grant Aerona3 Heat Pump"
-4. Restart Home Assistant
+2. Select **Add from link** and enter this repository's GitHub URL (the Marketplace asks you to connect a GitHub account for this)
+3. Install "Grant Aerona3 Heat Pump Integration"
+4. Restart Home Assistant if asked
+5. To try a beta, use ⋮ → **Install another version** on the repository page (see the [Installation Guide](Docs/installation_guide.md#trying-a-beta-version))
 
 **Earlier versions (HACS)**
 1. Open HACS in Home Assistant
