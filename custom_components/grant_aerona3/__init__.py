@@ -210,13 +210,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         return False
 
 async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Reload config entry."""
-    try:
-        unloaded = await async_unload_entry(hass, entry)
-        if unloaded:
-            await async_setup_entry(hass, entry)
-        else:
-            _LOGGER.error("Reload aborted: unload failed for entry %s", entry.entry_id)
-    except Exception as e:
-        _LOGGER.error("Error during reload: %s", e, exc_info=True)
-        raise
+    """Reload after an options change.
+
+    Home Assistant has to run the unload and setup itself: calling them directly
+    fails on current versions and leaves the unload callbacks (listeners) in place.
+    """
+    await hass.config_entries.async_reload(entry.entry_id)
