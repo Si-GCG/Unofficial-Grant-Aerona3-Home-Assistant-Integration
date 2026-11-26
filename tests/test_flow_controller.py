@@ -118,3 +118,21 @@ def test_translations_match_and_cover_errors():
     assert {"outdoor_points", "flow_points", "flow_limits"} <= options["error"].keys()
     assert "experimental_flow_controller" in options["step"]["init"]["data"]
     assert "flow_ctrl_sensor" in options["step"]["controller"]["data"]
+
+
+def test_outdoor_source():
+    data = {"input_registers": {6: 65533, 17: 55}, "coil_registers": {19: True}}
+    assert fc.outdoor_temperature(data, True) == 5.5
+    assert fc.outdoor_temperature(data, False) == -3
+    data["coil_registers"][19] = False  # probe terminal not enabled: register 17 means nothing
+    assert fc.outdoor_temperature(data, True) == -3
+    data["coil_registers"][19] = True
+    data["input_registers"][17] = 65535
+    assert fc.outdoor_temperature(data, True) == -3
+    assert fc.outdoor_temperature(None, True) is None
+
+
+def test_preset_follows_schedule():
+    assert fc.preset_for("off") == "eco"
+    for state in ("on", None, "unavailable"):
+        assert fc.preset_for(state) == "comfort"

@@ -55,6 +55,18 @@ Off by default. Turn on **Experimental: flow temperature offset** under Configur
 
 **Room trim (optional).** Under Configure you can also enable a *Zone 1 room trim* climate entity. It holds a room target in Home Assistant and, every 30 minutes by default, moves the offset by at most 0.5 °C towards it using a room temperature sensor you choose. It is not a normal thermostat: the heat pump's own mode and room set point are read-only over Modbus. Choose a sensor in a representative room, not the heat pump controller's own reading (that controller is often in a warm cupboard). If the sensor goes unavailable or sends nothing new for 6 hours, or you turn the trim off, the offset returns to 0. If it sits at its limit for several checks, the entity says the base curve probably needs adjusting. It pauses in cooling mode.
 
+## Experimental: flow temperature controller (preview)
+
+Off by default, and in this version it **writes nothing to the heat pump**. Turn on **Experimental: flow temperature controller (preview)** under Configure, pick a room temperature sensor and, if you like, a Home Assistant schedule. A *Zone 1 suggested flow temperature* sensor then shows the fixed flow temperature a controller would choose, so you can judge it before anything controls your heating.
+
+**How it chooses.** It starts from a line through two points you set (by default 40 °C flow at −3 °C outdoors and 28 °C at 15 °C), using the outdoor temperature averaged over the last hour. It then adds 1 °C of flow for each degree the room target is above 20 °C (and takes it away below), and 2 °C for each degree the room is below target. The result stays between your minimum (default 25 °C) and the *Maximum flow temperature* option. It is recalculated every 10 minutes.
+
+**Targets.** 20 °C while the schedule is on, 17 °C while it is off, and 20 °C without a schedule. If the room sensor is unavailable or older than 6 hours, only the outdoor temperature is used.
+
+**What to compare.** The sensor's attributes show each part of the sum and the current outgoing water temperature. The heat pump does not report the flow target its own curve is using, so that measured temperature is only meaningful while the unit is running.
+
+**Before any control version:** the heat pump still decides when to run. An external room thermostat has to keep calling for heat, or a flow temperature controller has no effect.
+
 ## Quick Start
 
 1. **Install** the integration (see the [Installation Guide](Docs/installation_guide.md))

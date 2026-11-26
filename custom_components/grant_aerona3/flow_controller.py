@@ -153,3 +153,18 @@ def should_write(calculated: float, current: float, after_target_change: bool) -
     """Ignore small differences, to save writes."""
     threshold = 0.5 if after_target_change else 1.0
     return abs(calculated - current) >= threshold - 1e-9
+
+
+def outdoor_temperature(data: dict | None, remote_sensor: bool) -> float | None:
+    """Outdoor reading, preferring the extra probe only where the unit has it enabled."""
+    inputs = (data or {}).get("input_registers", {})
+    if remote_sensor and (data or {}).get("coil_registers", {}).get(19):
+        value = decode_temperature(inputs.get(17), 0.1)
+        if value is not None:
+            return value
+    return decode_temperature(inputs.get(6), 1)
+
+
+def preset_for(schedule_state: str | None) -> str:
+    """Eco only while a schedule says it is off."""
+    return "eco" if schedule_state == "off" else "comfort"
