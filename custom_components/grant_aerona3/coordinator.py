@@ -103,6 +103,7 @@ class GrantAerona3Coordinator(DataUpdateCoordinator[Dict[str, Any]]):
         super().__init__(
             hass,
             _LOGGER,
+            config_entry=entry,
             name=f"{DOMAIN}_{self.host}",
             update_interval=timedelta(seconds=scan_interval),
         )
