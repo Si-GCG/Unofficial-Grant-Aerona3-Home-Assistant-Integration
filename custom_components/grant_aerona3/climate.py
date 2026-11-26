@@ -171,7 +171,10 @@ class GrantAerona3RoomTrim(ClimateEntity, RestoreEntity):
     async def _async_tick(self, now: datetime) -> None:
         room, age = self._read_sensor(now)
         input_regs = (self._coordinator.data or {}).get("input_registers", {})
+        low, high = self._manager.offset_limits()
         decision = decide(
+            low=low,
+            high=high,
             enabled=self._attr_hvac_mode == HVACMode.HEAT,
             cooling=input_regs.get(10) == COOLING_MODE,
             room=room,

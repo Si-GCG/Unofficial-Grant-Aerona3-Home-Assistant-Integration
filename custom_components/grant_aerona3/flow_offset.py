@@ -9,6 +9,13 @@ def clamp_flow(value: float, ceiling: float) -> float:
     return max(FLOOR_C, min(value, ceiling))
 
 
+def offset_limits(bases: list[float], ceiling: float) -> tuple[float, float]:
+    """Range of offsets that moves every flow value together, with none hitting a limit."""
+    low = min(0.0, round(FLOOR_C - min(bases), 1))
+    high = max(0.0, round(ceiling - max(bases), 1))
+    return low, high
+
+
 def shift_curve(tm1: float, tm2: float, offset: float, ceiling: float) -> tuple[float, float]:
     """Shift the weather-compensation curve in parallel; Tm1 never falls below Tm2."""
     new_tm2 = clamp_flow(tm2 + offset, ceiling)

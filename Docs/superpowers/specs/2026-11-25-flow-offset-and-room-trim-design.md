@@ -86,12 +86,17 @@ The unit has no offset concept, so Home Assistant has to remember the baseline: 
 - Current temperature: the chosen HA sensor. Target temperature: held in HA (restored across restarts). HVAC modes: `heat` and `off` only, meaning trim on or off. Turning it off returns the offset to 0.
 - Loop: every 30 minutes (my call), if the sensor is fresh, compare room vs target. Move the offset by one 0.5°C step towards the target when the error exceeds a ±0.3°C dead band (my call). No integral or derivative terms.
 - Hard cap on the offset, default ±3°C (my call, below the ±5 manual range).
-- Fail-safe: if the sensor is unavailable or older than 2 hours, or the coordinator poll fails, return the offset to 0 and show it in the climate entity's attributes.
+- Fail-safe: if the sensor is unavailable or older than 6 hours, or the coordinator poll fails, return the offset to 0 and show it in the climate entity's attributes.
 - Interval, dead band and cap are options-flow settings, not constants.
 
 ### Unit interaction to check before the controller ships (open, for the builder)
 
 Coil 7 ("HP unit turns on/off based on room set point or water set point") should be on water set point for this to behave as expected, since the unit's own room reading is skewed. Context from the maintainer: most installs put the controller next to the DHW tank, in a cupboard or attic, so its room reading is unrepresentative almost everywhere. Water set point (the register default) is therefore the common setup, the warning should rarely fire, and the trim must never default to inputs 33/34 as its room sensor. Decided by the maintainer: if the coil is on room set point, the options flow shows a warning but the trim is still allowed to run (no refusal). The builder should read the coil on the maintainer's unit to confirm its current state.
+
+## Changes after the first overnight test (2026-11-26, approved by the maintainer)
+
+- The offset is limited as a whole, not value by value: it stops where any shifted flow value would leave the 23 °C to maximum range, so the curve never tilts. The trim steps from, and stops at, that limit.
+- The stale-sensor window is 6 hours, not 2. An unchanged average-helper reading had reset the offset although nothing was broken. The cost is that a silently dead sensor takes longer to notice.
 
 ## Staging
 

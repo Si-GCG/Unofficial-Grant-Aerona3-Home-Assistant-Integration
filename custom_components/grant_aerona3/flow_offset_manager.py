@@ -14,11 +14,18 @@ try:  # package import (Home Assistant)
     from .flow_offset import (
         MismatchTracker,
         WriteLimiter,
+        offset_limits,
         shift_curve,
         shift_fixed,
     )
 except ImportError:  # loaded by file path in the unit tests
-    from flow_offset import MismatchTracker, WriteLimiter, shift_curve, shift_fixed
+    from flow_offset import (
+        MismatchTracker,
+        WriteLimiter,
+        offset_limits,
+        shift_curve,
+        shift_fixed,
+    )
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -109,6 +116,13 @@ class FlowOffsetManager:
             return None
         return "wc" if value else "fixed"
 
+    def offset_limits(self) -> tuple[float, float]:
+        """Offsets usable in the current mode; unbounded while the baseline is unknown."""
+        base = self.baseline.get(self.mode or self._last_mode or "")
+        if not base:
+            return float("-inf"), float("inf")
+        return offset_limits(list(base.values()), self._ceiling_for(base))
+
     @property
     def offset(self) -> float:
         """Effective offset: the smaller-magnitude shift actually applied after clamping."""
@@ -136,12 +150,20 @@ class FlowOffsetManager:
         return out
 
     def _target(self, mode: str, base: dict[str, float], requested: float) -> dict[str, float]:
-        """Register values for an offset. Never clamps below the user's own baseline."""
-        ceiling = max(self._ceiling(), *base.values())
+        """Register values for an offset. Never clamps below the user's own baseline.
+
+        The offset stops where any value would hit a limit, so the curve never tilts.
+        """
+        ceiling = self._ceiling_for(base)
+        low, high = offset_limits(list(base.values()), ceiling)
+        requested = max(low, min(requested, high))
         if mode == "wc":
             tm1, tm2 = shift_curve(base["tm1"], base["tm2"], requested, ceiling)
             return {"tm1": round(tm1, 1), "tm2": round(tm2, 1)}
         return {"fixed": round(shift_fixed(base["fixed"], requested, ceiling), 1)}
+
+    def _ceiling_for(self, base: dict[str, float]) -> float:
+        return max(self._ceiling(), *base.values())
 
     # -- writing --------------------------------------------------------
     async def _apply(self, mode: str, requested: float) -> tuple[bool, bool]:

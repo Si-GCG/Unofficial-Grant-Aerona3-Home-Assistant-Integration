@@ -32,7 +32,9 @@ def decide(
     dead_band: float,
     cap: float,
     pending_reset: bool = False,
-    stale_after_s: float = 7200.0,
+    low: float = float("-inf"),
+    high: float = float("inf"),
+    stale_after_s: float = 21600.0,
     step: float = 0.5,
 ) -> TrimDecision:
     """Decide what the trim should do on this tick."""
@@ -45,8 +47,10 @@ def decide(
         return _to_zero(current_offset, "sensor_unavailable")
     if room_age_s is None or room_age_s > stale_after_s:
         return _to_zero(current_offset, "sensor_stale")
-    proposed = next_trim_offset(current_offset, room, target, dead_band, step, cap)
-    if proposed != current_offset:
+    # Step from what the curve can really take, so a request beyond it costs no extra ticks
+    current = max(low, min(current_offset, high))
+    proposed = max(low, min(next_trim_offset(current, room, target, dead_band, step, cap), high))
+    if proposed != current:
         return TrimDecision(proposed, "stepped")
     if abs(round(target - room, 6)) > dead_band:
         return TrimDecision(None, "at_cap")

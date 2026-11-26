@@ -155,7 +155,8 @@ def test_ceiling_below_baseline_not_pulled_down():
     assert mgr.baseline["wc"] == {"tm1": 58.0, "tm2": 30.0}
     assert mgr.requested_offset == 0.0 and coord.writes == []
     asyncio.run(mgr.async_set_offset(0.5))
-    assert coord.writes == [(4, 305)]  # Tm1 is never taken below its own baseline
+    # Tm1 is already above the maximum, so the curve cannot go up without tilting
+    assert coord.writes == [] and mgr.offset == 0.0
 
 
 def test_ceiling_change_does_not_adopt_offset_into_baseline():
@@ -215,3 +216,33 @@ def test_correction_within_grace_is_allowed_and_not_counted():
     assert asyncio.run(mgr.async_set_offset(0.0)) is True
     assert mgr.offset == 0.0
     assert len(limiter._times) == 1
+
+
+def test_offset_stops_where_both_curve_ends_can_still_move():
+    # Tm1 37, Tm2 25: the 23C floor allows -2 only
+    mgr, coord, *_ = make(FakeCoordinator(holding={2: 335, 3: 370, 4: 250}))
+    asyncio.run(mgr.async_set_offset(-3.0))
+    assert coord.data["holding_registers"][3] == 350
+    assert coord.data["holding_registers"][4] == 230
+    assert mgr.offset == -2.0
+    assert mgr.requested_offset == -3.0
+
+
+def test_offset_stops_at_ceiling_without_flattening_the_curve():
+    mgr, coord, *_ = make(FakeCoordinator(holding={2: 450, 3: 540, 4: 400}))
+    asyncio.run(mgr.async_set_offset(5.0))
+    assert coord.data["holding_registers"][3] == 550
+    assert coord.data["holding_registers"][4] == 410
+
+
+def test_offset_limits_follow_the_baseline():
+    mgr, *_ = make(FakeCoordinator(holding={2: 335, 3: 370, 4: 250}))
+    mgr.on_coordinator_update()
+    assert mgr.offset_limits() == (-2.0, 18.0)
+    asyncio.run(mgr.async_set_offset(-1.0))
+    assert mgr.offset_limits() == (-2.0, 18.0)
+
+
+def test_offset_limits_unbounded_before_baseline_is_known():
+    mgr, *_ = make(FakeCoordinator(holding={}))
+    assert mgr.offset_limits() == (float("-inf"), float("inf"))
