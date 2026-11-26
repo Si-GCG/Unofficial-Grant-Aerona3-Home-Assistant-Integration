@@ -1,3 +1,6 @@
+import json
+import pathlib
+
 from conftest import load
 
 load("flow_offset")
@@ -106,3 +109,12 @@ def test_correction_is_bounded():
 def test_write_threshold():
     assert not fc.should_write(35.5, 35.0, False) and fc.should_write(36.0, 35.0, False)
     assert fc.should_write(35.5, 35.0, True) and not fc.should_write(35.0, 35.0, True)
+
+
+def test_translations_match_and_cover_errors():
+    root = pathlib.Path(__file__).resolve().parents[1] / "custom_components" / "grant_aerona3"
+    assert (root / "strings.json").read_text() == (root / "translations" / "en.json").read_text()
+    options = json.loads((root / "strings.json").read_text())["options"]
+    assert {"outdoor_points", "flow_points", "flow_limits"} <= options["error"].keys()
+    assert "experimental_flow_controller" in options["step"]["init"]["data"]
+    assert "flow_ctrl_sensor" in options["step"]["controller"]["data"]

@@ -87,7 +87,8 @@
           "has_advanced_config": "Advanced / installer settings",
           "experimental_flow_offset": "Experimental: flow temperature offset",
           "max_flow_temp": "Maximum flow temperature (°C)",
-          "room_trim_enabled": "Experimental: room temperature trim"
+          "room_trim_enabled": "Experimental: room temperature trim",
+          "experimental_flow_controller": "Experimental: flow temperature controller (preview)"
         },
         "data_description": {
           "scan_interval": "How often to poll the heat pump for data updates (5-3600 seconds)",
@@ -106,7 +107,8 @@
           "has_advanced_config": "Installer-only commissioning settings: frost-protection tuning, pump timing, error history, and terminal wiring switches. Set once, rarely touched again.",
           "experimental_flow_offset": "Adds a flow offset number per zone that shifts the heating curve (or fixed flow setpoint) in 0.5 degree steps. New and lightly tested; off by default. Turning it off removes the entities.",
           "max_flow_temp": "Ceiling for the experimental flow offset. Defaults to 55; the unit allows up to 60.",
-          "room_trim_enabled": "Slowly nudges the flow offset from a room temperature sensor of your choice. Needs the flow temperature offset above. Adds a climate entity. Turning it off removes the entity."
+          "room_trim_enabled": "Slowly nudges the flow offset from a room temperature sensor of your choice. Needs the flow temperature offset above. Adds a climate entity. Turning it off removes the entity.",
+          "experimental_flow_controller": "Preview only: adds a sensor showing the flow temperature the controller would choose from outdoor and room temperature. It writes nothing to the heat pump."
         }
       },
       "trim": {
@@ -123,10 +125,30 @@
           "room_trim_dead_band": "No change while the room is within this distance of the target.",
           "room_trim_cap": "The trim never moves the offset beyond plus or minus this value."
         }
+      },
+      "controller": {
+        "title": "Flow temperature controller (preview)",
+        "description": "The flow temperature follows a line through the two points below, then moves up or down with the room temperature and target. The preview writes nothing.\n\n{coil7_warning}",
+        "data": {
+          "flow_ctrl_sensor": "Room temperature sensor",
+          "flow_ctrl_schedule": "Schedule (optional)",
+          "flow_ctrl_cold_outdoor": "Cold point: outdoor temperature (°C)",
+          "flow_ctrl_cold_flow": "Cold point: flow temperature (°C)",
+          "flow_ctrl_mild_outdoor": "Mild point: outdoor temperature (°C)",
+          "flow_ctrl_mild_flow": "Mild point: flow temperature (°C)",
+          "flow_ctrl_min_flow": "Minimum flow temperature (°C)"
+        },
+        "data_description": {
+          "flow_ctrl_schedule": "While the schedule is on the room target is 20 °C, while it is off 17 °C. Without a schedule the target stays at 20 °C.",
+          "flow_ctrl_min_flow": "The maximum is the maximum flow temperature on the previous page."
+        }
       }
     },
     "error": {
-      "trim_needs_offset": "The room trim needs 'Experimental: flow temperature offset' to be ticked as well."
+      "trim_needs_offset": "The room trim needs 'Experimental: flow temperature offset' to be ticked as well.",
+      "outdoor_points": "The cold point's outdoor temperature must be lower than the mild point's.",
+      "flow_points": "The cold point's flow temperature must not be lower than the mild point's.",
+      "flow_limits": "The minimum flow temperature must be lower than the maximum flow temperature."
     }
   },
   "entity": {
