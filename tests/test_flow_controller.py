@@ -53,3 +53,56 @@ def test_parse_room():
     assert fc.parse_room("19.7") == 19.7
     for bad in (None, "unknown", "nan", "inf", "68"):
         assert fc.parse_room(bad) is None
+
+
+def test_outdoor_average_drops_old_samples():
+    a = fc.OutdoorAverage()
+    a.add(0, 2)
+    a.add(1800, 4)
+    assert a.value(1800) == 3 and a.value(4000) == 4 and a.value(9000) is None
+
+
+def test_correction_steps_every_two_hours():
+    c = fc.LearnedCorrection()
+    assert c.update(0, 0.5, 0) == 0 and c.update(7199, 0.5, 0) == 0
+    assert c.update(7200, 0.5, 0) == 0.5
+    assert c.update(14400, 0.5, 0) == 1.0
+
+
+def run(c, error, limited=0, start=0, steps=1):
+    c.update(start, error, limited)
+    return c.update(start + 7200 * steps, error, limited)
+
+
+def test_correction_pauses():
+    assert run(fc.LearnedCorrection(), 0.3, 0) == 0  # inside dead band
+    assert run(fc.LearnedCorrection(), 1.6, 0) == 0  # too far from target
+    assert run(fc.LearnedCorrection(), None, 0) == 0
+    assert run(fc.LearnedCorrection(), 0.5, 1) == 0  # already at maximum
+    assert run(fc.LearnedCorrection(), -0.5, 1) == -0.5  # may still come down
+
+
+def test_correction_restarts_when_error_changes_sign():
+    c = fc.LearnedCorrection()
+    c.update(0, 0.5, 0)
+    assert c.update(3600, -0.5, 0) == 0
+    assert c.update(7200, -0.5, 0) == 0
+    assert c.update(10800, -0.5, 0) == -0.5
+
+
+def test_correction_waits_after_target_change():
+    c = fc.LearnedCorrection()
+    c.target_changed(0)
+    c.update(0, 0.5, 0)
+    assert c.update(10799, 0.5, 0) == 0
+    assert c.update(10800 + 7200, 0.5, 0) == 0.5
+
+
+def test_correction_is_bounded():
+    assert run(fc.LearnedCorrection(8.0), 0.5) == 8.0
+    assert run(fc.LearnedCorrection(-8.0), -0.5) == -8.0
+
+
+def test_write_threshold():
+    assert not fc.should_write(35.5, 35.0, False) and fc.should_write(36.0, 35.0, False)
+    assert fc.should_write(35.5, 35.0, True) and not fc.should_write(35.0, 35.0, True)

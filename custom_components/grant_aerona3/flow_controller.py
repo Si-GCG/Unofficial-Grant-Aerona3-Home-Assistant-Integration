@@ -88,3 +88,68 @@ def parse_room(text: str | None) -> float | None:
     if not math.isfinite(value) or not ROOM_MIN <= value <= ROOM_MAX:
         return None
     return value
+
+
+class OutdoorAverage:
+    """Mean outdoor temperature over a rolling window."""
+
+    def __init__(self, window_s: float = 3600.0) -> None:
+        self.window_s = window_s
+        self._samples: list[tuple[float, float]] = []
+
+    def add(self, now: float, value: float) -> None:
+        self._samples.append((now, value))
+        self._trim(now)
+
+    def value(self, now: float) -> float | None:
+        self._trim(now)
+        if not self._samples:
+            return None
+        return sum(v for _, v in self._samples) / len(self._samples)
+
+    def _trim(self, now: float) -> None:
+        self._samples = [s for s in self._samples if now - s[0] <= self.window_s]
+
+
+class LearnedCorrection:
+    """Slow offset that makes up for curve points that are a bit wrong."""
+
+    STEP = 0.5
+    PERIOD_S = 7200.0
+    DEAD_BAND = 0.3
+    MAX_ERROR = 1.5
+    LIMIT = 8.0
+    HOLD_AFTER_TARGET_S = 10800.0
+
+    def __init__(self, value: float = 0.0) -> None:
+        self.value = value
+        self._since: float | None = None
+        self._sign = 0
+        self._hold_until = float("-inf")
+
+    def target_changed(self, now: float) -> None:
+        self._hold_until = now + self.HOLD_AFTER_TARGET_S
+        self._since = None
+
+    def update(self, now: float, error: float | None, limited: int) -> float:
+        """error is target minus room; call this regularly."""
+        sign = 0
+        if error is not None:
+            size = abs(round(error, 6))
+            if self.DEAD_BAND < size <= self.MAX_ERROR:
+                sign = 1 if error > 0 else -1
+        if sign == 0 or sign == limited:
+            self._since = None
+            return self.value
+        if self._since is None or sign != self._sign:
+            self._since, self._sign = max(now, self._hold_until), sign
+        elif now - self._since >= self.PERIOD_S:
+            self.value = max(-self.LIMIT, min(self.value + sign * self.STEP, self.LIMIT))
+            self._since = now
+        return self.value
+
+
+def should_write(calculated: float, current: float, after_target_change: bool) -> bool:
+    """Ignore small differences, to save writes."""
+    threshold = 0.5 if after_target_change else 1.0
+    return abs(calculated - current) >= threshold - 1e-9
